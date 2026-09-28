@@ -1,0 +1,26 @@
+[theme]
+base = "light"
+primaryColor = "#1F3A5F"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F5F7"
+textColor = "#1B1F24"
+linkColor = "#1F3A5F"
+linkUnderline = false
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+headingFont = "'Source Serif 4':https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap"
+baseFontSize = 15
+
+[theme.sidebar]
+backgroundColor = "#F7F7F5"
+
+[server]
+headless = true
+address = "localhost"  # do not expose the app on the network by default
+runOnSave = false
+fileWatcherType = "none"  # the watcher crawls transformers/torch and spams import errors
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "paper-triage",
+      "url": "http://localhost:8501",
+      "port": 8501
+    }
+  ]
+}
