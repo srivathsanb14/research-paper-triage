@@ -34,6 +34,102 @@ Optional environment variables:
 
 Tests: `.venv/bin/python -m pytest`
 
+## GitHub Pages (browser edition)
+
+The Pages edition runs the Python ranking engine in the visitor's browser using
+[Stlite](https://stlite.net/browser/) 1.9.2 and Pyodide. It needs no Python server,
+account, API key, or paid hosting. The existing `streamlit run app.py` command still
+runs the server edition.
+
+| Feature | Browser edition |
+|---|---|
+| Ranking, feedback, labels, evaluation, reading budget | Available; TF-IDF + LSA and learned regression |
+| Sample papers | 416 bundled records, with simulated demo feedback |
+| Your own papers | Import a JSON collection from **Add papers** |
+| Seed papers | Select papers already in your collection |
+| Profiles and feedback | Saved in this browser using IndexedDB; no sync between devices |
+| Backups | **Settings → Download profile backup**; restore from the sidebar |
+| BibTeX, RIS, CSV and Markdown exports | Available |
+| Live API searches, DOI/BibTeX resolution, full-text downloads | Server edition only |
+| MiniLM embeddings, Claude explanations, Slack/email delivery | Server edition only |
+| Scheduled fetching while closed | Server edition only |
+
+The first load downloads the Python runtime and scientific packages from public
+CDNs and can take a minute or two. An internet connection is needed to load those
+assets. Research interests and feedback are processed locally. Clearing the
+browser's site data deletes saved profiles; download a backup before doing so.
+Only one tab at a time can write this app's saved data. Current browsers with
+WebAssembly, IndexedDB and Web Locks are required.
+
+### Preview locally
+
+Only Python 3.11+ is needed to build and serve the static files:
+
+```bash
+python3.12 scripts/build_pages.py
+python3.12 -m http.server 8000 --bind 127.0.0.1 --directory _site
+```
+
+Open http://127.0.0.1:8000. Do not open `index.html` directly as a `file://` URL.
+The build copies an explicit list of application files and sample data into
+`_site/app.zip`; local databases, credentials, caches and `.git` are excluded.
+The app source and bundled sample data become publicly downloadable with the site.
+
+### Publish
+
+1. A repository admin or maintainer opens **Settings → Pages** and selects
+   **GitHub Actions** as the publishing source.
+2. Merge the Pages changes into `main`. The **GitHub Pages** workflow tests the
+   Python code, builds `_site`, and deploys it. Pull requests run tests and build
+   without publishing.
+3. Open the URL shown by the workflow's deployment job. For this repository, the
+   expected URL is `https://srivathsanb14.github.io/research-paper-triage/`.
+   That URL is not live until the first successful deployment.
+
+The repository is currently private. GitHub Pages on a private repository
+requires an eligible paid GitHub plan; public repositories can use GitHub Free.
+The workflow does not change repository visibility or account billing.
+See [GitHub's Pages requirements](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
+and [publishing permissions](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+
+### Import format
+
+Upload a JSON array (up to 2,000 papers and 10 MB). Each paper needs a unique `id`
+and `title`; abstracts substantially improve ranking. Optional fields follow
+`triage.models.Paper`. URLs must use `https://` or `http://`.
+
+```json
+[
+  {
+    "id": "local:example-paper",
+    "title": "Evaluating Retrieval-Augmented Generation",
+    "abstract": "We evaluate retrieval quality and answer faithfulness.",
+    "authors": ["A. Researcher"],
+    "year": 2026
+  }
+]
+```
+
+Use **Settings → Download paper collection** in either edition to export this
+format. A profile backup additionally contains interests, labels, feedback, seeds
+and triage settings. Restoring creates a new profile instead of overwriting one.
+
+### Verify the Pages edition
+
+```bash
+.venv/bin/pip install -r requirements-core.txt 'anthropic>=1.0' 'pytest>=8.0'
+.venv/bin/python -m pytest -q
+python3.12 scripts/build_pages.py
+npm ci
+npx playwright install chromium
+npm run test:pages
+```
+
+The browser check serves the site under a repository-style URL prefix and verifies
+startup, tab locking, feedback persistence across reloads, downloads, paper imports,
+labeling, evaluation and mobile layout. If Chrome is already installed, use
+`BROWSER_CHANNEL=chrome npm run test:pages` instead of installing Chromium.
+
 ## How it maps to the design
 
 | Design box | Code |

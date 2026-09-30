@@ -127,7 +127,8 @@ class Store:
         conn = sqlite3.connect(self.path, timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         try:
-            conn.execute("PRAGMA journal_mode=WAL")
+            # A single database file is safer to sync to IndexedDB in the browser.
+            conn.execute("PRAGMA journal_mode=DELETE" if config.BROWSER_MODE else "PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA foreign_keys=ON")
             yield conn
             conn.commit()

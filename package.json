@@ -1,0 +1,10 @@
+{
+  "name": "paper-triage-pages-checks",
+  "private": true,
+  "scripts": {
+    "test:pages": "node scripts/check_pages.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

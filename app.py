@@ -29,6 +29,7 @@ from triage.demo import DEMO_NAME, is_demo, seed_demo
 from triage.evaluate import MIN_LABELS
 from triage.relevance import FEATURES, PRIOR_WEIGHTS
 from triage.sources import ARXIV_CATEGORIES, SourceError
+from triage.transfer import export_profile, load_json, parse_papers, restore_profile
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 st.set_page_config(page_title="Paper Triage", page_icon=":material/menu_book:", layout="wide")
@@ -136,7 +137,7 @@ def profile_json(p: InterestProfile) -> str:
 
 
 def use_llm(profile: InterestProfile | None) -> bool:
-    return bool(profile and store.get_setting(profile.id, "use_llm", False) and llm_available())
+    return bool(not config.BROWSER_MODE and profile and store.get_setting(profile.id, "use_llm", False) and llm_available())
 
 
 @st.cache_data(max_entries=16, show_spinner=False, persist="disk")
@@ -199,6 +200,8 @@ def chip(label: str) -> str:
 def sidebar() -> InterestProfile | None:
     sb = st.sidebar
     sb.markdown("<p class='brand'>Paper Triage</p>", unsafe_allow_html=True)
+    if config.BROWSER_MODE:
+        sb.caption("Saved in this browser · No account needed")
 
     profiles = store.list_profiles()
     names = [p.name for p in profiles]
@@ -222,6 +225,17 @@ def sidebar() -> InterestProfile | None:
             if st.button("Open demo profile", width="stretch", type="tertiary"):
                 demo = seed_demo(engine)
                 st.session_state["goto_profile"] = demo.name
+                st.rerun()
+
+    with sb.expander("Restore profile backup"):
+        backup = st.file_uploader("Profile backup (.json)", type=["json"], key="profile_backup")
+        if st.button("Restore as a new profile", disabled=backup is None, width="stretch"):
+            try:
+                restored = restore_profile(store, backup.getvalue())
+            except ValueError as e:
+                st.error(str(e))
+            else:
+                st.session_state["goto_profile"] = restored.name
                 st.rerun()
 
     if profile is not None:
@@ -282,6 +296,8 @@ def start_visit(profile: InterestProfile) -> None:
 
 def auto_refresh(profile: InterestProfile) -> None:
     """Once per session: fetch today's arXiv listings if the last fetch is older than ~a day."""
+    if config.BROWSER_MODE:
+        return
     key = f"refreshed_{profile.id}"
     if key in st.session_state:
         if st.session_state[key]:
@@ -302,6 +318,18 @@ def auto_refresh(profile: InterestProfile) -> None:
 
 
 def seed_form(profile: InterestProfile) -> None:
+    if config.BROWSER_MODE:
+        st.caption("Choose essential papers from your collection to guide the ranking.")
+        papers = {p.id: p for p in [*engine.pool(profile), *engine.seed_papers(profile)]}
+        with st.form(f"browser_seeds_{profile.id}"):
+            selected = st.multiselect("Essential papers", list(papers), default=store.seed_ids(profile.id),
+                                      format_func=lambda pid: papers[pid].title)
+            if st.form_submit_button("Save seed papers", width="stretch"):
+                for pid in set(store.seed_ids(profile.id)) - set(selected):
+                    store.remove_seed(profile.id, pid)
+                store.add_seeds(profile.id, selected)
+                st.rerun()
+        return
     st.caption("Papers you consider essential. arXiv IDs, links or DOIs, or a BibTeX file.")
     with st.form(f"seeds_{profile.id}", border=False, clear_on_submit=True):
         text = st.text_area("Identifiers", height=80, placeholder="2005.11401\n10.18653/v1/2020.emnlp-main.550",
@@ -327,6 +355,29 @@ def seed_form(profile: InterestProfile) -> None:
 
 
 def fetch_form(profile: InterestProfile) -> None:
+    if config.BROWSER_MODE:
+        st.caption("Use the sample collection or import papers from a JSON file. Live searches are available in the Python app.")
+        if st.button("Add sample papers", type="primary", width="stretch"):
+            engine.fetch_into_pool(profile, "sample")
+            st.rerun()
+        with st.form(f"paper_import_{profile.id}", clear_on_submit=True):
+            uploaded = st.file_uploader("Paper collection (.json)", type=["json"])
+            st.caption('A list of papers with "id", "title" and preferably "abstract". Up to 2,000 papers / 10 MB.')
+            if st.form_submit_button("Import papers", width="stretch"):
+                if uploaded is None:
+                    st.warning("Choose a JSON file first.")
+                else:
+                    try:
+                        papers = parse_papers(load_json(uploaded.getvalue()))
+                        store.upsert_papers(papers)
+                        store.add_to_pool(profile.id, [p.id for p in papers])
+                        store.set_setting(profile.id, "content_rev", datetime.now(timezone.utc).isoformat())
+                    except ValueError as e:
+                        st.error(str(e))
+                    else:
+                        st.rerun()
+        st.caption(f"{len(store.pool_ids(profile.id))} papers in this profile")
+        return
     src = st.selectbox("Source", list(SOURCES), format_func=SOURCES.get)
     cats, days, n = [], None, 100
     if src in ("arxiv_new", "arxiv", "both"):
@@ -975,7 +1026,7 @@ def settings(profile: InterestProfile, run: TriageRun | None) -> None:
             help="Based on your reading time; extra papers move to Skim.")
     _toggle(profile, "auto_update", "Re-rank after each feedback")
     _toggle(profile, "group_similar", "Group near-identical papers")
-    full = _toggle(profile, "full_text", "Use full text for borderline papers",
+    full = False if config.BROWSER_MODE else _toggle(profile, "full_text", "Use full text for borderline papers",
                    help="Re-scores papers near a cutoff using their introduction and conclusion.")
     if full and run is not None:
         pending = len(engine.borderline(profile, run))
@@ -985,9 +1036,11 @@ def settings(profile: InterestProfile, run: TriageRun | None) -> None:
             st.rerun()
 
     st.markdown("<div class='section'>Explanations</div>", unsafe_allow_html=True)
-    available = llm_available()
+    available = not config.BROWSER_MODE and llm_available()
     saved_llm = bool(store.get_setting(profile.id, "use_llm", False))
-    llm_on = st.toggle(
+    if config.BROWSER_MODE:
+        st.caption("Explanations use evidence from the paper. This browser edition uses TF-IDF ranking and runs without API keys.")
+    llm_on = False if config.BROWSER_MODE else st.toggle(
         "Write explanations with Claude", value=saved_llm and available, disabled=not available,
         help=(f"Uses {config.LLM_MODEL}. Each explanation is checked against the paper; unverifiable ones are replaced."
               if available else "Set ANTHROPIC_API_KEY to enable."),
@@ -1030,6 +1083,12 @@ def settings(profile: InterestProfile, run: TriageRun | None) -> None:
             )
 
     st.markdown("<div class='section'>Data</div>", unsafe_allow_html=True)
+    if config.BROWSER_MODE:
+        st.caption("Profiles and feedback are saved on this device. Clearing site data removes them. Download a backup to keep a copy or move to another browser.")
+    st.download_button("Download profile backup", export_profile(store, profile),
+                       f"paper_triage_profile_{profile.id}.json", "application/json", icon=":material/save:")
+    st.download_button("Download paper collection", json.dumps([p.to_dict() for p in engine.pool(profile)], ensure_ascii=False),
+                       f"paper_collection_{profile.id}.json", "application/json", icon=":material/download:")
     with st.expander("Fetch history"):
         hist = store.fetch_history(profile.id, 30)
         if hist:

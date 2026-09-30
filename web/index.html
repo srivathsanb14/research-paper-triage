@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Find the research papers worth your time. Personalized Read, Skim and Skip rankings, saved in your browser.">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Paper Triage</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f3a5f'/%3E%3Ctext x='32' y='45' text-anchor='middle' fill='white' font-size='42' font-family='Georgia'%3EP%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./site.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.2/build/stlite.css">
+  </head>
+  <body>
+    <section id="loading" aria-live="polite">
+      <div class="mark" aria-hidden="true">P</div>
+      <p class="eyebrow">PAPER TRIAGE</p>
+      <h1>Make room for the papers that matter.</h1>
+      <p id="loading-status">Opening your reading workspace…</p>
+      <p class="detail">The first visit downloads the app and its ranking tools. This can take a minute or two. Later visits use your browser’s cache.</p>
+      <p class="detail">Your profiles and feedback stay in this browser. Start with 416 sample papers or import your own collection.</p>
+      <button id="retry" hidden type="button">Try again</button>
+    </section>
+    <noscript>Paper Triage needs JavaScript to run in your browser. Enable JavaScript and reload this page.</noscript>
+    <div id="root"></div>
+    <script type="module" src="./loader.js"></script>
+  </body>
+</html>

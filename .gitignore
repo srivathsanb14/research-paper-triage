@@ -5,3 +5,6 @@ data/triage.db*
 .streamlit/secrets.toml
 .streamlit/cache/
 .DS_Store
+_site/
+node_modules/
+test-results/

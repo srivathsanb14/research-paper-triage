@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
+BROWSER_MODE = sys.platform == "emscripten" or os.environ.get("TRIAGE_BROWSER_MODE") == "1"
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("TRIAGE_DATA_DIR", ROOT / "data"))
 DB_PATH = Path(os.environ.get("TRIAGE_DB_PATH", DATA_DIR / "triage.db"))

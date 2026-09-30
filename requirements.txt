@@ -1,11 +1,4 @@
-streamlit>=1.50
-numpy>=1.26
-pandas>=2.1
-scipy>=1.11
-scikit-learn>=1.4
-requests>=2.31
-pydantic>=2.5
+-r requirements-core.txt
 anthropic>=1.0          # optional: LLM explanations (needs ANTHROPIC_API_KEY)
 sentence-transformers>=3.0  # optional but recommended; falls back to TF-IDF without it
 pytest>=8.0
-pypdf>=4.0              # full-text fallback when a paper has no HTML version
