@@ -666,19 +666,38 @@ def labeling(profile: InterestProfile) -> None:
         if labels:
             by_id = {p.id: p for p in store.get_papers(list(labels))}
             df = pd.DataFrame([{"id": pid, "Title": by_id[pid].title if pid in by_id else pid, "Label": lab, "Remove": False} for pid, lab in labels.items()])
-            edited = st.data_editor(
-                df, hide_index=True, width="stretch", disabled=["id", "Title"], key=f"editor_{profile.id}",
-                column_config={"id": None, "Label": st.column_config.SelectboxColumn(options=list(config.LABELS), required=True)},
-            )
-            c1, c2 = st.columns(2)
-            if c1.button("Save changes"):
-                for _, row in edited.iterrows():
-                    if row["Remove"]:
-                        store.remove_label(profile.id, row["id"])
-                    elif row["Label"] != labels.get(row["id"]):
-                        store.set_label(profile.id, row["id"], row["Label"])
-                st.rerun()
-            c2.download_button(
+            if config.BROWSER_MODE:
+                # Stlite's current data_editor patch fails on Arrow conversion.
+                # Native widgets keep label corrections available in the browser.
+                pid = st.selectbox(
+                    "Labelled paper", list(labels),
+                    format_func=lambda pid: by_id[pid].title if pid in by_id else pid,
+                    key=f"label_paper_{profile.id}",
+                )
+                lab = st.selectbox(
+                    "Label", list(config.LABELS), index=list(config.LABELS).index(labels[pid]),
+                    key=f"label_value_{profile.id}_{pid}",
+                )
+                c1, c2 = st.columns(2)
+                if c1.button("Save label"):
+                    store.set_label(profile.id, pid, lab)
+                    st.rerun()
+                if c2.button("Remove label"):
+                    store.remove_label(profile.id, pid)
+                    st.rerun()
+            else:
+                edited = st.data_editor(
+                    df, hide_index=True, width="stretch", disabled=["id", "Title"], key=f"editor_{profile.id}",
+                    column_config={"id": None, "Label": st.column_config.SelectboxColumn(options=list(config.LABELS), required=True)},
+                )
+                if st.button("Save changes"):
+                    for _, row in edited.iterrows():
+                        if row["Remove"]:
+                            store.remove_label(profile.id, row["id"])
+                        elif row["Label"] != labels.get(row["id"]):
+                            store.set_label(profile.id, row["id"], row["Label"])
+                    st.rerun()
+            st.download_button(
                 "Export labels", json.dumps({"profile": profile.name, "labels": labels}, indent=1),
                 file_name=f"labels_{profile.name.replace(' ', '_')}.json", mime="application/json",
             )

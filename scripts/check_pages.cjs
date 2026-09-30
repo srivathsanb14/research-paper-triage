@@ -74,8 +74,11 @@ async function main() {
 
     await page.getByText("Add papers", { exact: true }).click();
     const collection = [{ id: "test:browser-import", title: "Browser Persistence Test Paper", abstract: "Retrieval augmented generation for scientific question answering." }];
-    await page.getByLabel("Paper collection (.json)", { exact: true }).setInputFiles({ name: "papers.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(collection)) });
+    await page.getByLabel("Paper collection (.json)", { exact: true }).locator('input[type="file"]').setInputFiles({ name: "papers.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(collection)) });
+    await page.getByText("papers.json", { exact: true }).waitFor();
     await page.getByRole("button", { name: "Import papers", exact: true }).click();
+    // Do not navigate away while Streamlit is handling the form submission.
+    await page.getByText("417 papers in this profile", { exact: true }).waitFor();
     await page.getByRole("tab", { name: "Reading list", exact: true }).click();
     await page.getByText(/^All \(/).click();
     await page.getByPlaceholder("Search titles and abstracts").fill("Browser Persistence Test Paper");
@@ -85,6 +88,8 @@ async function main() {
 
     await page.getByRole("tab", { name: "Labeling", exact: true }).click();
     await page.getByText("Sampling", { exact: true }).waitFor({ state: "attached" });
+    await page.getByText("Manage labels", { exact: true }).click();
+    await page.getByRole("button", { name: "Save label", exact: true }).waitFor();
     assert.equal(await page.locator('[data-testid="stException"]').count(), 0);
     console.log("PASS: labeling view works.");
     await page.getByRole("tab", { name: "Evaluation", exact: true }).click();
