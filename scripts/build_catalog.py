@@ -64,7 +64,8 @@ def paper_from_work(work: dict) -> Paper | None:
         "citation_count": work.get("cited_by_count"),
     }
     try:
-        return parse_papers([row])[0]
+        paper = parse_papers([row])[0]
+        return paper if len(paper.abstract.split()) >= 30 else None
     except ValueError:
         return None
 

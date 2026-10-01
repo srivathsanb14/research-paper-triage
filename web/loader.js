@@ -47,6 +47,7 @@ async function start() {
           TRIAGE_BROWSER_MODE: "1",
           TRIAGE_EMBEDDING_BACKEND: "tfidf",
           TRIAGE_DB_PATH: `${storagePath}/triage.db`,
+          TRIAGE_CATALOG_URL: new URL("./catalog/", import.meta.url).href,
         },
         idbfsMountpoints: [storagePath],
         streamlitConfig,

@@ -44,6 +44,8 @@ runs the server edition.
 | Feature | Browser edition |
 |---|---|
 | Ranking, feedback, labels, evaluation, reading budget | Available; TF-IDF + LSA and learned regression |
+| Broad research catalog | 1,800 OpenAlex records across six areas, covering all 26 fields |
+| Getting started | Choose fields, optionally describe your interests, then click **Find papers** |
 | Sample papers | 416 bundled records, with simulated demo feedback |
 | Your own papers | Import a JSON collection from **Add papers** |
 | Seed papers | Select papers already in your collection |
@@ -52,7 +54,8 @@ runs the server edition.
 | BibTeX, RIS, CSV and Markdown exports | Available |
 | Live API searches, DOI/BibTeX resolution, full-text downloads | Server edition only |
 | MiniLM embeddings, Claude explanations, Slack/email delivery | Server edition only |
-| Scheduled fetching while closed | Server edition only |
+| Shared catalog refresh | Daily on GitHub Actions, even while visitors have the app closed |
+| Personal live API fetching while closed | Server edition only |
 
 The first load downloads the Python runtime and scientific packages from public
 CDNs and can take a minute or two. An internet connection is needed to load those
@@ -60,6 +63,42 @@ assets. Research interests and feedback are processed locally. Clearing the
 browser's site data deletes saved profiles; download a backup before doing so.
 Only one tab at a time can write this app's saved data. Current browsers with
 WebAssembly, IndexedDB and Web Locks are required.
+
+### Shared paper catalog
+
+Visitors need no installation, login, API key, or file import. New visitors see a
+field picker; the RAG demo is an optional example. Existing profiles and their
+feedback remain intact. **Add papers → Load field papers** adds a fresh selection
+to an existing profile. Reload the website to pick up a newly published catalog.
+
+The public catalog covers computing/engineering; maths/physical sciences;
+biology/medicine; earth/environment; society/psychology/economics; and
+arts/humanities. It samples up to 300 papers per area, balanced across the 26
+[OpenAlex fields](https://help.openalex.org/data/fields/). Records must have usable
+English abstracts and publication dates within the past 180 days. This is a
+bounded selection, not complete coverage of every paper. Titles, abstracts,
+authors, dates, categories and links are hosted; PDFs are linked, not mirrored.
+
+Only the selected areas' files are downloaded from the same website. A load adds
+100–1,000 papers, balanced across the selected areas. Ranking, learning, research
+interests, labels and feedback stay in the browser. Catalog files contain public
+metadata only; no visitor data is sent to OpenAlex or GitHub Actions.
+
+The Pages workflow refreshes the catalog daily at 06:23 UTC and on **Run workflow**.
+It caches the last validated snapshot and falls back to it if OpenAlex is down or
+rate-limited; the checked-in snapshot also supports an initial deployment. The
+app shows the catalog's actual update date. GitHub schedules start after the
+workflow is merged into the default branch and can be delayed.
+
+For the site owner, an optional repository Actions secret `OPENALEX_API_KEY` gives
+the collector its own API allowance if GitHub's shared anonymous quota runs out.
+Visitors never supply a key, and the key is never included in site files. No
+separate backend service is required. API access:
+[OpenAlex authentication](https://help.openalex.org/api/authentication/).
+
+Maintainers can rebuild the snapshot with `.venv/bin/python scripts/build_catalog.py`.
+The **Collect paper catalog** workflow also uploads a downloadable snapshot for
+review. Failed collections leave the existing manifest unchanged.
 
 ### Preview locally
 

@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * *'
 
 permissions:
   contents: read
@@ -28,10 +30,32 @@ jobs:
             requirements.txt
       - name: Install test dependencies (without torch)
         run: python -m pip install -r requirements-core.txt 'anthropic>=1.0' 'pytest>=8.0'
+      - name: Restore last refreshed catalog
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/catalog
+          key: paper-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: paper-catalog-v1-
+      - name: Refresh shared paper catalog
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        run: |
+          if ! python scripts/build_catalog.py; then
+            echo '::warning::Catalog refresh failed. Publishing the last bundled catalog with its original update date.'
+            test -f data/catalog/manifest.json
+          fi
       - name: Test
         run: python -m pytest -q
       - name: Build browser app
         run: python scripts/build_pages.py
+      - name: Keep validated catalog for the next refresh
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        with:
+          path: data/catalog
+          key: paper-catalog-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:

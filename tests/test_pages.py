@@ -13,16 +13,19 @@ from triage.transfer import export_profile, load_json, parse_papers, restore_pro
 def test_pages_artifact_contains_only_public_app_files(tmp_path):
     build(tmp_path)
     assert {p.name for p in tmp_path.iterdir()} == {
-        "index.html", "loader.js", "site.css", "app.zip", "app-config.json", ".nojekyll"
+        "index.html", "loader.js", "site.css", "app.zip", "app-config.json", ".nojekyll", "catalog"
     }
     with ZipFile(tmp_path / "app.zip") as bundle:
         names = bundle.namelist()
         assert "app.py" in names
         assert "data/sample_papers.json" in names
         assert "triage/transfer.py" in names
-        assert all(name in ("app.py", "data/sample_papers.json") or
+        assert "data/catalog/manifest.json" in names
+        assert all(name in ("app.py", "data/sample_papers.json", "data/catalog/manifest.json") or
                    (name.startswith("triage/") and name.endswith(".py")) for name in names)
         assert len(json.loads(bundle.read("data/sample_papers.json"))) > 400
+        manifest = json.loads(bundle.read("data/catalog/manifest.json"))
+        assert {p.name for p in (tmp_path / "catalog").iterdir()} == {"manifest.json", *(a["file"] for a in manifest["areas"])}
 
 
 @pytest.mark.parametrize("row", [

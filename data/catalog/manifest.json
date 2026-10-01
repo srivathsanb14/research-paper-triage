@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-01T14:58:27+00:00",
+  "source": "OpenAlex",
+  "source_url": "https://openalex.org",
+  "license": "CC0",
+  "since": "2026-04-04",
+  "until": "2026-10-01",
+  "language": "en",
+  "areas": [
+    {
+      "id": "computing",
+      "label": "Computing & engineering",
+      "file": "computing-223fdf0750404a255c7225fcbc836ec2192ac8cfac94a2f6947d96e1e08ad483.json",
+      "sha256": "223fdf0750404a255c7225fcbc836ec2192ac8cfac94a2f6947d96e1e08ad483",
+      "count": 261,
+      "fields": [
+        17,
+        22,
+        25
+      ]
+    },
+    {
+      "id": "physical",
+      "label": "Maths & physical sciences",
+      "file": "physical-210abbc93529b4e06c8e73c22590e57a966aca0707081618c424d952c832db28.json",
+      "sha256": "210abbc93529b4e06c8e73c22590e57a966aca0707081618c424d952c832db28",
+      "count": 262,
+      "fields": [
+        15,
+        16,
+        23,
+        26,
+        31
+      ]
+    },
+    {
+      "id": "life",
+      "label": "Biology & medicine",
+      "file": "life-d0c536f0c9e9d749e39f3bb3f2bfa280cb21045f4436e7d09462726d5619e187.json",
+      "sha256": "d0c536f0c9e9d749e39f3bb3f2bfa280cb21045f4436e7d09462726d5619e187",
+      "count": 259,
+      "fields": [
+        13,
+        24,
+        27,
+        28,
+        29,
+        30,
+        34,
+        35,
+        36
+      ]
+    },
+    {
+      "id": "environment",
+      "label": "Earth & environment",
+      "file": "environment-3042a90f8f16c594b4d72768cd132b775a3fc3cf4a03b095ed65401d1d93fa25.json",
+      "sha256": "3042a90f8f16c594b4d72768cd132b775a3fc3cf4a03b095ed65401d1d93fa25",
+      "count": 247,
+      "fields": [
+        11,
+        19
+      ]
+    },
+    {
+      "id": "society",
+      "label": "Society, psychology & economics",
+      "file": "society-2979984a199e5cef4075339be61c1800de20dde555be2518e1b420291c8fde35.json",
+      "sha256": "2979984a199e5cef4075339be61c1800de20dde555be2518e1b420291c8fde35",
+      "count": 238,
+      "fields": [
+        14,
+        18,
+        20,
+        32,
+        33
+      ]
+    },
+    {
+      "id": "humanities",
+      "label": "Arts & humanities",
+      "file": "humanities-69e4a4ca0ada836bcafe1cdd098a21081b58de209e740dbe0b77f07aadc4f994.json",
+      "sha256": "69e4a4ca0ada836bcafe1cdd098a21081b58de209e740dbe0b77f07aadc4f994",
+      "count": 215,
+      "fields": [
+        12
+      ]
+    }
+  ]
+}

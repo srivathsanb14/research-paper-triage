@@ -18,6 +18,7 @@ import pandas as pd
 import streamlit as st
 
 from triage import config
+from triage import catalog
 from triage.embeddings import sbert_available
 from triage import export
 from triage.explain import explain_many, llm_available
@@ -111,7 +112,7 @@ store = engine.store
 
 # A demo profile (sample papers + simulated labels/feedback) is created once, on
 # first launch. Deleting it is respected; it can be recreated from Settings.
-if not store.get_setting(0, "demo_seeded", False):
+if not config.BROWSER_MODE and not store.get_setting(0, "demo_seeded", False):
     if not store.list_profiles():
         with st.spinner("Preparing the demo profile…"):
             seed_demo(engine)
@@ -356,8 +357,8 @@ def seed_form(profile: InterestProfile) -> None:
 
 def fetch_form(profile: InterestProfile) -> None:
     if config.BROWSER_MODE:
-        st.caption("Use the sample collection or import papers from a JSON file. Live searches are available in the Python app.")
-        if st.button("Add sample papers", type="primary", width="stretch"):
+        catalog_form(profile)
+        if st.button("Add sample papers", width="stretch"):
             engine.fetch_into_pool(profile, "sample")
             st.rerun()
         with st.form(f"paper_import_{profile.id}", clear_on_submit=True):
@@ -1148,7 +1149,93 @@ def settings(profile: InterestProfile, run: TriageRun | None) -> None:
 # ------------------------------------------------------------------- main
 
 
+@st.cache_data(show_spinner=False, max_entries=12)
+def catalog_selection(selected: tuple[str, ...], limit: int):
+    return catalog.load_selection(list(selected), limit)
+
+
+def catalog_controls(defaults: list[str], key: str):
+    selected = st.multiselect("Research fields", list(catalog.AREAS),
+                             default=[k for k in defaults if k in catalog.AREAS],
+                             format_func=lambda k: catalog.AREAS[k][0], key=f"fields_{key}")
+    limit = st.select_slider("Papers to load", options=[100, 300, 600, 1000], value=300, key=f"limit_{key}")
+    return selected, limit
+
+
+def catalog_note() -> None:
+    try:
+        info = catalog.manifest()
+        count = sum(entry["count"] for entry in info["areas"])
+        st.caption(f"{count:,} papers across six broad areas · Updated {info['updated_at'][:10]} · OpenAlex")
+        st.caption("English abstracts · A recent selection, not a complete research index.")
+    except ValueError as exc:
+        st.warning(str(exc))
+
+
+def save_catalog(profile: InterestProfile, papers, selected: list[str]) -> None:
+    store.upsert_papers(papers)
+    store.add_to_pool(profile.id, [p.id for p in papers])
+    store.set_setting(profile.id, "catalog_fields", selected)
+    store.set_setting(profile.id, "content_rev", datetime.now(timezone.utc).isoformat())
+
+
+def catalog_form(profile: InterestProfile) -> None:
+    catalog_note()
+    with st.form(f"catalog_{profile.id}", border=False):
+        selected, limit = catalog_controls(store.get_setting(profile.id, "catalog_fields", list(catalog.AREAS)), str(profile.id))
+        submitted = st.form_submit_button("Load field papers", type="primary", width="stretch")
+    if submitted:
+        try:
+            with st.spinner("Loading papers…"):
+                papers = catalog_selection(tuple(selected), limit)
+            save_catalog(profile, papers, selected)
+        except ValueError as exc:
+            st.error(str(exc))
+        else:
+            st.rerun()
+
+
+def browser_welcome() -> None:
+    st.markdown("<div class='page-title'>Find papers for your research</div>", unsafe_allow_html=True)
+    st.write("Choose your fields and tell us what interests you. Your reading list and feedback stay in this browser.")
+    catalog_note()
+    with st.form("welcome"):
+        interests = st.text_area("What are you interested in?", placeholder="For example: clean energy, public health, or ancient history.")
+        selected, limit = catalog_controls(list(catalog.AREAS), "welcome")
+        submitted = st.form_submit_button("Find papers", type="primary")
+    if submitted:
+        try:
+            with st.spinner("Loading your reading list…"):
+                papers = catalog_selection(tuple(selected), limit)
+            profile = store.save_profile(InterestProfile(
+                name="My reading list", description=interests.strip() or ", ".join(catalog.AREAS[k][0] for k in selected)))
+            save_catalog(profile, papers, selected)
+        except ValueError as exc:
+            st.error(str(exc))
+        else:
+            st.session_state["goto_profile"] = profile.name
+            st.query_params["view"] = "ALL"
+            st.rerun()
+    with st.expander("Already have a profile backup?"):
+        backup = st.file_uploader("Restore profile (.json)", type=["json"])
+        if st.button("Restore profile", disabled=backup is None):
+            try:
+                restored = restore_profile(store, backup.getvalue())
+            except ValueError as exc:
+                st.error(str(exc))
+            else:
+                st.session_state["goto_profile"] = restored.name
+                st.rerun()
+    if st.button("Try the RAG demo", type="tertiary"):
+        demo = seed_demo(engine)
+        st.session_state["goto_profile"] = demo.name
+        st.rerun()
+
+
 def main() -> None:
+    if config.BROWSER_MODE and not store.list_profiles():
+        browser_welcome()
+        return
     profile = sidebar()
     if profile is None:
         st.markdown("<div class='page-title'>Paper Triage</div>", unsafe_allow_html=True)

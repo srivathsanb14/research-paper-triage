@@ -19,10 +19,10 @@ from .transfer import load_json, parse_papers
 CATALOG_DIR = config.DATA_DIR / "catalog"
 # All 26 OpenAlex fields appear once. IDs follow OpenAlex's field taxonomy.
 AREAS = {
-    "computing": ("Computing & engineering", [17, 22, 25]),
-    "physical": ("Maths & physical sciences", [15, 16, 23, 26, 31]),
+    "computing": ("Computing & engineering", [17, 21, 22, 25]),
+    "physical": ("Maths & physical sciences", [15, 16, 26, 31]),
     "life": ("Biology & medicine", [13, 24, 27, 28, 29, 30, 34, 35, 36]),
-    "environment": ("Earth & environment", [11, 19]),
+    "environment": ("Earth & environment", [11, 19, 23]),
     "society": ("Society, psychology & economics", [14, 18, 20, 32, 33]),
     "humanities": ("Arts & humanities", [12]),
 }

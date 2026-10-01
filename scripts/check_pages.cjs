@@ -35,19 +35,22 @@ async function main() {
     const errors = [];
     page.on("pageerror", error => { errors.push(error.message); console.error("Browser error:", error.message); });
     page.on("requestfailed", request => console.error("Request failed:", request.url(), request.failure()?.errorText));
-    await page.goto(url + "?view=READ");
+    await page.goto(url + "?view=ALL");
     console.log("Loading browser app at a GitHub Pages-style subpath…");
     progress = setInterval(async () => {
       try { console.log("Loading:", (await page.locator("body").innerText({ timeout: 5000 })).slice(-700)); }
       catch { console.log("Waiting for browser response…"); }
     }, 20000);
-    await page.getByRole("tab", { name: "Reading list", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Find papers", exact: true }).waitFor();
     clearInterval(progress);
+    await page.getByLabel("What are you interested in?", { exact: true }).fill("Climate change and public health");
+    await page.getByRole("button", { name: "Find papers", exact: true }).click();
+    await page.getByRole("tab", { name: "Reading list", exact: true }).waitFor();
     console.log("App interface loaded.");
     await page.getByRole("button", { name: /Relevant$/ }).first().waitFor();
     assert.equal(await page.locator('[data-testid="stException"]').count(), 0);
     assert.equal(await page.locator("#loading").isVisible(), false);
-    console.log("PASS: sample collection and rankings load.");
+    console.log("PASS: a fresh visitor loads field papers and rankings without setup.");
 
     const second = await context.newPage();
     await second.goto(url);
@@ -78,7 +81,7 @@ async function main() {
     await page.getByText("papers.json", { exact: true }).waitFor();
     await page.getByRole("button", { name: "Import papers", exact: true }).click();
     // Do not navigate away while Streamlit is handling the form submission.
-    await page.getByText("417 papers in this profile", { exact: true }).waitFor();
+    await page.getByText(`${before.pool.length + 1} papers in this profile`, { exact: true }).waitFor();
     await page.getByRole("tab", { name: "Reading list", exact: true }).click();
     await page.getByText(/^All \(/).click();
     await page.getByPlaceholder("Search titles and abstracts").fill("Browser Persistence Test Paper");
@@ -88,12 +91,13 @@ async function main() {
 
     await page.getByRole("tab", { name: "Labeling", exact: true }).click();
     await page.getByText("Sampling", { exact: true }).waitFor({ state: "attached" });
+    await page.getByRole("button", { name: "Read", exact: true }).click();
     await page.getByText("Manage labels", { exact: true }).click();
     await page.getByRole("button", { name: "Save label", exact: true }).waitFor();
     assert.equal(await page.locator('[data-testid="stException"]').count(), 0);
     console.log("PASS: labeling view works.");
     await page.getByRole("tab", { name: "Evaluation", exact: true }).click();
-    await page.getByText("Ranking quality", { exact: true }).waitFor();
+    await page.getByText(/Label at least .* papers to see evaluation/).waitFor();
     assert.equal(await page.locator('[data-testid="stException"]').count(), 0);
     console.log("PASS: evaluation view works.");
     await page.getByRole("tab", { name: "Reading list", exact: true }).click();

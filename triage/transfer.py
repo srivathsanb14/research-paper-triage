@@ -15,7 +15,7 @@ from .store import FEEDBACK_ACTIONS, Store
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PAPERS = 2000
-SETTINGS = ("cutoffs", "budget", "auto_update", "group_similar", "good_mode", "demo")
+SETTINGS = ("cutoffs", "budget", "auto_update", "group_similar", "good_mode", "demo", "catalog_fields")
 
 
 def load_json(data: bytes | str):
@@ -157,7 +157,11 @@ def restore_profile(store: Store, data: bytes | str) -> InterestProfile:
     for key, value in settings.items():
         if key not in SETTINGS or value is None:
             continue
-        if key == "cutoffs":
+        if key == "catalog_fields":
+            from .catalog import AREAS
+            if not isinstance(value, list) or any(not isinstance(v, str) or v not in AREAS for v in value):
+                raise ValueError("Invalid research field selection.")
+        elif key == "cutoffs":
             if not isinstance(value, dict) or set(value) != {"read", "skim"}:
                 raise ValueError("Invalid triage cutoffs.")
             read = _number(value["read"], "Read cutoff")
