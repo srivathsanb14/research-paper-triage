@@ -44,7 +44,7 @@ runs the server edition.
 | Feature | Browser edition |
 |---|---|
 | Ranking, feedback, labels, evaluation, reading budget | Available; TF-IDF + LSA and learned regression |
-| Broad research catalog | 1,800 OpenAlex records across six areas, covering all 26 fields |
+| Broad research catalog | 1,488 bundled OpenAlex records across six areas, covering all 26 fields |
 | Getting started | Choose fields, optionally describe your interests, then click **Find papers** |
 | Sample papers | 416 bundled records, with simulated demo feedback |
 | Your own papers | Import a JSON collection from **Add papers** |

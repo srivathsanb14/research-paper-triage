@@ -49,6 +49,7 @@ def test_published_catalog_has_real_papers_and_verified_shards():
     info = catalog.manifest()
     assert {entry["id"] for entry in info["areas"]} == set(catalog.AREAS)
     for entry in info["areas"]:
+        assert entry["fields"] == catalog.AREAS[entry["id"]][1]
         papers = catalog.read_shard(entry)
         assert len(papers) == entry["count"] >= 30
         assert all(p.source == "openalex" and len(p.abstract.split()) >= 30 for p in papers)

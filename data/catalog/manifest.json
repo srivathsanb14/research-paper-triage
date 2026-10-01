@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-01T14:58:27+00:00",
+  "updated_at": "2026-10-01T15:02:34+00:00",
   "source": "OpenAlex",
   "source_url": "https://openalex.org",
   "license": "CC0",
@@ -11,11 +11,12 @@
     {
       "id": "computing",
       "label": "Computing & engineering",
-      "file": "computing-223fdf0750404a255c7225fcbc836ec2192ac8cfac94a2f6947d96e1e08ad483.json",
-      "sha256": "223fdf0750404a255c7225fcbc836ec2192ac8cfac94a2f6947d96e1e08ad483",
-      "count": 261,
+      "file": "computing-19e3c4a1fa032874cc4e3d128b637c7bdd51b2e7ba7c2c47af4d723764bdad51.json",
+      "sha256": "19e3c4a1fa032874cc4e3d128b637c7bdd51b2e7ba7c2c47af4d723764bdad51",
+      "count": 273,
       "fields": [
         17,
+        21,
         22,
         25
       ]
@@ -23,13 +24,12 @@
     {
       "id": "physical",
       "label": "Maths & physical sciences",
-      "file": "physical-210abbc93529b4e06c8e73c22590e57a966aca0707081618c424d952c832db28.json",
-      "sha256": "210abbc93529b4e06c8e73c22590e57a966aca0707081618c424d952c832db28",
-      "count": 262,
+      "file": "physical-729df5e4764c7794db6af99d2d5a185f04057d9cffa9ccaaf5df0270d438d4cc.json",
+      "sha256": "729df5e4764c7794db6af99d2d5a185f04057d9cffa9ccaaf5df0270d438d4cc",
+      "count": 272,
       "fields": [
         15,
         16,
-        23,
         26,
         31
       ]
@@ -55,12 +55,13 @@
     {
       "id": "environment",
       "label": "Earth & environment",
-      "file": "environment-3042a90f8f16c594b4d72768cd132b775a3fc3cf4a03b095ed65401d1d93fa25.json",
-      "sha256": "3042a90f8f16c594b4d72768cd132b775a3fc3cf4a03b095ed65401d1d93fa25",
-      "count": 247,
+      "file": "environment-b9e6f40f0882c25a1d774d7360fc9df6fcae7c94b315fe5355779667ba305762.json",
+      "sha256": "b9e6f40f0882c25a1d774d7360fc9df6fcae7c94b315fe5355779667ba305762",
+      "count": 231,
       "fields": [
         11,
-        19
+        19,
+        23
       ]
     },
     {
