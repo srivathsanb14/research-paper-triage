@@ -153,38 +153,41 @@ export function stratifiedSubset(ids, k, labelOf, seed) {
 const mean = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
 /**
- * Learning curve: how well the model ranks papers it has NOT seen as it learns from more of your labels.
+ * How much better do the recommendations get as you label more papers?
  *
- * It uses the same stratified 5-fold split as the cross-validated report above it. For each training
- * size k, the model learns from k labels drawn (with your label mix) from each fold's training part and
- * then scores that fold's held-out papers. Every labelled paper is therefore scored by a model that never
- * saw it, and each point is NDCG@10 over all of them. This repeats `repeats` times with different draws,
- * and the band is the spread of those draws. At the largest k the model has all the training labels,
- * which is exactly the report's own cross-validation.
+ * For each number of labels k, the recommender is built exactly as the app would build it from only
+ * k of your labels (it learns your taste from them and decides, by cross-validation on those k labels,
+ * how far to trust that learning). It then ranks papers it has never seen, and each point is how many
+ * high up its list the papers you would want sit: average precision, where 100% means every wanted paper
+ * is ranked above every other one and a random order scores the share of papers that are wanted.
  *
- * Lines: the hand-set profile alone (it still uses the k labels as reference papers, so it moves a little),
- * the model learning from labels only, the app's blend at `weight` (the cross-validated learning weight),
- * and a random order. At the largest k these match the "Profile only", "Learned from feedback only" and
- * "Personalised" rows of the report.
+ * Papers it ranks are your other labelled papers: the same stratified 5-fold split as the report, so every
+ * labelled paper is ranked by a recommender that never saw it. k labels are drawn from each fold's training
+ * part, stratified by label, and this repeats `repeats` times; the band is the spread over those draws.
+ * "Good" is Read, or Read and Skim when `good` says so (or when there are no Read labels).
+ *
+ * Lines: the hand-written profile alone (the starting point), the recommender learning from your labels,
+ * and a random order.
  */
-export function learningCurve(ctx, { weight = 0, repeats = 5, k: folds5 = 5 } = {}) {
+export function learningCurve(ctx, { good = "read", repeats = 3, k: folds5 = 5 } = {}) {
   const { labels, byId } = ctx;
   const ids = Object.keys(labels).filter(id => byId.has(id) && ctx.space.vec(byId.get(id)));
   const labelOf = id => labels[id].label ?? labels[id];
   const counts = Object.fromEntries(LABELS.map(l => [l, ids.filter(id => labelOf(id) === l).length]));
-  const present = LABELS.filter(l => counts[l]).length;
   const parts = folds(ids, labelOf, Math.min(folds5, ids.length));
   const pool = Math.min(...parts.map(f => ids.length - f.length));
   const sizes = curveSizes(pool);
-  if (ids.length < 20 || present < 2 || sizes.length < 2) {
-    return { ok: false, n: ids.length, message: "Label at least 20 papers, with at least two different labels, to see a learning curve." };
+  if (ids.length < 20 || LABELS.filter(l => counts[l]).length < 2 || sizes.length < 2) {
+    return { ok: false, n: ids.length, message: "Label at least 20 papers, with at least two different labels, to see how the recommendations improve." };
   }
+  // "Relevant" is Read; when there are too few Read labels to measure anything, Read and Skim both count.
+  const sparse = counts.READ < 10;
+  const goodSet = good === "read_skim" || sparse ? new Set(["READ", "SKIM"]) : new Set(["READ"]);
+  const isGood = ids.map(id => goodSet.has(labelOf(id)));
+  const nGood = isGood.filter(Boolean).length;
   const index = new Map(ids.map((id, i) => [id, i]));
-  const truth = ids.map(labelOf);
-  const w = Math.min(1, Math.max(0, weight || 0));
-  // learned/blend/prior [si][r][i]: score of paper i by a model trained on sizes[si] labels in repeat r
   const grid = () => sizes.map(() => Array.from({ length: repeats }, () => new Array(ids.length)));
-  const learned = grid(), blend = grid(), prior = grid();
+  const rec = grid(), prior = grid(), weights = sizes.map(() => []);
   parts.forEach((test, fi) => {
     const trainPool = ids.filter(id => !test.includes(id));
     const testPapers = test.map(id => byId.get(id));
@@ -192,37 +195,32 @@ export function learningCurve(ctx, { weight = 0, repeats = 5, k: folds5 = 5 } = 
       for (let r = 0; r < repeats; r++) {
         const train = stratifiedSubset(trainPool, Math.min(k, trainPool.length), labelOf, `${fi}|${r}`);
         const trainLabels = Object.fromEntries(train.map(id => [id, labels[id]]));
-        const model = new RelevanceModel(ctx.space, ctx.pv, { today: ctx.today }).fit(buildExamples(trainLabels, []), byId);
-        model.learnedWeight = 1;
+        const sub = { ...ctx, labels: trainLabels, feedback: [], seeds: [] };
+        const blend = selectBlend(sub); // how far to trust learning, decided only from these k labels
+        const model = new RelevanceModel(ctx.space, ctx.pv, { weightOverride: blend.weight, today: ctx.today }).fit(buildExamples(trainLabels, []), byId);
         const rows = model.score(testPapers);
-        test.forEach((id, j) => {
-          const i = index.get(id), row = rows[j];
-          prior[si][r][i] = row.prior;
-          const l = row.learned ?? row.prior; // too few labels or one answer so far: nothing learned yet
-          learned[si][r][i] = l;
-          blend[si][r][i] = (1 - w) * row.prior + w * l;
-        });
+        weights[si].push(model.learnedWeight);
+        test.forEach((id, j) => { const i = index.get(id); rec[si][r][i] = rows[j].final; prior[si][r][i] = rows[j].prior; });
       }
     });
   });
-  const ndcg = scores => ndcgAt(scores, truth);
-  const spread = vals => { const m = mean(vals); return { m, lo: Math.min(...vals), hi: Math.max(...vals) }; };
+  const score = scores => averagePrecision(scores, isGood); // 1 = every relevant paper above every other
+  const spread = vals => ({ m: mean(vals), lo: Math.min(...vals), hi: Math.max(...vals) });
   const points = sizes.map((k, si) => {
-    const l = spread(learned[si].map(ndcg)), b = spread(blend[si].map(ndcg)), p = spread(prior[si].map(ndcg));
-    return { k, learned: l.m, learnedLo: l.lo, learnedHi: l.hi, blend: b.m, blendLo: b.lo, blendHi: b.hi, prior: p.m, priorLo: p.lo, priorHi: p.hi };
+    const a = spread(rec[si].map(score)), b = spread(prior[si].map(score));
+    return { k, rec: a.m, recLo: a.lo, recHi: a.hi, prior: b.m, priorLo: b.lo, priorHi: b.hi, weight: mean(weights[si]) };
   });
-  // A random order's expected NDCG@10, from many deterministic shuffles of the same labels.
-  const random = mean(Array.from({ length: 200 }, (_, d) => ndcg(ids.map(id => hashOf(`random|${d}|${id}`)))));
+  // A random order's expected score, from many deterministic shuffles of the same labels.
+  const random = mean(Array.from({ length: 200 }, (_, d) => score(ids.map(id => hashOf(`random|${d}|${id}`)))));
   const last = points[points.length - 1];
-  const caught = points.find(p => p.learned >= p.prior - 1e-9);
-  const lowSignal = counts.READ < 10;
+  const gain = last.rec - last.prior;
+  // From which size the recommender is clearly (2+ points) ahead of your profile alone, and stays ahead. Null: it never gets clearly ahead.
+  const ahead = gain >= 0.02 ? points.find((p, i) => points.slice(i).every(q => q.rec - q.prior >= 0.02)) : null;
   return {
-    ok: true, n: ids.length, counts, repeats, weight: w, random, points,
-    // How many labels until learning from labels alone matches the hand-set profile (null: not within your labels).
-    catchUp: caught ? caught.k : null,
-    gain: (w > 0 ? last.blend : last.learned) - last.prior,
-    learnedGain: last.learned - last.prior,
-    reliability: lowSignal || ids.length < 60 ? "low" : "ok",
-    note: lowSignal ? `Only ${counts.READ} Read label${counts.READ === 1 ? "" : "s"}: one paper moves this curve a lot, so read it as a rough guide.` : ids.length < 60 ? "Under 60 labels: the curve is rough." : "",
+    ok: true, n: ids.length, counts, nGood, goodLabel: goodSet.size === 1 ? "Read" : "Read or Skim", skimCounted: goodSet.size > 1 && good !== "read_skim", repeats, random, points,
+    ahead: ahead ? ahead.k : null,
+    gain,
+    reliability: nGood < 10 || ids.length < 60 ? "low" : "ok",
+    note: nGood < 10 ? `Only ${nGood} of your labels count as relevant, so one paper moves this curve a lot. Read it as a rough guide.` : ids.length < 60 ? "Under 60 labels: the curve is rough." : "",
   };
 }

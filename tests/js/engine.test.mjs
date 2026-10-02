@@ -148,31 +148,31 @@ test("stratified subsets keep the label mix and at least one of every label", ()
   assert.deepEqual(stratifiedSubset(ids, 10, labelOf, "s"), stratifiedSubset(ids, 10, labelOf, "s"), "deterministic");
 });
 
-test("learning curve scores every label out-of-fold and matches the report at its last point", () => {
+test("learning curve rebuilds the recommender from k labels and ranks unseen labelled papers", () => {
   assert.deepEqual(curveSizes(8), [5]);
   assert.deepEqual(curveSizes(42), [5, 10, 15, 20, 30, 45].filter(k => k <= 42).concat(42));
   const ps = Array.from({ length: 5 }, (_, j) => papers().map(p => ({ ...p, id: `${p.id}-${j}`, title: `${p.title} (${j})` }))).flat();
   const labels = Object.fromEntries(ps.map(p => [p.id, { label: RAG.some(([t]) => p.title.startsWith(t)) ? "READ" : "SKIP" }]));
   const c = ctx(ps, { labels });
-  const curve = learningCurve(c, { weight: 0.5, repeats: 3 });
+  const curve = learningCurve(c, { repeats: 2 });
   assert.ok(curve.ok);
   assert.equal(curve.n, 60);
   assert.equal(curve.points[0].k, 5);
+  assert.ok(curve.points.every((p, i) => i === 0 || p.k > curve.points[i - 1].k));
   for (const pt of curve.points) {
-    for (const key of ["learned", "blend", "prior"]) {
+    for (const key of ["rec", "prior"]) {
       assert.ok(pt[key] >= 0 && pt[key] <= 1);
       assert.ok(pt[`${key}Lo`] <= pt[key] + 1e-12 && pt[key] <= pt[`${key}Hi`] + 1e-12, `${key} sits inside its band`);
     }
+    assert.ok(pt.weight >= 0 && pt.weight <= 1);
   }
-  assert.ok(curve.points.every((p, i) => i === 0 || p.k > curve.points[i - 1].k));
-  // At the largest k the model has the whole training part of each fold: the report's own cross-validation.
+  // The profile-alone line at the largest size is the report's own cross-validated "profile only" score.
   const rep = evaluate(c, "read");
-  const last = curve.points.at(-1);
-  assert.ok(Math.abs(last.prior - rep.systems.find(s => s.key === "prior").ndcg) < 1e-9, "profile-only matches the report");
-  assert.ok(Math.abs(last.learned - rep.systems.find(s => s.key === "learned").ndcg) < 1e-9, "learned-only matches the report");
-  assert.ok(curve.random < last.learned, "learning beats a random order");
-  assert.equal(curve.reliability, "ok");
-  assert.equal(learningCurve(c, { weight: 0, repeats: 2 }).points[0].blend, learningCurve(c, { weight: 0, repeats: 2 }).points[0].prior, "weight 0 is the profile alone");
+  assert.ok(Math.abs(curve.points.at(-1).prior - rep.systems.find(s => s.key === "prior").ap) < 1e-9, "profile-only matches the report");
+  assert.ok(curve.random < curve.points.at(-1).rec, "the recommender beats a random order");
+  assert.equal(curve.goodLabel, "Read");
+  const sparse = Object.fromEntries(Object.entries(labels).map(([id, l], i) => [id, { label: l.label === "READ" && i % 6 ? "SKIM" : l.label }]));
+  assert.equal(learningCurve(ctx(ps, { labels: sparse }), { repeats: 1 }).goodLabel, "Read or Skim", "with under 10 Read labels, Skim counts as relevant too");
   assert.equal(learningCurve(ctx(papers(), { labels: { p0: { label: "READ" }, p6: { label: "SKIP" } } })).ok, false);
 });
 

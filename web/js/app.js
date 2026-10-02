@@ -748,37 +748,34 @@ function computeCurve() {
   if (!prof || !A.run?.ctx || A.curve) return;
   const seq = rankSeq;
   let curve;
-  try { curve = learningCurve(A.run.ctx, { weight: A.report?.blend?.weight ?? 0 }); } catch (e) { console.error(e); curve = { ok: false, message: e.message }; }
+  try { curve = learningCurve(A.run.ctx, { good: prof.good || "read" }); } catch (e) { console.error(e); curve = { ok: false, message: e.message }; }
   if (seq !== rankSeq) return; // ranking changed while computing: the next report recomputes
   A.curve = curve;
   if (A.view === "insights") render();
 }
 
 function learningSection() {
-  const head = `<h2>How fast does it learn you?</h2>`;
-  if (!A.curve) return `<div class="card-surface">${head}<div class="empty"><div class="spinner"></div><p>Training on growing subsets of your labels…</p></div></div>`;
+  const head = `<h2>Do the recommendations get better as you label?</h2>`;
+  if (!A.curve) return `<div class="card-surface">${head}<div class="empty"><div class="spinner"></div><p>Rebuilding the recommender from fewer and fewer of your labels…</p></div></div>`;
   if (!A.curve.ok) return `<div class="card-surface">${head}<p class="hint">${esc(A.curve.message)}</p></div>`;
   const c = A.curve;
-  const last = c.points[c.points.length - 1];
-  const pctPts = x => Math.round(x * 100);
+  const first = c.points[0], last = c.points[c.points.length - 1];
+  const p = x => `${Math.round(x * 100)}%`;
   const lines = [
-    `With ${last.k} labels of its own to learn from, the model alone scores ${pctPts(last.learned)}% on papers it hasn’t seen, against ${pctPts(last.prior)}% for your profile and ${pctPts(c.random)}% for a random order.`,
-    c.catchUp != null
-      ? `Learning alone passes your hand-written profile at about <b>${c.catchUp} labels</b>.`
-      : `Learning alone doesn’t pass your hand-written profile within your ${last.k} labels: the profile already captures your taste.`,
-    c.weight > 0
-      ? `The app blends in ${pct(c.weight)} learning (chosen by cross-validation), which scores ${pctPts(last.blend)}%.`
-      : `Cross-validation keeps the learning weight at 0%, so your ranking uses the profile alone for now.`,
+    c.gain >= 0.02
+      ? `After learning from ${last.k} of your labels it ranks your relevant papers at <b>${p(last.rec)}</b>, against ${p(last.prior)} from your hand-written profile alone (a random order scores ${p(c.random)}).${c.ahead ? ` It pulls clearly ahead at about <b>${c.ahead} labels</b>.` : ""}`
+      : `Your profile already ranks your relevant papers about as well as your labels can teach it (<b>${p(last.prior)}</b> from the profile alone, ${p(last.rec)} after learning from ${last.k} labels; random scores ${p(c.random)}). More labels haven’t improved it, because what you wrote matches what you pick. Learning pays off when your taste differs from your description.`,
+    `The recommender decides by cross-validation how far to trust your labels: ${p(first.weight)} with ${first.k} labels, ${p(last.weight)} with ${last.k}.`,
+    ...(c.skimCounted ? [`Skim counts as relevant here, because only ${c.counts.READ} of your labels are Read.`] : []),
   ];
   const series = [
-    { name: "Profile only", key: "prior", cls: "s2", band: ["priorLo", "priorHi"] },
-    { name: "Learns from your labels", key: "learned", cls: "s1", band: ["learnedLo", "learnedHi"] },
-    ...(c.weight > 0 ? [{ name: `Personalised (${pct(c.weight)} learning)`, key: "blend", cls: "s3", band: ["blendLo", "blendHi"] }] : []),
+    { name: "Your profile alone", key: "prior", cls: "s2", band: ["priorLo", "priorHi"] },
+    { name: "After learning from your labels", key: "rec", cls: "s1", band: ["recLo", "recHi"] },
     { name: "Random order", key: "random", cls: "ref" },
   ];
-  const points = c.points.map(p => ({ ...p, random: c.random }));
+  const points = c.points.map(x => ({ ...x, random: c.random }));
   return `<div class="card-surface">${head}
-    ${learningChart(points, series, { note: `Every one of your ${c.n} labelled papers is scored by a model that never saw it (the same 5-fold split as the report above). Shaded bands show the spread over ${c.repeats} random draws of the training labels.` })}
+    ${learningChart(points, series, { title: "How high up the list your relevant papers rank, by labels learned from", yLabel: "Higher is better: 100% means every relevant paper is ranked above every other", note: `Each point rebuilds the recommender from only that many of your labels, then ranks papers it never saw (your other ${c.n} labelled papers, the same 5-fold split as the report). Shaded bands show the spread over ${c.repeats} random draws of the training labels.` })}
     <ul class="curve-notes">${lines.map(l => `<li>${l}</li>`).join("")}</ul>
     ${c.note ? `<p class="hint warn-text">${esc(c.note)}</p>` : ""}</div>`;
 }
