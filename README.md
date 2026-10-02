@@ -5,7 +5,7 @@ Too many papers, too little time. Describe your research and every recent paper 
 code or data, study design, citation impact, cautions). It learns from your ratings and labels.
 Runs in the browser; no API key. **Load more** pulls fresh papers live from OpenAlex, Europe PMC and Crossref (Settings → Sources).
 
-**Live:** Hugging Face Space (see [Publish](#publish)) · GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/`
+**Live:** [Hugging Face Space](https://huggingface.co/spaces/ishaanamahajan/paper-triage) · [dataset](https://huggingface.co/datasets/ishaanamahajan/paper-triage-dataset) · model cards: [ranker](https://huggingface.co/ishaanamahajan/paper-triage-ranker), [MiniLM](https://huggingface.co/ishaanamahajan/paper-triage-minilm-embeddings) · GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/`
 
 ## Requirements
 

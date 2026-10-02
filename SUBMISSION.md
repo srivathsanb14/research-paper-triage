@@ -1,17 +1,17 @@
-<!-- Technical submission package (Project 1). Replace <hf-user> after running scripts/publish_hf.sh. -->
+<!-- Technical submission package (Project 1). -->
 
 # Interface
-**Hugging Face Space:** [Demo Link](https://huggingface.co/spaces/<hf-user>/paper-triage)
+**Hugging Face Space:** [Demo Link](https://huggingface.co/spaces/ishaanamahajan/paper-triage)
 *Paper Triage: describe your research in a sentence and ~1,900 recent papers from all fields are sorted into Read / Skim / Skip, each with a one-line reason and "worth-it" signals (peer review, released code or data, study design, citation impact, cautions). Pick your fields (optionally describe your research), rate at least 5 of the first 20 papers as relevant or not, and the algorithm sorts the rest into Read / Skim / Skip, re-sorting with every further rating; Load more pulls fresh papers live from OpenAlex, Europe PMC and Crossref (CORS-enabled, no keys; de-duplicated by DOI); label papers in **Label** and see cross-validated accuracy in **Insights**. **Insights** also plots a learning curve (ranking quality on held-out labels vs. number of labels learned from). The hosted Space runs entirely in the browser with no account; an optional bundled server (`python -m server`) adds sign-in and syncs each user's profiles and labels to SQLite. Also on GitHub Pages: https://srivathsanb14.github.io/research-paper-triage/*
 
 # Models
-- **Primary Model (trained from scratch):** [Model Card Link](https://huggingface.co/<hf-user>/paper-triage-ranker)
+- **Primary Model (trained from scratch):** [Model Card Link](https://huggingface.co/ishaanamahajan/paper-triage-ranker)
   *Interpretable relevance ranker: seven readable features (semantic similarity to the description, focus and keywords; exact keyword coverage; recency; excluded topics; similarity to rated papers) feed a hand-set profile score and a weighted ridge regression trained per user on their ratings and hand labels. The learned weight is chosen by 5-fold cross-validated average precision and stays 0 unless it beats the profile alone. Outputs Read/Skim/Skip with a reading-time budget. On 500 manual labels across three research profiles it reaches AP 0.83–1.00 for Read papers (random order: 0.01–0.03) and surfaces 80% of them within the first 3–6 papers (random: 80–160); cross-validation kept the learned weight at 0% because learning did not beat the profile score on these labels.*
-- **Secondary Model (off-the-shelf):** [Model Card Link](https://huggingface.co/<hf-user>/paper-triage-minilm-embeddings)
+- **Secondary Model (off-the-shelf):** [Model Card Link](https://huggingface.co/ishaanamahajan/paper-triage-minilm-embeddings)
   *all-MiniLM-L6-v2 sentence embeddings (q8 ONNX, transformers.js), unchanged. Embeds the catalog at build time and the user's interests in a browser Web Worker; cosine similarities are calibrated and used as four of the ranker's features and for near-duplicate grouping. Chosen for size (~23 MB), browser speed and quality on short English text; compared with a TF-IDF space on the same labels.*
 
 # Data
-- **Dataset:** [Dataset Link](https://huggingface.co/datasets/<hf-user>/paper-triage-dataset)
+- **Dataset:** [Dataset Link](https://huggingface.co/datasets/ishaanamahajan/paper-triage-dataset)
   *~1,900 recent papers (OpenAlex, CC0 metadata) across all 26 fields with computed worth-it signals (`papers`), 7 written research profiles (`profiles`) and 1,484 Read/Skim/Skip labels (`labels`), one row per profile and paper, joined to the papers by id. Labels carry no labeller names. 500 are manual (a person judged each paper; in review mode a model proposed a label from title and abstract first) and 984 are synthetic rule-based mockups for the demo accounts and pipeline tests; the `origin` column (`manual` / `synthetic`) records which, and only the manual ones count towards the 500. The card includes collection details, license, ethics notes and EDA. Used to evaluate and tune the ranker.*
 
 # Code Repositories
