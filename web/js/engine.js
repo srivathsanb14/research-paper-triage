@@ -494,11 +494,11 @@ export function rank(ctx) {
   const seedSet = new Set(ctx.seeds);
   const papers = ctx.papers.filter(p => !seedSet.has(p.id) && ctx.space.vec(p));
   const scored = model.score(papers);
-  const cutoffs = ctx.adaptive ? adaptiveCutoffs(scored.filter((_, i) => !ctx.adaptive.exclude?.has(papers[i].id)).map(s => s.final), ctx.cutoffs, ctx.adaptive) : ctx.cutoffs;
+  const cutoffs = ctx.adaptive ? adaptiveCutoffs(scored.filter((_, i) => !(ctx.exclude ?? ctx.adaptive.exclude)?.has(papers[i].id)).map(s => s.final), ctx.cutoffs, ctx.adaptive) : ctx.cutoffs;
   const results = triage(papers, scored, cutoffs, {
     maxRead: ctx.budget ? readBudget(ctx.hours) : null,
     overrides: userLabels(ctx.labels, ctx.feedback),
-    notCounted: ctx.adaptive?.exclude,
+    notCounted: ctx.exclude ?? ctx.adaptive?.exclude,
   });
   if (ctx.group) groupSimilar(results, ctx.space);
   return { results, model, blend, cutoffs };

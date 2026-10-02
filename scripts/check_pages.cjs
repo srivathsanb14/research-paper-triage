@@ -90,7 +90,7 @@ async function main() {
     await page.locator(".tabs").waitFor();
     const tabs = (await page.locator(".tabs").innerText()).replace(/\s+/g, " ");
     assert.match(tabs, /Read [1-9]/, `Read is filled: ${tabs}`);
-    assert.match(tabs, /Rated 5/);
+    assert.match(tabs, /Reviewed 5/);
     assert.equal(await page.locator('article.paper [data-act="relabel"]').count(), 0, "labels are the algorithm's, not editable");
     step(`5 ratings unlock the algorithm's triage (${tabs.trim()})`);
 
@@ -109,9 +109,19 @@ async function main() {
     const skimId = await skimCard.getAttribute("data-id");
     await skimCard.getByRole("button", { name: "Hide" }).click();
     await page.waitForFunction(id => !document.querySelector(`article.paper[data-id="${CSS.escape(id)}"]`), skimId);
-    await page.getByRole("tab", { name: /Rated/ }).click();
+    await page.getByRole("tab", { name: /Reviewed/ }).click();
     await page.locator(`article.paper[data-id="${firstId}"]`).waitFor();
-    step("saving moves a paper to Rated; hiding removes it");
+    step("saving moves a paper to Reviewed; hiding removes it");
+
+    // The selected tab survives a reload (remembered per profile).
+    await page.getByRole("tab", { name: /Skim/ }).click();
+    await page.waitForTimeout(300); // let the write to IndexedDB commit
+    await page.reload();
+    await page.locator(".tabs").waitFor();
+    assert.equal(await page.locator('.tab[aria-selected="true"]').count(), 1, "exactly one tab is selected");
+    assert.match(await page.locator('.tab[aria-selected="true"]').innerText(), /Skim/);
+    await page.getByRole("tab", { name: /Read/ }).click();
+    step("the selected tab is remembered across reloads");
 
     // Details panel and keyboard shortcuts.
     await page.getByRole("tab", { name: /Read/ }).click();

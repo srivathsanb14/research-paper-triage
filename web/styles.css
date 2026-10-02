@@ -421,8 +421,8 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
   .dialog-body { padding: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
-.gate { display: grid; place-items: center; padding: 56px 16px; }
-.gate form { width: min(380px, 100%); display: grid; gap: 12px; padding: 28px; }
+.gate { display: flex; justify-content: center; padding: 64px 16px; }
+.gate form { width: min(380px, 100%); display: grid; gap: 12px; padding: 28px; align-self: start; }
 .gate h1 { margin: 0; font-family: var(--serif, inherit); }
 .gated .top-right, .gated #nav { display: none; }
 #account-btn { display: inline-flex; align-items: center; gap: 6px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

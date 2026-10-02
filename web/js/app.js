@@ -65,6 +65,22 @@ const A = {
 
 const defaultState = () => ({ version: 1, active: null, profiles: {}, settings: { semantic: true, labeler: "" } });
 const profile = () => A.state.profiles[A.state.active] || null;
+/** Tab, sort and signal filters are remembered per profile, so the feed looks the same when you come back. */
+const VIEW_DEFAULT = { tab: "READ", sort: "match", signals: [] };
+function applyView(prof) {
+  const v = { ...VIEW_DEFAULT, ...(prof?.ui || {}) };
+  A.tab = ["NEW", "READ", "SKIM", "SKIP", "ALL", "RATED", "HIDDEN"].includes(v.tab) ? v.tab : VIEW_DEFAULT.tab;
+  A.sort = v.sort in SORTS ? v.sort : VIEW_DEFAULT.sort;
+  A.signalFilters = new Set((v.signals || []).filter(k => k in SIGNAL_FILTERS));
+  A.query = "";
+}
+function saveView() {
+  const prof = profile();
+  if (!prof) return;
+  prof.ui = { tab: A.tab, sort: A.sort, signals: [...A.signalFilters] };
+  save();
+}
+
 const save = () => { store.saveState(A.state); account.queue(A.state); };
 const now = () => new Date().toISOString();
 
@@ -152,7 +168,8 @@ async function contextFor(prof) {
     // Snapshots, so a report computed from this run matches the model trained in it.
     papers: pool, byId, space, pv, labels: { ...prof.labels }, feedback: [...prof.feedback], seeds: prof.seeds.filter(id => byId.has(id)),
     cutoffs: prof.cutoffs, hours: prof.hours, budget: prof.budget, group: prof.group, today: Date.now(),
-    adaptive: prof.adaptive === false ? null : { read: readBudget(prof.hours), exclude: new Set(ratedIds(prof)) },
+    adaptive: prof.adaptive === false ? null : { read: readBudget(prof.hours) },
+    exclude: decidedIds(prof), // already decided, so they don't use up reading time
   };
 }
 
@@ -245,6 +262,10 @@ function explain(r) {
 /** Papers you have judged in the feed (a vote or a save). */
 function ratedIds(prof) {
   return [...states(prof)].filter(([, x]) => x.vote || x.saved).map(([id]) => id);
+}
+/** Everything you have already decided: feed ratings, saves and hand labels. These leave the Read/Skim/Skip lists and live under Reviewed. */
+function decidedIds(prof) {
+  return new Set([...ratedIds(prof), ...Object.keys(prof.labels)]);
 }
 function likedIds(prof) {
   return [...states(prof)].filter(([, x]) => x.vote === "useful" || (x.saved && x.vote !== "not_useful")).map(([id]) => id);
@@ -358,17 +379,18 @@ function rowsFor(prof, { tab = A.tab, ignoreTab = false } = {}) {
   const fields = new Set(prof.fields.length ? prof.fields : [...A.catalog.areas.map(a => a.id), "imported"]);
   fields.add("imported");
   const q = A.query.trim().toLowerCase();
+  const decided = decidedIds(prof);
   let rows = A.run.results.filter(r => {
     const st = s.get(r.paper.id) || {};
     if (!fields.has(r.paper.area)) return false;
     for (const f of A.signalFilters) if (!SIGNAL_FILTERS[f].test(r.paper._sig)) return false;
     if (q && !`${r.paper.title} ${r.paper.abstract} ${(r.paper.authors || []).join(" ")}`.toLowerCase().includes(q)) return false;
-    if (ignoreTab) return !st.hidden && !(st.vote || st.saved);
+    const done = decided.has(r.paper.id);
+    if (ignoreTab) return !st.hidden && !done;
     if (tab === "HIDDEN") return st.hidden;
     if (st.hidden) return false;
-    const rated = !!(st.vote || st.saved);
-    if (tab === "RATED") return rated;
-    if (rated) return false; // you already judged it; the tabs hold what the algorithm sorted
+    if (tab === "RATED") return done;
+    if (done) return false; // you already judged it; the tabs hold what the algorithm sorted
     const label = st.corrected || r.label;
     if (tab === "NEW") return A.newIds.has(r.paper.id) && label !== "SKIP";
     return tab === "ALL" || label === tab;
@@ -451,15 +473,13 @@ function feedView(prof) {
   const count = lab => all.filter(r => (s.get(r.paper.id)?.corrected || r.label) === lab).length;
   const counts = { READ: count("READ"), SKIM: count("SKIM"), SKIP: count("SKIP"), ALL: all.length, NEW: all.filter(r => A.newIds.has(r.paper.id) && (s.get(r.paper.id)?.corrected || r.label) !== "SKIP").length };
   const hiddenN = [...s.values()].filter(x => x.hidden).length;
-  counts.RATED = ratingsCount(prof);
+  counts.RATED = decidedIds(prof).size;
   const { rows } = rowsFor(prof);
   const page = rows.slice(0, A.shown);
-  const tabs = [["READ", "Read"], ["SKIM", "Skim"], ["SKIP", "Skip"], ["ALL", "All"], ["RATED", "Rated"]];
+  const tabs = [["READ", "Read"], ["SKIM", "Skim"], ["SKIP", "Skip"], ["ALL", "All"], ["RATED", "Reviewed"]];
   if (counts.NEW) tabs.unshift(["NEW", "New"]);
-  // The weekly budget is about what the algorithm suggests; papers you already labelled or rated are decided.
-  const decided = id => prof.labels[id] || s.get(id)?.corrected || s.get(id)?.vote || s.get(id)?.saved;
-  const toRead = all.filter(r => (s.get(r.paper.id)?.corrected || r.label) === "READ" && !decided(r.paper.id)).length;
-  const minutes = toRead * MINUTES_PER_READ;
+  if ((A.tab === "NEW" && !counts.NEW) || (A.tab === "HIDDEN" && !hiddenN)) A.tab = "READ"; // that tab no longer exists
+  const minutes = counts.READ * MINUTES_PER_READ;
   const budget = prof.hours * 60;
   const m = A.run.model;
   const teachers = counts.RATED + Object.keys(prof.labels).length; // ratings and hand labels both teach the model
@@ -477,7 +497,7 @@ function feedView(prof) {
         ${kws.length ? `<div class="kw">${kws.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
       </div>
       <div class="budget" title="Read papers take about ${MINUTES_PER_READ} minutes each">
-        <div class="budget-num"><b>${toRead}</b> new to read</div>
+        <div class="budget-num"><b>${counts.READ}</b> to read this week</div>
         <div class="meter" role="img" aria-label="${Math.round(minutes / 60 * 10) / 10} of ${prof.hours} hours"><i style="width:${Math.min(100, (minutes / Math.max(1, budget)) * 100)}%"></i></div>
         <div class="budget-sub">≈ ${fmtHours(minutes)} of your ${prof.hours} h a week${prof.budget ? ` · Read capped at ${readBudget(prof.hours)}` : ""}</div>
       </div>
@@ -493,7 +513,7 @@ function feedView(prof) {
           <h3>Worth-it signals</h3>
           <div class="chips">${Object.entries(SIGNAL_FILTERS).map(([k, f]) => `<label class="chip-toggle small"><input type="checkbox" data-act="signal-filter" value="${k}" ${A.signalFilters.has(k) ? "checked" : ""}><span>${f.text}</span></label>`).join("")}</div>
           <h3>Fields</h3>
-          <div class="chips">${fieldChips(prof.fields, "feed-fields")}</div>
+          <div class="chips"><label class="chip-toggle"><input type="checkbox" name="feed-fields-all" ${prof.fields.length ? "" : "checked"}><span>All fields</span></label>${fieldChips(prof.fields, "feed-fields", { noneMeansAll: false })}</div>
           <h3>Papers</h3>
           <label class="btn small ghost file">${icon("upload")}Import papers (JSON)<input type="file" accept=".json,application/json" data-act="import-papers" hidden></label>
           <div class="export-row"><button class="btn small ghost" data-act="digest">${icon("download")}Digest (Markdown)</button></div>
@@ -532,7 +552,7 @@ function card(r, st) {
   const similar = r.similar.map(id => A.run.byId.get(id)).filter(Boolean);
   return `<article class="paper ${label} ${A.focusId === p.id ? "focused" : ""}" data-id="${esc(p.id)}" tabindex="-1">
     <div class="paper-top">
-      ${st.vote || st.saved ? `<span class="voted ${st.vote || "useful"}">${st.vote === "not_useful" ? "You: not relevant" : "You: relevant"}</span>` : `<span class="label-chip ${label}" title="${esc(LABEL_HELP[label])}: decided by the algorithm">${LABEL_TEXT[label]}</span>`}
+      ${st.vote || st.saved ? `<span class="voted ${st.vote || "useful"}">${st.vote === "not_useful" ? "You: not relevant" : "You: relevant"}</span>` : profile().labels[p.id] ? `<span class="voted ${profile().labels[p.id].label === "SKIP" ? "not_useful" : "useful"}">You labelled: ${LABEL_TEXT[profile().labels[p.id].label ?? profile().labels[p.id]]}</span>` : `<span class="label-chip ${label}" title="${esc(LABEL_HELP[label])}: decided by the algorithm">${LABEL_TEXT[label]}</span>`}
       ${A.newIds.has(p.id) ? '<span class="new-chip">New</span>' : ""}
       ${area ? `<span class="area">${esc(area)}</span>` : ""}
       <span class="match" title="Relevance score ${r.score.toFixed(2)} (Read ≥ ${(A.run.cutoffs || profile().cutoffs).read.toFixed(2)}, Skim ≥ ${(A.run.cutoffs || profile().cutoffs).skim.toFixed(2)})"><i style="--v:${Math.round(r.score * 100)}%"></i>${Math.round(r.score * 100)}</span>
@@ -913,6 +933,7 @@ async function adoptAccountState() {
   mergeAccountState(await account.pullState());
   save(); // uploads the merge (or this browser's state, for a new account)
   A.run = null; A.report = null; A.curve = null; A.labelQueue = null;
+  applyView(profile());
   render();
   if (profile()) { await rerank(); setVisitBaseline(profile()); }
   render();
@@ -1319,9 +1340,9 @@ document.addEventListener("click", async e => {
       A.expanded.has(pid) ? A.expanded.delete(pid) : A.expanded.add(pid);
       A.focusId = pid;
       return keepAnchor(pid, render);
-    case "tab": A.tab = el.dataset.tab; A.shown = PAGE; return render();
+    case "tab": A.tab = el.dataset.tab; A.shown = PAGE; saveView(); return render();
     case "more": A.shown += PAGE; return render();
-    case "clear-filters": A.query = ""; A.signalFilters.clear(); return render();
+    case "clear-filters": A.query = ""; A.signalFilters.clear(); saveView(); return render();
     case "example": {
       const ex = EXAMPLES[+el.dataset.i];
       const f = $("#start-form");
@@ -1334,7 +1355,7 @@ document.addEventListener("click", async e => {
     case "new-profile": closeMenu(); return profileDialog(null, true);
     case "switch-profile":
       closeMenu();
-      A.state.active = el.dataset.id; save(); A.run = null; A.labelQueue = null; A.expanded.clear(); render(); await rerank(); return setVisitBaseline(profile());
+      A.state.active = el.dataset.id; applyView(profile()); save(); A.run = null; A.labelQueue = null; A.expanded.clear(); render(); await rerank(); return setVisitBaseline(profile());
     case "close-dialog": return el.closest("dialog").close();
     case "delete-profile":
       if (!confirm(`Delete “${prof.name}” with its ratings and labels? This can’t be undone.`)) return;
@@ -1437,12 +1458,13 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", async e => {
   const t = e.target;
   const prof = profile();
-  if (t.dataset.act === "signal-filter") { t.checked ? A.signalFilters.add(t.value) : A.signalFilters.delete(t.value); A.shown = PAGE; return render(); }
-  if (t.name === "sort") { A.sort = t.value; return render(); }
-  if (t.name === "feed-fields") {
-    const all = $$('input[name="feed-fields"]').filter(x => x.checked).map(x => x.value);
-    prof.fields = all.length === A.catalog.areas.length ? [] : all;
-    save(); A.labelQueue = null; return render();
+  if (t.dataset.act === "signal-filter") { t.checked ? A.signalFilters.add(t.value) : A.signalFilters.delete(t.value); A.shown = PAGE; saveView(); return render(); }
+  if (t.name === "sort") { A.sort = t.value; saveView(); return render(); }
+  if (t.name === "feed-fields" || t.name === "feed-fields-all") {
+    // "All fields" is the default (no narrowing); picking specific fields narrows the feed.
+    const picked = t.name === "feed-fields-all" ? [] : $$('input[name="feed-fields"]').filter(x => x.checked).map(x => x.value);
+    prof.fields = picked.length === A.catalog.areas.length ? [] : picked;
+    save(); A.labelQueue = null; A.shown = PAGE; return render();
   }
   if (t.id === "label-strategy") { A.labelStrategy = t.value; return render(); }
   if (t.id === "labeler") { A.state.settings.labeler = t.value.trim(); return save(); }
@@ -1648,6 +1670,7 @@ async function boot() {
   }
   A.embedder.addEventListener("change", renderModelPill);
   if (A.state.settings.semantic !== false) startEmbedder();
+  applyView(profile());
   A.ready = true;
   document.body.classList.add("ready");
   $("#boot").remove();
