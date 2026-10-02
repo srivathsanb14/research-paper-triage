@@ -487,3 +487,9 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
 .voted.not_useful { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .btn.busy { opacity: .6; cursor: progress; }
 @media (max-width: 640px) { .rate-progress { grid-template-columns: 1fr auto; } .rate-meter { display: none; } }
+.gate-mode { display: grid; grid-template-columns: 1fr 1fr; }
+.gate-mode button { padding: 7px 10px; font-size: 13px; }
+.gate-mode button.on { color: var(--ink); }
+.gate-or { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: 12px; }
+.gate-or::before, .gate-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.hint.small { font-size: 12px; margin: 0; text-align: center; }

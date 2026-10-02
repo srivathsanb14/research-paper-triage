@@ -64,7 +64,7 @@ const A = {
 };
 
 const defaultState = () => ({ version: 1, active: null, profiles: {}, settings: { semantic: true } });
-const profile = () => A.state.profiles[A.state.active] || null;
+const profile = () => A.state?.profiles?.[A.state.active] || null; // no state yet on the sign-in screen
 /** Tab, sort and signal filters are remembered per profile, so the feed looks the same when you come back. */
 const VIEW_DEFAULT = { tab: "READ", sort: "match", signals: [] };
 function applyView(prof) {
@@ -882,7 +882,7 @@ function accountDialog(message = "") {
   if (!user) {
     openDialog("#account-dialog", `<form method="dialog" id="account-form">
       <h2>Your account</h2>
-      <p class="hint">Sign in to keep your profiles, ratings and labels on the server, so the ranking is personal to you on any device. Without an account everything stays in this browser.</p>
+      <p class="hint">Sign in to keep your profiles, ratings and labels on the server, so the ranking is personal to you on any device. Your profiles in this browser are added to the account the first time. <b>Sign in</b> uses an existing account; <b>Create account</b> makes a new one.</p>
       <label class="field"><span>Username</span><input name="username" autocomplete="username" required minlength="3" maxlength="40" autofocus></label>
       <label class="field"><span>Password <small>at least 8 characters</small></span><input name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></label>
       <p class="form-error" ${message ? "" : "hidden"}>${esc(message)}</p>
@@ -1370,6 +1370,12 @@ document.addEventListener("click", async e => {
       return li.remove();
     }
     case "account": return accountDialog();
+    case "gate-mode": return showLoginGate("", el.dataset.v);
+    case "guest":
+      setGuest(true);
+      location.hash = "";
+      location.reload();
+      return;
     case "import-seed": return importSeedSet(el.dataset.slug, el);
     case "sign-out":
       await account.signOut();
@@ -1513,7 +1519,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "start-form") { e.preventDefault(); startFromWelcome(e.target); }
   if (e.target.id === "profile-form") { e.preventDefault(); submitProfile(e.target); }
   if (e.target.id === "settings-form") { e.preventDefault(); e.target.closest("dialog").close(); }
-  if (e.target.id === "gate-form") { e.preventDefault(); submitGate(e.target, e.submitter?.value); }
+  if (e.target.id === "gate-form") { e.preventDefault(); submitGate(e.target); }
   if (e.target.id === "account-form") { e.preventDefault(); submitAccount(e.target, e.submitter?.value); }
 });
 
@@ -1523,6 +1529,7 @@ async function submitAccount(form, mode) {
   buttons.forEach(b => { b.disabled = true; });
   try {
     await (mode === "register" ? account.register : account.signIn)(username, password);
+    setGuest(false);
     $$("dialog[open]").forEach(d => d.close());
     await adoptAccountState();
     toast(mode === "register" ? "Account created. Your work now syncs." : `Signed in as ${username}.`);
@@ -1599,30 +1606,50 @@ async function adoptServerStateAtBoot() {
   try { mergeAccountState(await account.pullState()); account.queue(A.state); } catch (e) { console.warn("Could not load your account state", e); }
 }
 
-/** With the account backend present, nothing loads until the visitor signs in. */
-function showLoginGate(message = "") {
+// "Continue without an account": this browser keeps everything locally, as on the static site.
+const GUEST_KEY = "paper-triage:guest";
+const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === "1"; } catch { return false; } };
+const setGuest = on => { try { on ? localStorage.setItem(GUEST_KEY, "1") : localStorage.removeItem(GUEST_KEY); } catch { /* storage blocked */ } };
+
+/** With the account backend present, visitors sign in, create an account, or continue as a guest. */
+function showLoginGate(message = "", mode = "login") {
   document.body.classList.add("gated");
-  $("#main").innerHTML = `<section class="gate"><form id="gate-form" class="card-surface">
+  const create = mode === "register";
+  $("#main").innerHTML = `<section class="gate"><form id="gate-form" class="card-surface" data-mode="${mode}">
     <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
     <h1>Paper Triage</h1>
-    <p class="hint">Sign in to see your papers.</p>
-    <label class="field"><span>Username</span><input name="username" autocomplete="username" required maxlength="40" autofocus></label>
-    <label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
+    <div class="seg gate-mode" role="tablist">
+      <button type="button" role="tab" aria-selected="${!create}" class="${create ? "" : "on"}" data-act="gate-mode" data-v="login">Sign in</button>
+      <button type="button" role="tab" aria-selected="${create}" class="${create ? "on" : ""}" data-act="gate-mode" data-v="register">Create account</button>
+    </div>
+    <p class="hint">${create ? "New here? Pick a username and password. Your profiles, ratings and labels will sync to this account on any device." : "Already have an account? Sign in to get your papers back."}</p>
+    <label class="field"><span>Username</span><input name="username" autocomplete="username" required minlength="${create ? 3 : 1}" maxlength="40" autofocus></label>
+    <label class="field"><span>Password${create ? " <small>at least 8 characters</small>" : ""}</span><input name="password" type="password" autocomplete="${create ? "new-password" : "current-password"}" required minlength="${create ? 8 : 1}" maxlength="200"></label>
+    ${create ? `<label class="field"><span>Confirm password</span><input name="confirm" type="password" autocomplete="new-password" required minlength="8" maxlength="200"></label>` : ""}
     <p class="form-error" ${message ? "" : "hidden"}>${esc(message)}</p>
-    <button type="submit" class="btn primary" value="login">Sign in</button>
-    <button type="submit" class="btn ghost" value="register" formnovalidate>Create account</button>
+    <button type="submit" class="btn primary">${create ? "Create account" : "Sign in"}</button>
+    <div class="gate-or"><span>or</span></div>
+    <button type="button" class="btn ghost" data-act="guest">Continue without an account</button>
+    <p class="hint small">Without an account everything stays in this browser. You can sign in later from the top bar.</p>
   </form></section>`;
 }
 
-async function submitGate(form, mode) {
+async function submitGate(form) {
+  const mode = form.dataset.mode;
   const username = form.username.value.trim(), password = form.password.value;
+  if (mode === "register" && password !== form.confirm.value) {
+    showLoginGate("The passwords don’t match.", mode);
+    $("#gate-form").username.value = username;
+    return;
+  }
   $$("button", form).forEach(b => { b.disabled = true; });
   try {
     await (mode === "register" ? account.register : account.signIn)(username, password);
+    setGuest(false);
     location.hash = "#/feed"; // land on For you
     location.reload();
   } catch (e) {
-    showLoginGate(e.message);
+    showLoginGate(e.message, mode);
     $("#gate-form").username.value = username;
   }
 }
@@ -1630,7 +1657,7 @@ async function submitGate(form, mode) {
 async function boot() {
   const status = $("#boot-status");
   await account.init();
-  if (account.acct.available && !account.acct.user) return showLoginGate();
+  if (account.acct.available && !account.acct.user && !isGuest()) return showLoginGate();
   try {
     const [rules, state, visitor, catalog, proposals] = await Promise.all([
       loadRules(new URL("quality-rules.json", ROOT)),
@@ -1643,6 +1670,8 @@ async function boot() {
     void rules;
     A.state = state && state.version === 1 ? state : defaultState();
     A.state.settings ||= { semantic: true };
+    // A guest never sees what a signed-in account left cached in this browser.
+    if (!account.acct.user && A.state.owner) A.state = { ...defaultState(), settings: A.state.settings };
     if (account.acct.user) await adoptServerStateAtBoot();
     A.visitor = visitor.map(fromRecord);
     A.catalog = catalog;
