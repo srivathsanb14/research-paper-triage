@@ -43,7 +43,7 @@
     "type": "ridge_regression",
     "alpha": 1,
     "fit_intercept": true,
-    "min_examples": 8,
+    "min_examples": 5,
     "target": {
       "READ": 1,
       "SKIM": 0.5,

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseImport } from "../../web/js/data.js";
 import {
-  DEFAULT_CUTOFFS, SparseSpace, buildExamples, buildProfileVectors, groupSimilar, profileTexts, rank, readBudget,
+  DEFAULT_CUTOFFS, SparseSpace, adaptiveCutoffs, buildExamples, buildProfileVectors, groupSimilar, profileTexts, rank, readBudget,
 } from "../../web/js/engine.js";
 import { evaluate } from "../../web/js/evaluate.js";
 import { toBibtex, toCsv } from "../../web/js/export.js";
@@ -120,4 +120,18 @@ test("exports escape BibTeX and CSV specials", () => {
   assert.match(bib, /^@article\{lovelace2026costs,/);
   assert.match(bib, /Costs \\& \\\{braces\\\} at 50\\%/);
   assert.equal(toCsv([{ a: 'x,"y"', b: ["p", "q"] }], ["a", "b"]), 'a,b\n"x,""y""",p; q\n');
+});
+
+test("adaptive cutoffs fill Read when scores run low, and never raise the fixed cutoffs", () => {
+  const low = Array.from({ length: 100 }, (_, i) => 0.5 - i * 0.004);
+  const c = adaptiveCutoffs(low, DEFAULT_CUTOFFS, { read: 6 });
+  assert.equal(low.filter(x => x >= c.read).length, 6);
+  assert.ok(c.skim <= DEFAULT_CUTOFFS.skim && c.skim >= 0.2);
+  const high = Array.from({ length: 100 }, () => 0.9);
+  assert.deepEqual(adaptiveCutoffs(high, DEFAULT_CUTOFFS), DEFAULT_CUTOFFS);
+});
+
+test("pressing a rating again clears it", () => {
+  const ex = buildExamples({}, [{ pid: "a", action: "useful" }, { pid: "a", action: "clear_vote" }, { pid: "b", action: "not_useful" }]);
+  assert.deepEqual(ex.map(e => e.pid), ["b"]);
 });

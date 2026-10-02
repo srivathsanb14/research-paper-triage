@@ -29,7 +29,7 @@ export const MINUTES_PER_SKIM = 5;
 const BLEND_K = 30;
 const MAX_UNVALIDATED_WEIGHT = 0.3;
 export const BLEND_GRID = [0, 0.15, 0.3, 0.5, 0.7];
-const MIN_TRAIN_EXAMPLES = 8;
+export const MIN_TRAIN_EXAMPLES = 5; // the app asks for 5 ratings before it triages
 export const MIN_LABELS = 6;
 const RIDGE_ALPHA = 1.0;
 const FEEDBACK_TARGETS = { useful: [1, 1], not_useful: [0, 1], save: [1, 1], open: [0.75, 0.3], dismiss: [0.15, 0.5] };
@@ -193,6 +193,7 @@ export function buildExamples(labels, feedback, { exclude = new Set(), seeds = [
       const [t, w] = FEEDBACK_TARGETS[action];
       explicit.set(pid, { pid, target: t, weight: w, source: action });
     } else if (action === "unsave" && explicit.get(pid)?.source === "save") explicit.delete(pid);
+    else if (action === "clear_vote" && ["useful", "not_useful"].includes(explicit.get(pid)?.source)) explicit.delete(pid);
     else if (action === "open" || action === "dismiss") {
       const [t, w] = FEEDBACK_TARGETS[action];
       const prev = implicit.get(pid);
@@ -439,7 +440,7 @@ export function userLabels(labels, feedback) {
   return out;
 }
 
-export function triage(papers, scored, cut, { maxRead = null, overrides = {} } = {}) {
+export function triage(papers, scored, cut, { maxRead = null, overrides = {}, notCounted = null } = {}) {
   const order = papers.map((_, i) => i).sort((a, b) => scored[b].final - scored[a].final || a - b);
   let nRead = 0;
   return order.map((i, r) => {
@@ -450,11 +451,11 @@ export function triage(papers, scored, cut, { maxRead = null, overrides = {} } =
     if (overrides[p.id]) {
       if (overrides[p.id] !== label) note = `Model said ${label.toLowerCase()}; your label is applied.`;
       label = overrides[p.id];
-    } else if (label === "READ" && maxRead != null && nRead >= maxRead) {
+    } else if (label === "READ" && maxRead != null && nRead >= maxRead && !notCounted?.has(p.id)) {
       label = "SKIM";
       note = "Moved to Skim: your weekly reading time is already full.";
     }
-    if (label === "READ") nRead++;
+    if (label === "READ" && !notCounted?.has(p.id)) nRead++; // papers you already rated don't use up reading time
     return { paper: p, score: s.final, prior: s.prior, learned: s.learned, f: s.f, label, rank: r + 1, note, lead: "", similar: [] };
   });
 }
@@ -492,12 +493,31 @@ export function rank(ctx) {
     .fit(buildExamples(ctx.labels, ctx.feedback, { seeds: ctx.seeds }), ctx.byId);
   const seedSet = new Set(ctx.seeds);
   const papers = ctx.papers.filter(p => !seedSet.has(p.id) && ctx.space.vec(p));
-  const results = triage(papers, model.score(papers), ctx.cutoffs, {
+  const scored = model.score(papers);
+  const cutoffs = ctx.adaptive ? adaptiveCutoffs(scored.filter((_, i) => !ctx.adaptive.exclude?.has(papers[i].id)).map(s => s.final), ctx.cutoffs, ctx.adaptive) : ctx.cutoffs;
+  const results = triage(papers, scored, cutoffs, {
     maxRead: ctx.budget ? readBudget(ctx.hours) : null,
     overrides: userLabels(ctx.labels, ctx.feedback),
+    notCounted: ctx.adaptive?.exclude,
   });
   if (ctx.group) groupSimilar(results, ctx.space);
-  return { results, model, blend };
+  return { results, model, blend, cutoffs };
+}
+
+/**
+ * Cutoffs that adapt to the score distribution, so Read is never empty just
+ * because absolute scores run low (e.g. a profile built from a few liked
+ * papers). Read: the best `read` papers, but never below the Skim cutoff.
+ * Skim: about the top `skimShare` of papers, but never below `skimFloor`.
+ * Cutoffs only ever move down from the fixed ones.
+ */
+export function adaptiveCutoffs(scores, cut, { read = 6, skimShare = 0.1, skimFloor = 0.2 } = {}) {
+  const sorted = [...scores].sort((a, b) => b - a);
+  if (!sorted.length) return cut;
+  const skimAt = sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * skimShare) - 1))];
+  const skim = Math.min(cut.skim, Math.max(skimFloor, skimAt));
+  const readAt = sorted[Math.min(sorted.length - 1, Math.max(0, read - 1))];
+  return { read: Math.min(cut.read, Math.max(skim + 1e-6, readAt)), skim };
 }
 
 // ------------------------------------------------------------ explanations

@@ -22,16 +22,17 @@ Face static Space (see [Publish](#publish)).
 
 ## Try it
 
-1. Open the site and pick an example ("RAG & LLM evaluation", "Climate adaptation", …) or write your own description.
-2. **For you**: read the Read list first. Open *Details* for the abstract with matched terms highlighted,
-   the most relevant sentence, the score breakdown and publication facts.
-3. Rate a few papers (👍 / 👎, or move them between Read/Skim/Skip). After 8 ratings the ranking learns.
-   Keyboard: `J`/`K` move, `U`/`N` rate, `1`/`2`/`3` relabel, `S` save, `X` hide, `?` help.
-4. **Find more on OpenAlex** pulls papers from the past year that match your keywords (only the search terms are sent).
-5. **Label** papers with predictions hidden (`1`/`2`/`3`, `0` skip, `Backspace` undo) and open
-   **Insights** to see how well the ranking finds what you would pick: good papers in the top 10,
-   papers to screen for 80% of good ones, time saved, NDCG@10 / AP / Spearman against baselines.
-6. **Saved** exports BibTeX / RIS / CSV for Zotero, Mendeley or EndNote. Settings has backups.
+1. Open the site, pick your fields (and describe your research if you like, or click an example), then **Show papers**.
+2. You get 20 papers. Mark at least **5** as 👍 Relevant or 👎 Not relevant (press again to undo).
+   **Load more** below the list fetches fresh papers for your fields from OpenAlex.
+3. After 5 ratings the algorithm sorts every paper you haven't rated into **Read / Skim / Skip**, with a
+   one-line reason and trust signals. Each further rating re-sorts the lists; rated papers move to **Rated**.
+   Read is capped by your weekly reading time, and adaptive cutoffs keep it filled with your best matches.
+   Keyboard: `J`/`K` move, `U`/`N` rate, `S` save, `X` hide, `Enter` details, `?` help.
+4. **Label** papers with predictions hidden, or review suggested labels, and open **Insights** to see how
+   well the ranking finds what you would pick: good papers in the top 10, papers to screen for 80% of good
+   ones, time saved, NDCG@10 / AP / Spearman against baselines.
+5. **Saved** exports BibTeX / RIS / CSV for Zotero, Mendeley or EndNote. Settings has backups.
 
 ## How it works
 

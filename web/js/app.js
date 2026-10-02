@@ -11,13 +11,14 @@ import { digestMarkdown, download, slug, toBibtex, toCsv, toRis } from "./export
 import { parseIdentifiers, resolveIdentifiers, searchRecent } from "./live.js";
 import { badges, loadRules, signals } from "./quality.js";
 import * as store from "./store.js";
-import { parseList } from "./text.js";
+import { parseList, tokenize } from "./text.js";
 import { $, $$, ago, authors, date, esc, fix, highlight, icon, pct, safeUrl, toast } from "./ui.js";
 
 const ROOT = new URL("../", import.meta.url);
 const LABEL_TEXT = { READ: "Read", SKIM: "Skim", SKIP: "Skip" };
 const LABEL_HELP = { READ: "Highly relevant: worth reading in full", SKIM: "Useful but peripheral: skim it", SKIP: "Low relevance: skip it" };
 const PAGE = 20;
+const MIN_RATINGS = 5; // ratings before the algorithm sorts papers into Read / Skim / Skip
 const DATASET_GOAL = 500;
 const EXAMPLES = [
   { name: "RAG & LLM evaluation", description: "I build retrieval-augmented generation systems and study how to evaluate whether LLM answers are faithful to the retrieved evidence.", keywords: ["retrieval augmented generation", "large language models", "evaluation", "hallucination"], fields: ["ai", "computing"] },
@@ -138,7 +139,10 @@ async function contextFor(prof) {
   const space = useDense(prof) ? A.dense : A.sparse;
   const encoded = await encode(profileTexts(prof).map(t => t[1]), space);
   const seedPapers = prof.seeds.map(id => A.byId.get(id)).filter(Boolean);
-  const pv = buildProfileVectors(prof, space, encoded, seedPapers);
+  // Without a written description, the papers you liked describe your interests.
+  const taste = isEmptyProfile(prof) ? likedIds(prof).map(id => A.byId.get(id)).filter(Boolean) : [];
+  if (isEmptyProfile(prof) && !seedPapers.length && !taste.length) return null;
+  const pv = buildProfileVectors(prof, space, encoded, [...seedPapers, ...taste]);
   const pool = poolFor(prof);
   const byId = new Map([...pool, ...seedPapers].map(p => [p.id, p]));
   for (const id of Object.keys(prof.labels)) if (A.byId.has(id)) byId.set(id, A.byId.get(id));
@@ -146,6 +150,7 @@ async function contextFor(prof) {
     // Snapshots, so a report computed from this run matches the model trained in it.
     papers: pool, byId, space, pv, labels: { ...prof.labels }, feedback: [...prof.feedback], seeds: prof.seeds.filter(id => byId.has(id)),
     cutoffs: prof.cutoffs, hours: prof.hours, budget: prof.budget, group: prof.group, today: Date.now(),
+    adaptive: prof.adaptive === false ? null : { read: readBudget(prof.hours), exclude: new Set(ratedIds(prof)) },
   };
 }
 
@@ -158,8 +163,8 @@ async function rerank({ quiet = true } = {}) {
   try {
     const ctx = await contextFor(prof);
     if (seq !== rankSeq) return;
-    const out = rank(ctx);
-    A.run = { ...out, space: ctx.space, ctx, byId: new Map(out.results.map(r => [r.paper.id, r])) };
+    const out = ctx ? rank(ctx) : discover(prof);
+    A.run = { ...out, space: ctx?.space ?? A.sparse, ctx, byId: new Map(out.results.map(r => [r.paper.id, r])) };
     A.explained.clear();
     A.report = null;
     if (!quiet && before) {
@@ -174,6 +179,26 @@ async function rerank({ quiet = true } = {}) {
   render();
 }
 
+/**
+ * Before there is anything to rank against (fields only, nothing rated yet):
+ * a varied sample that interleaves the chosen fields, papers with strong
+ * signals and recent papers first. Nothing is labelled.
+ */
+function discover(prof) {
+  const fields = prof.fields.length ? prof.fields : A.catalog.areas.map(a => a.id);
+  const by = Object.fromEntries(fields.map(f => [f, []]));
+  for (const p of poolFor(prof)) (by[p.area] ||= []).push(p);
+  for (const list of Object.values(by)) list.sort((a, b) => b._sig.points - a._sig.points || (b.published || "").localeCompare(a.published || ""));
+  const order = [];
+  const lists = Object.values(by);
+  for (let i = 0; lists.some(l => i < l.length); i++) for (const l of lists) if (l[i]) order.push(l[i]);
+  const zeros = FEATURES.map(() => 0);
+  return {
+    results: order.map((p, i) => ({ paper: p, score: 0, prior: 0, learned: null, f: zeros, label: "SKIP", rank: i + 1, note: "", lead: "", similar: [] })),
+    model: { info: { n_examples: 0, learned: false }, learnedWeight: 0 }, blend: {}, discover: true,
+  };
+}
+
 let rerankTimer = null;
 function scheduleRerank() {
   clearTimeout(rerankTimer);
@@ -186,6 +211,7 @@ function states(prof) {
   for (const f of prof.feedback) {
     const x = s.get(f.pid) || {};
     if (f.action === "useful" || f.action === "not_useful") x.vote = f.action;
+    else if (f.action === "clear_vote") x.vote = undefined;
     else if (f.action === "correct") x.corrected = f.value;
     else if (f.action === "dismiss") x.hidden = true;
     else if (f.action === "undismiss") x.hidden = false;
@@ -213,7 +239,14 @@ function explain(r) {
   return A.explained.get(key);
 }
 
-const ratingsCount = prof => new Set(prof.feedback.filter(f => ["useful", "not_useful", "correct", "save"].includes(f.action)).map(f => f.pid)).size + Object.keys(prof.labels).length;
+/** Papers you have judged in the feed (a vote or a save). */
+function ratedIds(prof) {
+  return [...states(prof)].filter(([, x]) => x.vote || x.saved).map(([id]) => id);
+}
+function likedIds(prof) {
+  return [...states(prof)].filter(([, x]) => x.vote === "useful" || (x.saved && x.vote !== "not_useful")).map(([id]) => id);
+}
+const ratingsCount = prof => ratedIds(prof).length;
 
 // -------------------------------------------------------------------- shell
 
@@ -289,21 +322,21 @@ function welcomeView() {
     <div class="hero">
       <p class="eyebrow">${icon("spark")} Research paper triage</p>
       <h1>Too many papers.<br><em>Read the right ones.</em></h1>
-      <p class="lede">Papers are cheaper to produce than ever, and your reading time hasn’t grown. Describe your research in a sentence. Paper Triage sorts ${total.toLocaleString()} recent papers into <b class="t-read">Read</b>, <b class="t-skim">Skim</b> and <b class="t-skip">Skip</b>, says why, and shows whether each one is worth trusting. It learns from every thumbs-up.</p>
+      <p class="lede">Papers are cheaper to produce than ever, and your reading time hasn’t grown. Pick your fields and rate a few papers. Paper Triage then sorts the rest into <b class="t-read">Read</b>, <b class="t-skim">Skim</b> and <b class="t-skip">Skip</b>, says why, shows whether each one is worth trusting, and keeps learning as you rate.</p>
     </div>
     <form class="start card-surface" id="start-form">
-      <label class="field"><span>What are you working on?</span>
-        <textarea name="description" rows="3" required placeholder="e.g. I study how retrieval-augmented generation systems can be evaluated for faithfulness."></textarea></label>
+      <label class="field"><span>What are you working on? <small>optional, helps the first suggestions</small></span>
+        <textarea name="description" rows="3" placeholder="e.g. I study how retrieval-augmented generation systems can be evaluated for faithfulness."></textarea></label>
       <div class="examples" role="group" aria-label="Examples"><span>Try:</span>${EXAMPLES.map((e, i) => `<button type="button" class="example" data-act="example" data-i="${i}">${esc(e.name)}</button>`).join("")}</div>
       <label class="field"><span>Keywords <small>optional, comma-separated</small></span><input name="keywords" placeholder="e.g. RAG, hallucination, LLM evaluation"></label>
       <fieldset class="field"><legend>Fields to include <small>optional, leave empty for all</small></legend><div class="chips one-line">${fieldChips([], "fields", { noneMeansAll: false, short: true })}</div></fieldset>
-      <div class="start-actions"><button class="btn primary big" type="submit">Rank papers ${icon("chevron", "rot")}</button>
+      <div class="start-actions"><button class="btn primary big" type="submit">Show papers ${icon("chevron", "rot")}</button>
       <label class="btn ghost file">${icon("upload")}Restore a backup<input type="file" accept=".json,application/json" data-act="restore" hidden></label></div>
     </form>
     <ol class="how">
-      <li><b>Describe</b><span>A sentence or two about your research. Add keywords if you like.</span></li>
-      <li><b>Triage</b><span>Every paper gets a label, a one-line reason, and trust signals: peer review, code, data, study design.</span></li>
-      <li><b>Teach</b><span>Thumbs up or down. The ranking retrains in your browser, and only uses what you teach it if that measurably helps.</span></li>
+      <li><b>Pick</b><span>Choose your fields, and describe your research if you like. You get 20 papers to start.</span></li>
+      <li><b>Rate</b><span>Mark at least ${MIN_RATINGS} as relevant or not. Load more from OpenAlex whenever you want.</span></li>
+      <li><b>Triage</b><span>The algorithm sorts every other paper into Read, Skim and Skip with a reason and trust signals, and re-sorts as you keep rating.</span></li>
     </ol>
     ${A.proposals?.sets.length ? `<p class="fine">${icon("check")}<span>Labelling papers for the project dataset? <a href="#/label">Review suggested labels</a>.</span></p>` : ""}
     <p class="fine">${icon("shield")}<span>Runs entirely in your browser. No account, and your interests and ratings never leave this device. Catalog: ${total.toLocaleString()} papers from <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> (CC0), updated ${esc(date(m.updated_at))}.</span></p>
@@ -322,9 +355,12 @@ function rowsFor(prof, { tab = A.tab, ignoreTab = false } = {}) {
     if (!fields.has(r.paper.area)) return false;
     for (const f of A.signalFilters) if (!SIGNAL_FILTERS[f].test(r.paper._sig)) return false;
     if (q && !`${r.paper.title} ${r.paper.abstract} ${(r.paper.authors || []).join(" ")}`.toLowerCase().includes(q)) return false;
-    if (ignoreTab) return !st.hidden;
+    if (ignoreTab) return !st.hidden && !(st.vote || st.saved);
     if (tab === "HIDDEN") return st.hidden;
     if (st.hidden) return false;
+    const rated = !!(st.vote || st.saved);
+    if (tab === "RATED") return rated;
+    if (rated) return false; // you already judged it; the tabs hold what the algorithm sorted
     const label = st.corrected || r.label;
     if (tab === "NEW") return A.newIds.has(r.paper.id) && label !== "SKIP";
     return tab === "ALL" || label === tab;
@@ -336,15 +372,82 @@ function rowsFor(prof, { tab = A.tab, ignoreTab = false } = {}) {
   return { rows, states: s };
 }
 
+/** First phase: a fixed list of papers to rate; nothing is labelled yet. */
+function starterIds(prof) {
+  if (!prof.starter?.length) {
+    const fields = new Set(prof.fields.length ? prof.fields : A.catalog.areas.map(a => a.id));
+    const st = states(prof);
+    prof.starter = A.run.results.filter(r => (fields.has(r.paper.area) || r.paper.area === "imported") && !st.get(r.paper.id)?.hidden)
+      .slice(0, PAGE).map(r => r.paper.id);
+    save();
+  }
+  return prof.starter.filter(id => A.byId.has(id));
+}
+
+function rateView(prof) {
+  const st = states(prof);
+  const n = ratingsCount(prof);
+  const liked = likedIds(prof).length;
+  const ids = starterIds(prof);
+  const needLike = isEmptyProfile(prof) && n >= MIN_RATINGS && !liked;
+  const desc = prof.focus || prof.description;
+  return `<section class="feed rate-phase">
+    <header class="feed-head">
+      <div>
+        <h1>${esc(prof.name)}</h1>
+        <p class="interest">${desc ? esc(desc.slice(0, 220)) + (desc.length > 220 ? "…" : "") : esc(fieldNames(prof))} <button class="link" data-act="edit-profile">${icon("edit")}Edit</button></p>
+      </div>
+    </header>
+    <div class="rate-progress" role="status">
+      <div><b>Rate at least ${MIN_RATINGS} papers</b> as relevant or not relevant. Then the algorithm sorts every other paper into Read, Skim and Skip, and keeps re-sorting as you rate more.
+        ${needLike ? "<br><span class=\"warn-text\">Mark at least one paper as relevant so it knows what you like.</span>" : ""}</div>
+      <div class="rate-meter"><i style="width:${Math.min(100, (n / MIN_RATINGS) * 100)}%"></i></div>
+      <span class="rate-count">${Math.min(n, MIN_RATINGS)}/${MIN_RATINGS}</span>
+    </div>
+    <div class="list rate-list">
+      ${ids.map(id => rateCard(A.byId.get(id), st.get(id) || {})).join("")}
+      <button class="btn more" data-act="load-more">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>
+    </div>
+  </section>`;
+}
+
+function fieldNames(prof) {
+  const ids = prof.fields.length ? prof.fields : A.catalog.areas.map(a => a.id);
+  return ids.length === A.catalog.areas.length ? "Fields: all" : "Fields: " + ids.map(id => SHORT_AREA[id] || id).join(" · ");
+}
+
+function rateCard(p, st) {
+  const open = A.expanded.has(p.id);
+  const url = safeUrl(p.url);
+  const area = A.catalog.areas.find(a => a.id === p.area)?.label || "From OpenAlex";
+  const meta = [authors(p.authors), p.venue, date(p.published || String(p.year || ""))].filter(Boolean).map(esc).join(" · ");
+  const abs = p.abstract || "No abstract available.";
+  const b = badges(p._sig, p);
+  return `<article class="paper unrated ${st.vote === "useful" ? "liked" : st.vote === "not_useful" ? "disliked" : ""} ${A.focusId === p.id ? "focused" : ""}" data-id="${esc(p.id)}" tabindex="-1">
+    <div class="paper-top"><span class="area">${esc(area)}</span>${st.vote ? `<span class="voted ${st.vote}">${st.vote === "useful" ? "You: relevant" : "You: not relevant"}</span>` : ""}</div>
+    <h2>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" data-act="open-paper">${esc(p.title)}</a>` : esc(p.title)}</h2>
+    <p class="meta">${meta}</p>
+    <p class="abstract short">${esc(open || abs.length <= 420 ? abs : abs.slice(0, 420).replace(/\s+\S*$/, "") + "…")}${abs.length > 420 ? ` <button class="link" data-act="expand">${open ? "less" : "more"}</button>` : ""}</p>
+    ${b.length ? `<ul class="signals" aria-label="Worth-it signals">${b.map(x => `<li class="sig ${x.tone}" title="${esc(x.tip)}">${esc(x.text)}</li>`).join("")}</ul>` : ""}
+    <div class="actions rate-actions">
+      <button class="btn rate up ${st.vote === "useful" ? "on" : ""}" data-act="vote" data-v="useful" aria-pressed="${st.vote === "useful"}" title="Relevant (U)">${icon("up")}Relevant</button>
+      <button class="btn rate down ${st.vote === "not_useful" ? "on" : ""}" data-act="vote" data-v="not_useful" aria-pressed="${st.vote === "not_useful"}" title="Not relevant (N)">${icon("down")}Not relevant</button>
+    </div>
+  </article>`;
+}
+
 function feedView(prof) {
+  const n = ratingsCount(prof);
+  if (n < MIN_RATINGS || A.run.discover) return rateView(prof);
   const all = rowsFor(prof, { ignoreTab: true }).rows;
   const s = states(prof);
   const count = lab => all.filter(r => (s.get(r.paper.id)?.corrected || r.label) === lab).length;
   const counts = { READ: count("READ"), SKIM: count("SKIM"), SKIP: count("SKIP"), ALL: all.length, NEW: all.filter(r => A.newIds.has(r.paper.id) && (s.get(r.paper.id)?.corrected || r.label) !== "SKIP").length };
   const hiddenN = [...s.values()].filter(x => x.hidden).length;
+  counts.RATED = n;
   const { rows } = rowsFor(prof);
   const page = rows.slice(0, A.shown);
-  const tabs = [["READ", "Read"], ["SKIM", "Skim"], ["SKIP", "Skip"], ["ALL", "All"]];
+  const tabs = [["READ", "Read"], ["SKIM", "Skim"], ["SKIP", "Skip"], ["ALL", "All"], ["RATED", "Rated"]];
   if (counts.NEW) tabs.unshift(["NEW", "New"]);
   const minutes = counts.READ * MINUTES_PER_READ;
   const budget = prof.hours * 60;
@@ -353,14 +456,14 @@ function feedView(prof) {
   const blend = A.run.blend;
   const engineLine = A.run.space === A.dense ? "MiniLM semantic ranking" : "Keyword (TF-IDF) ranking";
   const learning = m.info.learned
-    ? `learning from ${m.info.n_examples} ratings (${pct(m.learnedWeight)} weight${blend.validated ? ", validated on your labels" : ""})`
-    : ratings ? `${Math.max(0, 8 - m.info.n_examples)} more ratings to start learning` : "rate a few papers to personalise";
+    ? `sorted by the algorithm from your ${ratings} ratings (learned model weight ${pct(m.learnedWeight)}${blend.validated ? ", validated on your labels" : ""})`
+    : `sorted by the algorithm from your ${ratings} ratings`;
   const kws = [...prof.keywords.slice(0, 5)];
   return `<section class="feed">
     <header class="feed-head">
       <div>
         <h1>${esc(prof.name)}</h1>
-        <p class="interest">${esc((prof.focus || prof.description).slice(0, 220))}${(prof.focus || prof.description).length > 220 ? "…" : ""} <button class="link" data-act="edit-profile">${icon("edit")}Edit</button></p>
+        <p class="interest">${(prof.focus || prof.description) ? esc((prof.focus || prof.description).slice(0, 220)) + ((prof.focus || prof.description).length > 220 ? "…" : "") : esc(fieldNames(prof))} <button class="link" data-act="edit-profile">${icon("edit")}Edit</button></p>
         ${kws.length ? `<div class="kw">${kws.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
       </div>
       <div class="budget" title="Read papers take about ${MINUTES_PER_READ} minutes each">
@@ -369,7 +472,7 @@ function feedView(prof) {
         <div class="budget-sub">≈ ${fmtHours(minutes)} of your ${prof.hours} h a week${prof.budget ? ` · Read capped at ${readBudget(prof.hours)}` : ""}</div>
       </div>
     </header>
-    <p class="engine">${icon("spark")} ${engineLine}, ${learning}. ${A.run.space !== A.dense && A.embedder.status === "loading" ? "Switches to semantic ranking when the model finishes loading." : ""}</p>
+    <p class="engine">${icon("spark")} ${engineLine}, ${learning}. Keep rating with ${icon("up")} / ${icon("down")} and the lists re-sort. ${A.run.space !== A.dense && A.embedder.status === "loading" ? "Switches to semantic ranking when the model finishes loading." : ""}</p>
     <div class="feed-grid">
       <aside class="filters" aria-label="Filters">
         <details class="filters-box" ${(A.filtersOpen ?? matchMedia("(min-width: 900px)").matches) ? "open" : ""}>
@@ -382,8 +485,8 @@ function feedView(prof) {
           <h3>Fields</h3>
           <div class="chips">${fieldChips(prof.fields, "feed-fields")}</div>
           <h3>More papers</h3>
-          <button class="btn small" data-act="live-search">${icon("globe")}Find more on OpenAlex</button>
-          <p class="hint">Searches OpenAlex for papers from the past year using your keywords. Only the search terms are sent.</p>
+          <button class="btn small" data-act="load-more">${icon("globe")}Load more from OpenAlex</button>
+          <p class="hint">Fetches papers from the past year in your fields from OpenAlex. Only your fields and keywords are sent.</p>
           <label class="btn small ghost file">${icon("upload")}Import papers (JSON)<input type="file" accept=".json,application/json" data-act="import-papers" hidden></label>
           <div class="export-row"><button class="btn small ghost" data-act="digest">${icon("download")}Digest (Markdown)</button></div>
         </details>
@@ -392,9 +495,9 @@ function feedView(prof) {
         <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${A.tab === k}" class="tab ${k}" data-act="tab" data-tab="${k}">${t}<span>${counts[k].toLocaleString()}</span></button>`).join("")}
           ${hiddenN ? `<button class="tab link ${A.tab === "HIDDEN" ? "on" : ""}" data-act="tab" data-tab="HIDDEN">Hidden ${hiddenN}</button>` : ""}
           <button class="kbd-hint" data-act="help" title="Keyboard shortcuts">${icon("keyboard")}</button></div>
-        ${ratings < 8 && A.tab !== "HIDDEN" ? nudge(ratings) : ""}
         ${page.length ? page.map(r => card(r, s.get(r.paper.id) || {})).join("") : emptyTab(prof)}
-        ${rows.length > A.shown ? `<button class="btn more" data-act="more">Show ${Math.min(PAGE, rows.length - A.shown)} more <span>${(rows.length - A.shown).toLocaleString()} left</span></button>` : ""}
+        ${rows.length > A.shown ? `<button class="btn more" data-act="more">Show ${Math.min(PAGE, rows.length - A.shown)} more <span>${(rows.length - A.shown).toLocaleString()} left</span></button>`
+          : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>` : ""}
       </div>
     </div>
   </section>`;
@@ -402,13 +505,9 @@ function feedView(prof) {
 
 const fmtHours = min => (min < 60 ? `${min} min` : `${Math.round((min / 60) * 10) / 10} h`);
 
-function nudge(n) {
-  return `<div class="nudge">${icon("spark")}<div><b>Teach it your taste.</b> Rate papers with ${icon("up")} / ${icon("down")} or move them between Read, Skim and Skip. After 8 ratings the ranking starts learning; it keeps what it learns only when that beats your profile alone.</div><div class="nudge-meter"><i style="width:${(n / 8) * 100}%"></i></div><small>${n}/8</small></div>`;
-}
-
 function emptyTab(prof) {
   if (A.query || A.signalFilters.size) return `<div class="empty small"><p>No papers match these filters.</p><button class="btn small" data-act="clear-filters">Clear filters</button></div>`;
-  if (A.tab === "READ") return `<div class="empty small"><p>Nothing clears the Read bar yet. Check <b>Skim</b>, add keywords, or <button class="link" data-act="live-search">find more papers on OpenAlex</button>.</p></div>`;
+  if (A.tab === "READ") return `<div class="empty small"><p>Nothing clears the Read bar yet. Check <b>Skim</b>, rate a few more papers, or <button class="link" data-act="load-more">load more papers from OpenAlex</button>.</p></div>`;
   return `<div class="empty small"><p>No papers here.</p></div>`;
 }
 
@@ -425,10 +524,10 @@ function card(r, st) {
   const similar = r.similar.map(id => A.run.byId.get(id)).filter(Boolean);
   return `<article class="paper ${label} ${A.focusId === p.id ? "focused" : ""}" data-id="${esc(p.id)}" tabindex="-1">
     <div class="paper-top">
-      <span class="label-chip ${label}" title="${esc(LABEL_HELP[label])}${st.corrected ? " (your label)" : ""}">${LABEL_TEXT[label]}${st.corrected ? " ✓" : ""}</span>
+      ${st.vote || st.saved ? `<span class="voted ${st.vote || "useful"}">${st.vote === "not_useful" ? "You: not relevant" : "You: relevant"}</span>` : `<span class="label-chip ${label}" title="${esc(LABEL_HELP[label])}: decided by the algorithm">${LABEL_TEXT[label]}</span>`}
       ${A.newIds.has(p.id) ? '<span class="new-chip">New</span>' : ""}
       ${area ? `<span class="area">${esc(area)}</span>` : ""}
-      <span class="match" title="Relevance score ${r.score.toFixed(2)} (Read ≥ ${profile().cutoffs.read}, Skim ≥ ${profile().cutoffs.skim})"><i style="--v:${Math.round(r.score * 100)}%"></i>${Math.round(r.score * 100)}</span>
+      <span class="match" title="Relevance score ${r.score.toFixed(2)} (Read ≥ ${(A.run.cutoffs || profile().cutoffs).read.toFixed(2)}, Skim ≥ ${(A.run.cutoffs || profile().cutoffs).skim.toFixed(2)})"><i style="--v:${Math.round(r.score * 100)}%"></i>${Math.round(r.score * 100)}</span>
     </div>
     <h2>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" data-act="open-paper">${esc(p.title)}</a>` : esc(p.title)}</h2>
     <p class="meta">${meta}</p>
@@ -439,7 +538,6 @@ function card(r, st) {
         <button class="icon-btn ${st.vote === "useful" ? "on up" : ""}" data-act="vote" data-v="useful" aria-pressed="${st.vote === "useful"}" title="Relevant (U)">${icon("up")}<span>Relevant</span></button>
         <button class="icon-btn ${st.vote === "not_useful" ? "on down" : ""}" data-act="vote" data-v="not_useful" aria-pressed="${st.vote === "not_useful"}" title="Not relevant (N)">${icon("down")}<span>Not relevant</span></button>
       </div>
-      <div class="seg" role="group" aria-label="Move to">${LABELS.map((l, i) => `<button class="${l} ${label === l ? "on" : ""}" data-act="relabel" data-v="${l}" aria-pressed="${label === l}" title="${LABEL_HELP[l]} (${i + 1})">${LABEL_TEXT[l]}</button>`).join("")}</div>
       <button class="icon-btn ${st.saved ? "on saved" : ""}" data-act="save" aria-pressed="${!!st.saved}" title="Save to your reading list (S)">${icon("bookmark")}<span>${st.saved ? "Saved" : "Save"}</span></button>
       <button class="icon-btn" data-act="${st.hidden ? "unhide" : "hide"}" title="${st.hidden ? "Restore" : "Hide this paper (X)"}">${icon(st.hidden ? "undo" : "hide")}<span>${st.hidden ? "Restore" : "Hide"}</span></button>
       <button class="icon-btn more-btn" data-act="expand" aria-expanded="${open}" title="Details (Enter)">${icon("chevron", open ? "flip" : "")}<span>${open ? "Less" : "Details"}</span></button>
@@ -731,9 +829,10 @@ function settingsDialog() {
   const prof = profile();
   openDialog("#settings-dialog", `<form method="dialog" id="settings-form">
     <h2>Settings</h2>
-    <h3>Triage cutoffs</h3>
+    <h3>Triage cutoffs <small>(the fixed ones; adaptive cutoffs can only lower them)</small></h3>
     <label class="slider"><span>Read when relevance ≥ <b id="read-v">${prof.cutoffs.read.toFixed(2)}</b></span><input type="range" name="read" min="0" max="1" step="0.01" value="${prof.cutoffs.read}"></label>
     <label class="slider"><span>Skim when relevance ≥ <b id="skim-v">${prof.cutoffs.skim.toFixed(2)}</b></span><input type="range" name="skim" min="0" max="1" step="0.01" value="${prof.cutoffs.skim}"></label>
+    <label class="toggle"><input type="checkbox" name="adaptive" ${prof.adaptive !== false ? "checked" : ""}><span>Adaptive cutoffs: fill Read with my best matches (up to my reading budget) when scores run low${A.run?.cutoffs && prof.adaptive !== false ? ` · now Read ≥ ${A.run.cutoffs.read.toFixed(2)}, Skim ≥ ${A.run.cutoffs.skim.toFixed(2)}` : ""}</span></label>
     <label class="toggle"><input type="checkbox" name="budget" ${prof.budget ? "checked" : ""}><span>Cap Read at what fits my reading time (${readBudget(prof.hours)} papers a week)</span></label>
     <label class="toggle"><input type="checkbox" name="group" ${prof.group ? "checked" : ""}><span>Group near-identical papers under one card</span></label>
     <h3>Ranking model</h3>
@@ -750,10 +849,10 @@ function settingsDialog() {
 }
 
 function helpDialog() {
-  const keys = [["J / K", "Next / previous paper"], ["Enter", "Show or hide details"], ["U / N", "Relevant / not relevant"], ["1 / 2 / 3", "Move to Read / Skim / Skip"], ["S", "Save"], ["X", "Hide"], ["O", "Open the paper"], ["/", "Search"], ["?", "This help"]];
+  const keys = [["J / K", "Next / previous paper"], ["Enter", "Show or hide details"], ["U / N", "Relevant / not relevant (press again to undo)"], ["S", "Save"], ["X", "Hide"], ["O", "Open the paper"], ["/", "Search"], ["?", "This help"]];
   openDialog("#help-dialog", `<h2>How Paper Triage works</h2>
     <p><b>Relevance</b> says whether a paper is about your research. <b>Worth-it signals</b> say whether it’s worth your time: peer review, released code or data, study-design cues, open access and citation impact, plus cautions like very short abstracts or promotional wording. Signals are cues you can check, not verdicts, and they never change the relevance score. Use them to filter or sort.</p>
-    <p>Your ratings train a small model in your browser. It only gets a say when cross-validation on your own labels shows it helps.</p>
+    <p>Rate at least ${MIN_RATINGS} papers and the algorithm sorts the rest into Read, Skim and Skip; every further rating re-sorts the lists. Your ratings train a small model in your browser, which gets a bigger say only when cross-validation on your own labels shows it helps.</p>
     <h3>Keyboard</h3><dl class="keys">${keys.map(([k, t]) => `<dt><kbd>${k}</kbd></dt><dd>${t}</dd>`).join("")}</dl>
     <h3>Labelling</h3><p><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> label Read / Skim / Skip, <kbd>0</kbd> skips, <kbd>Backspace</kbd> undoes.</p>
     <p class="hint">Catalog: ${A.catalog.papers.length.toLocaleString()} papers from OpenAlex, updated ${esc(date(A.catalog.manifest.updated_at))}. <a href="https://github.com/srivathsanb14/research-paper-triage" target="_blank" rel="noopener">Source code</a></p>
@@ -782,13 +881,12 @@ async function submitProfile(form) {
   const isNew = form.dataset.new === "true";
   const fail = msg => { err.textContent = msg; err.hidden = false; };
   if (!values.name) return fail("Give the profile a name.");
-  if (isEmptyProfile(values) && !A.pendingSeeds.length) return fail("Add a description, keywords or a current focus.");
   if (Object.values(A.state.profiles).some(p => p.name === values.name && (isNew || p.id !== A.state.active))) return fail("A profile with that name already exists.");
   if (isNew) {
     const p = newProfile({ ...values, seeds: A.pendingSeeds });
     A.state.profiles[p.id] = p;
     A.state.active = p.id;
-  } else Object.assign(profile(), values, { seeds: A.pendingSeeds });
+  } else Object.assign(profile(), values, { seeds: A.pendingSeeds, starter: [] });
   save();
   $("#profile-dialog").close();
   A.labelQueue = null;
@@ -804,10 +902,11 @@ async function startFromWelcome(form) {
   const description = String(fd.get("description") || "").trim();
   const keywords = parseList(fd.get("keywords"));
   const fields = fd.getAll("fields");
-  if (!description && !keywords.length) { toast("Describe your research or add a keyword first."); return; }
+  if (!description && !keywords.length && !fields.length) { toast("Pick at least one field, or describe your research."); return; }
   const example = EXAMPLES.find(e => e.description === description);
   // No field chosen means every field.
-  const p = newProfile({ name: example?.name || "My research", description, keywords, fields: fields.length === A.catalog.areas.length ? [] : fields });
+  const name = example?.name || (description || keywords.length ? "My research" : fields.length && fields.length < A.catalog.areas.length ? fields.map(f => SHORT_AREA[f]).join(" + ").slice(0, 70) : "My papers");
+  const p = newProfile({ name, description, keywords, fields: fields.length === A.catalog.areas.length ? [] : fields });
   A.state.profiles[p.id] = p;
   A.state.active = p.id;
   save();
@@ -830,18 +929,61 @@ function setVisitBaseline(prof) {
   save();
 }
 
-async function liveSearch() {
+/** OpenAlex field ids for a profile's areas ("ai" is part of Computer Science, field 17). */
+function openalexFields(prof) {
+  if (!prof.fields.length) return [];
+  const ids = new Set();
+  for (const a of A.catalog.manifest.areas) if (prof.fields.includes(a.id)) for (const f of a.fields) ids.add(f >= 1000 ? Math.floor(f / 100) : f);
+  return [...ids];
+}
+
+function areaFor(p) {
+  if (p._subfield === 1702 || p._subfield === 1707) return "ai";
+  const a = A.catalog.manifest.areas.find(x => x.id !== "ai" && x.fields.includes(p._field));
+  return a?.id || "imported";
+}
+
+/** Search words: keywords, else the description, else frequent words in titles you liked. */
+function searchTerms(prof) {
+  if (prof.keywords.length) return prof.keywords.slice(0, 4).join(" ");
+  const text = prof.focus || prof.description;
+  if (text) return text.split(/\s+/).slice(0, 12).join(" ");
+  const counts = new Map();
+  for (const id of likedIds(prof)) for (const t of tokenize(A.byId.get(id)?.title || "")) if (t.length > 3) counts.set(t, (counts.get(t) || 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([t]) => t).join(" ");
+}
+
+let loadingMore = false;
+/** "Load more": fresh papers for your fields from OpenAlex; falls back to the built-in catalog. */
+async function loadMore() {
   const prof = profile();
-  const query = (prof.keywords.length ? prof.keywords.slice(0, 4).join(" ") : (prof.focus || prof.description).split(/\s+/).slice(0, 10).join(" ")).trim();
-  if (!query) return toast("Add keywords to your profile first.");
-  toast(`Searching OpenAlex for “${query}”…`, { ms: 20000 });
+  if (!prof || loadingMore) return;
+  loadingMore = true;
+  $$('[data-act="load-more"]').forEach(b => { b.disabled = true; b.classList.add("busy"); });
+  const rating = ratingsCount(prof) < MIN_RATINGS || A.run?.discover;
+  let found = [], failed = false;
   try {
-    const found = await searchRecent(query, { limit: 100 });
-    const added = await addVisitorPapers(found, prof);
-    const already = found.length - added;
+    prof.livePage = (prof.livePage || 0) + 1;
+    found = await searchRecent(searchTerms(prof), { fields: openalexFields(prof), limit: 40, page: prof.livePage });
+    for (const p of found) p.area = areaFor(p);
+    await addVisitorPapers(found, prof);
     await rerank();
-    toast(added ? `Added ${added} papers from OpenAlex${already ? ` (${already} you already had)` : ""}.` : found.length ? "No new papers: you already have all the matches." : "OpenAlex found no recent matches. Try different keywords.");
-  } catch (e) { toast(e.message || "OpenAlex search failed."); }
+  } catch (e) {
+    console.warn(e);
+    failed = true;
+  }
+  if (rating) {
+    const st = states(prof);
+    const have = new Set(prof.starter);
+    const fresh = found.map(p => p.id).filter(id => A.byId.has(id) && !have.has(id) && !st.get(id)?.vote);
+    const fields = new Set(prof.fields.length ? prof.fields : A.catalog.areas.map(a => a.id));
+    const local = A.run.results.map(r => r.paper).filter(p => !have.has(p.id) && (fields.has(p.area) || p.area === "imported")).map(p => p.id);
+    prof.starter.push(...[...new Set([...fresh, ...local])].slice(0, PAGE));
+    save();
+  } else A.shown += PAGE;
+  loadingMore = false;
+  render();
+  toast(failed ? "Couldn’t reach OpenAlex, so here are more papers from the built-in catalog." : found.length ? `Loaded ${found.length} papers from OpenAlex.` : "OpenAlex had nothing new, so here are more from the built-in catalog.");
 }
 
 function backupJson(prof) {
@@ -874,7 +1016,7 @@ async function restoreBackup(text) {
     });
   } else throw new Error("Choose a Paper Triage backup file.");
   sanitizeProfile(prof);
-  if (!prof.name || (isEmptyProfile(prof) && !prof.seeds.length)) throw new Error("The backup has no research interests.");
+  if (!prof.name) throw new Error("The backup has no profile name.");
   let name = prof.name, i = 1;
   while (Object.values(A.state.profiles).some(p => p.name === prof.name)) prof.name = `${name} (restored ${i++})`;
   await addVisitorPapers(papers, prof);
@@ -902,9 +1044,11 @@ function sanitizeProfile(p) {
   const c = p.cutoffs || {};
   p.cutoffs = Number.isFinite(c.read) && Number.isFinite(c.skim) && 0 <= c.skim && c.skim <= c.read && c.read <= 1 ? { read: c.read, skim: c.skim } : { ...DEFAULT_CUTOFFS };
   p.budget = p.budget !== false;
+  p.adaptive = p.adaptive !== false;
   p.group = p.group !== false;
   p.good = p.good === "read_skim" ? "read_skim" : "read";
   p.reviewSet = typeof p.reviewSet === "string" ? p.reviewSet.slice(0, 80) : undefined;
+  p.starter = Array.isArray(p.starter) ? p.starter.filter(x => typeof x === "string").slice(0, 2000) : [];
   const labels = {};
   for (const [pid, l] of Object.entries(p.labels && typeof p.labels === "object" ? p.labels : {})) {
     const label = typeof l === "string" ? l : l?.label;
@@ -912,7 +1056,7 @@ function sanitizeProfile(p) {
       ...(LABELS.includes(l?.proposed) ? { proposed: l.proposed, proposal: str(l.proposal, 80) } : {}) };
   }
   p.labels = labels;
-  const actions = new Set(["useful", "not_useful", "correct", "dismiss", "undismiss", "save", "unsave", "open", "explanation_ok", "explanation_bad"]);
+  const actions = new Set(["useful", "not_useful", "clear_vote", "correct", "dismiss", "undismiss", "save", "unsave", "open", "explanation_ok", "explanation_bad"]);
   p.feedback = (Array.isArray(p.feedback) ? p.feedback : []).filter(f => f && typeof f.pid === "string" && actions.has(f.action) && (f.action !== "correct" || LABELS.includes(f.value)))
     .map(f => ({ pid: f.pid, action: f.action, value: f.value ?? null, at: str(f.at, 40) || now(), predicted: LABELS.includes(f.predicted) ? f.predicted : null, score: Number.isFinite(f.score) ? f.score : null }));
   return p;
@@ -965,12 +1109,20 @@ function paperAction(act, pid, v) {
   A.focusId = pid;
   if (act === "vote") {
     const undoLen = prof.feedback.length;
-    logFeedback(pid, v);
-    toast(v === "useful" ? "Marked relevant" : "Marked not relevant", { action: { label: "Undo", run: () => undoTo(undoLen) } });
-  } else if (act === "relabel") {
-    const undoLen = prof.feedback.length;
-    logFeedback(pid, "correct", v);
-    if ((st.corrected || r?.label) !== v) toast(`Moved to ${LABEL_TEXT[v]}`, { action: { label: "Undo", run: () => undoTo(undoLen) } });
+    const before = ratingsCount(prof);
+    logFeedback(pid, st.vote === v ? "clear_vote" : v);
+    const after = ratingsCount(prof);
+    if (before < MIN_RATINGS && after >= MIN_RATINGS) {
+      A.tab = "READ";
+      A.shown = PAGE;
+      toast(`That’s ${MIN_RATINGS}! The algorithm has sorted your papers into Read, Skim and Skip.`, { ms: 6000 });
+      render();
+      window.scrollTo(0, 0);
+      return rerank();
+    }
+    if (st.vote === v) toast("Rating removed");
+    else if (before < MIN_RATINGS) toast(`${after} of ${MIN_RATINGS} rated`, { action: { label: "Undo", run: () => undoTo(undoLen) } });
+    else toast(v === "useful" ? "Marked relevant · re-sorting" : "Marked not relevant · re-sorting", { action: { label: "Undo", run: () => undoTo(undoLen) } });
   } else if (act === "save") logFeedback(pid, st.saved ? "unsave" : "save");
   else if (act === "hide") {
     const undoLen = prof.feedback.length;
@@ -1026,7 +1178,7 @@ document.addEventListener("click", async e => {
   const pid = el.closest("[data-id]")?.dataset.id;
   const prof = profile();
   switch (act) {
-    case "vote": case "relabel": case "save": case "hide": case "unhide": return paperAction(act, pid, el.dataset.v);
+    case "vote": case "save": case "hide": case "unhide": return paperAction(act, pid, el.dataset.v);
     case "open-paper": return paperAction(act, pid);
     case "expand":
       A.expanded.has(pid) ? A.expanded.delete(pid) : A.expanded.add(pid);
@@ -1077,7 +1229,7 @@ document.addEventListener("click", async e => {
     }
     case "settings": return settingsDialog();
     case "help": return helpDialog();
-    case "live-search": return liveSearch();
+    case "live-search": case "load-more": return loadMore();
     case "digest": {
       const rows = rowsFor(prof, { ignoreTab: true }).rows;
       const reasons = Object.fromEntries(rows.filter(r => r.label === "READ").map(r => [r.paper.id, explain(r).reason]));
@@ -1159,6 +1311,7 @@ document.addEventListener("change", async e => {
       prof.cutoffs = { read, skim };
     }
     if (t.name === "budget") prof.budget = t.checked;
+    if (t.name === "adaptive") prof.adaptive = t.checked;
     if (t.name === "group") prof.group = t.checked;
     if (t.name === "semantic") {
       A.state.settings.semantic = t.checked;
@@ -1238,7 +1391,7 @@ document.addEventListener("keydown", e => {
   if (k === "k" || e.key === "ArrowUp" && e.shiftKey) { e.preventDefault(); return focus(i < 0 ? 0 : i - 1); }
   if (i < 0) return;
   const pid = A.focusId;
-  const acts = { u: ["vote", "useful"], n: ["vote", "not_useful"], 1: ["relabel", "READ"], 2: ["relabel", "SKIM"], 3: ["relabel", "SKIP"], s: ["save"], x: ["hide"] };
+  const acts = { u: ["vote", "useful"], n: ["vote", "not_useful"], s: ["save"], x: ["hide"] };
   if (acts[k]) { e.preventDefault(); return paperAction(acts[k][0], pid, acts[k][1]); }
   if (e.key === "Enter") { e.preventDefault(); A.expanded.has(pid) ? A.expanded.delete(pid) : A.expanded.add(pid); return keepAnchor(pid, render); }
   if (k === "o") { const a = cards[i].querySelector("h2 a"); if (a) { a.click(); } }

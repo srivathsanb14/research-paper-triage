@@ -2,7 +2,7 @@
 
 # Interface
 **Hugging Face Space:** [Demo Link](https://huggingface.co/spaces/<hf-user>/paper-triage)
-*Paper Triage: describe your research in a sentence and ~1,900 recent papers from all fields are sorted into Read / Skim / Skip, each with a one-line reason and "worth-it" signals (peer review, released code or data, study design, citation impact, cautions). Try an example profile, rate a few papers (👍/👎) and watch the ranking learn; label papers in **Label** and see cross-validated accuracy in **Insights**. Runs entirely in the browser; no account. Also on GitHub Pages: https://srivathsanb14.github.io/research-paper-triage/*
+*Paper Triage: describe your research in a sentence and ~1,900 recent papers from all fields are sorted into Read / Skim / Skip, each with a one-line reason and "worth-it" signals (peer review, released code or data, study design, citation impact, cautions). Pick your fields (optionally describe your research), rate at least 5 of the first 20 papers as relevant or not, and the algorithm sorts the rest into Read / Skim / Skip, re-sorting with every further rating; Load more pulls fresh papers from OpenAlex; label papers in **Label** and see cross-validated accuracy in **Insights**. Runs entirely in the browser; no account. Also on GitHub Pages: https://srivathsanb14.github.io/research-paper-triage/*
 
 # Models
 - **Primary Model (trained from scratch):** [Model Card Link](https://huggingface.co/<hf-user>/paper-triage-ranker)

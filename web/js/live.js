@@ -46,30 +46,43 @@ export function paperFromWork(work, minWords = 30) {
     oa_status: work.open_access?.oa_status || "",
     fwci: typeof work.fwci === "number" ? work.fwci : null,
     references_count: work.referenced_works_count ?? null,
+  }, {
+    // OpenAlex topic ids, so the app can file the paper under one of its areas.
+    _field: Number(String(topic.field?.id || "").split("/").pop()) || null,
+    _subfield: Number(String(topic.subfield?.id || "").split("/").pop()) || null,
   });
 }
 
 async function get(params) {
   const url = new URL(API);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url);
+  let res;
+  for (let attempt = 0; ; attempt++) { // one dropped connection shouldn't fail the search
+    try { res = await fetch(url); break; } catch (e) { if (attempt >= 2) throw e; await new Promise(r => setTimeout(r, 800 * (attempt + 1))); }
+  }
   if (res.status === 429) throw new Error("OpenAlex is busy right now. Try again in a minute.");
   if (!res.ok) throw new Error(`OpenAlex returned HTTP ${res.status}.`);
   return res.json();
 }
 
-/** Recent papers matching the visitor's own search terms. */
-export async function searchRecent(query, { days = 365, limit = 100 } = {}) {
+/**
+ * Recent papers matching the visitor's own search terms and/or OpenAlex field
+ * ids. Without a query, returns the most-cited and newest papers in the fields.
+ */
+export async function searchRecent(query, { days = 365, limit = 100, fields = [], page = 1 } = {}) {
   const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const fieldFilter = fields.length ? `,primary_topic.field.id:${fields.join("|")}` : "";
   const params = {
-    search: query.slice(0, 300),
-    filter: `from_publication_date:${since},has_abstract:true,is_retracted:false,type:article|review|preprint`,
+    filter: `from_publication_date:${since},has_abstract:true,is_retracted:false,language:en,type:article|review|preprint${fieldFilter}`,
     per_page: String(Math.min(100, limit)),
+    page: String(page),
     select: SELECT,
   };
+  if (query.trim()) params.search = query.trim().slice(0, 300);
+  const sorts = query.trim() ? ["relevance_score:desc", "cited_by_count:desc"] : ["cited_by_count:desc", "publication_date:desc"];
   const out = [];
   const seen = new Set();
-  for (const sort of ["relevance_score:desc", "cited_by_count:desc"]) {
+  for (const sort of sorts) {
     const data = await get({ ...params, sort, per_page: String(Math.ceil(limit / 2)) });
     for (const w of data.results || []) {
       const p = paperFromWork(w);

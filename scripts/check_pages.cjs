@@ -53,38 +53,63 @@ async function main() {
   try {
     const t0 = Date.now();
     await page.goto(url);
-    await page.getByRole("button", { name: /Rank papers/ }).waitFor();
+    await page.getByRole("button", { name: /Show papers/ }).waitFor();
     step(`welcome page interactive in ${Date.now() - t0} ms`);
 
+    // Phase 1: 20 papers to rate, nothing labelled yet.
     await page.getByRole("button", { name: "RAG & LLM evaluation" }).click();
-    await page.getByRole("button", { name: /Rank papers/ }).click();
-    await page.locator("article.paper").first().waitFor();
+    await page.getByRole("button", { name: /Show papers/ }).click();
+    await page.locator("article.paper.unrated").first().waitFor();
+    assert.equal(await page.locator("article.paper.unrated").count(), 20);
+    assert.equal(await page.locator(".tabs").count(), 0, "no Read/Skim/Skip before 5 ratings");
     const top = await page.locator("article.paper h2").first().innerText();
     assert.match(top, /retriev|RAG|language model|LLM/i, `unexpected top paper: ${top}`);
-    assert.ok(await page.locator("article.paper .signals").count() > 0, "signals are shown");
-    step(`a new visitor gets a ranked Read list without setup (top: “${top.slice(0, 60)}”)`);
+    step(`a new visitor gets 20 papers to rate, no labels yet (top: “${top.slice(0, 60)}”)`);
+
+    const active = () => page.evaluate(() => window.__triage.state.profiles[window.__triage.state.active]);
+    const cards = page.locator("article.paper.unrated");
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    await page.getByRole("button", { name: "Undo" }).click();
+    assert.equal((await active()).feedback.length, 0, "undo removes feedback");
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    assert.equal(await page.locator(".rate-count").innerText(), "0/5", "pressing again clears the rating");
+    step("rate, undo and un-rate work");
+
+    // Load more pulls fresh papers from OpenAlex (stubbed) into the list.
+    await page.locator('.list [data-act="load-more"]').click();
+    await page.getByText(/Loaded 1 papers from OpenAlex/).waitFor();
+    assert.equal(await cards.count(), 40);
+    await page.locator("article.paper.unrated h2", { hasText: "Live OpenAlex Test Paper" }).waitFor();
+    step("Load more adds OpenAlex papers to the list");
+
+    // Five ratings unlock the algorithm's Read / Skim / Skip.
+    for (let i = 0; i < 5; i++) await cards.nth(i).getByRole("button", { name: i < 3 ? "Relevant" : "Not relevant", exact: true }).click();
+    await page.locator(".tabs").waitFor();
+    const tabs = (await page.locator(".tabs").innerText()).replace(/\s+/g, " ");
+    assert.match(tabs, /Read [1-9]/, `Read is filled: ${tabs}`);
+    assert.match(tabs, /Rated 5/);
+    assert.equal(await page.locator('article.paper [data-act="relabel"]').count(), 0, "labels are the algorithm's, not editable");
+    step(`5 ratings unlock the algorithm's triage (${tabs.trim()})`);
 
     if (!process.env.OFFLINE_MODEL) {
       await page.waitForFunction(() => window.__triage.run?.space?.name === "minilm", null, { timeout: 120000 });
       step("MiniLM loads in a worker and the ranking switches to semantic vectors");
     }
 
-    // Feedback, undo, save, hide.
+    // Further ratings, save and hide in triage.
     const first = page.locator("article.paper").first();
     const firstId = await first.getAttribute("data-id");
-    await first.getByRole("button", { name: "Relevant", exact: true }).click();
-    await page.getByRole("button", { name: "Undo" }).click();
-    let fb = await page.evaluate(() => window.__triage.state.profiles[window.__triage.state.active].feedback.length);
-    assert.equal(fb, 0, "undo removes feedback");
-    const card = id => page.locator(`article.paper[data-id="${id}"]`);
-    await card(firstId).getByRole("button", { name: "Relevant", exact: true }).click();
-    await card(firstId).getByRole("button", { name: /^Save/ }).click();
+    await first.getByRole("button", { name: /^Save/ }).click();
+    await page.waitForFunction(id => !document.querySelector(`article.paper[data-id="${CSS.escape(id)}"]`), firstId);
     await page.getByRole("tab", { name: /Skim/ }).click();
     const skimCard = page.locator("article.paper").first();
     const skimId = await skimCard.getAttribute("data-id");
     await skimCard.getByRole("button", { name: "Hide" }).click();
     await page.waitForFunction(id => !document.querySelector(`article.paper[data-id="${CSS.escape(id)}"]`), skimId);
-    step("rate, undo, save and hide work");
+    await page.getByRole("tab", { name: /Rated/ }).click();
+    await page.locator(`article.paper[data-id="${firstId}"]`).waitFor();
+    step("saving moves a paper to Rated; hiding removes it");
 
     // Details panel and keyboard shortcuts.
     await page.getByRole("tab", { name: /Read/ }).click();
@@ -92,7 +117,7 @@ async function main() {
     await page.keyboard.press("Enter");
     await page.locator(".details .bars").first().waitFor();
     await page.keyboard.press("n");
-    fb = await page.evaluate(() => window.__triage.state.profiles[window.__triage.state.active].feedback.map(f => f.action));
+    const fb = (await active()).feedback.map(f => f.action);
     assert.ok(fb.includes("not_useful"), "keyboard N records not relevant");
     step("details show the score breakdown; keyboard triage works");
 
@@ -102,15 +127,12 @@ async function main() {
     const sigs = await page.locator("article.paper .signals").allInnerTexts();
     assert.ok(sigs.length && sigs.every(t => t.includes("Peer-reviewed")), "peer-reviewed filter");
     await page.locator("label.chip-toggle", { hasText: "Peer-reviewed" }).click();
-    step("worth-it signal filters narrow the list");
-
-    // Live OpenAlex search (stubbed).
-    await page.getByRole("button", { name: /Find more on OpenAlex/ }).click();
-    await page.getByText(/Added 1 papers from OpenAlex/).waitFor();
-    await page.locator("#search").fill("Live OpenAlex Test Paper");
-    await page.locator("article.paper h2", { hasText: "Live OpenAlex Test Paper" }).waitFor();
+    assert.ok(await page.evaluate(() => window.__triage.run.byId.has("doi:10.9999/live-test")), "OpenAlex paper is ranked");
+    await page.locator("#search").fill("Retrieval");
+    const hits = await page.locator("article.paper h2").allInnerTexts();
+    assert.ok(hits.length > 0 && hits.length <= 20, "search narrows the list");
     await page.locator("#search").fill("");
-    step("papers found on OpenAlex join the ranking");
+    step("signal filters and search work; OpenAlex papers are ranked too");
 
     // Saved list exports BibTeX.
     await page.locator("#nav").getByRole("link", { name: /^Saved/ }).click();
@@ -199,7 +221,7 @@ async function main() {
     }
 
     await fs.mkdir("test-results", { recursive: true });
-    await page.getByRole("tab", { name: /Read/ }).click();
+    if (await page.locator(".tabs").count()) await page.getByRole("tab", { name: /Read/ }).click(); // a fresh profile is still in the rating phase
     await page.screenshot({ path: "test-results/pages-desktop.png" });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: "test-results/pages-mobile.png" });

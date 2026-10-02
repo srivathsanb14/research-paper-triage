@@ -37,7 +37,7 @@ its evaluation.
 3. **Learned score (trained from scratch).** A weighted ridge regression (α = 1, scikit-learn
    semantics) on the same features. Targets: Read 1, Skim 0.5, Skip 0. Examples and weights:
    papers named as essential (2.0), hand labels (1.0), corrections (1.5), relevant / not
-   relevant / saved (1.0), opened (0.3) and hidden (0.5).
+   relevant / saved (1.0), opened (0.3) and hidden (0.5). Training starts at 5 ratings, the number the app asks for before it triages.
 4. **Validated blend.** `final = (1 − w)·profile + w·learned`, with w ∈ {0, 0.15, 0.3, 0.5, 0.7}
    chosen by 5-fold cross-validated average precision on the person's hand labels. Learning
    gets a say only if it beats w = 0 by 0.01. With fewer than 6 hand labels w = min(0.3, n/(n+30)).
