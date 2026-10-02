@@ -95,4 +95,3 @@ export async function flush(keepalive = false) {
 
 export const seedSets = () => call("seed-sets").then(r => r.sets);
 export const seedSet = slug => call(`seed-sets/${encodeURIComponent(slug)}`);
-export const labelsUrl = () => new URL("labels", API).href;

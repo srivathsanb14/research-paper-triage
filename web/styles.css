@@ -196,10 +196,7 @@ body[data-view="welcome"] main { max-width: 900px; }
 .tab.READ[aria-selected="true"] span { color: var(--read); } .tab.SKIM[aria-selected="true"] span { color: var(--skim); }
 .tab.link { margin-left: auto; font-size: 13px; color: var(--ink-3); }
 .tab.link.on { color: var(--ink); }
-.kbd-hint { margin-left: auto; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); cursor: pointer; }
-.tab.link + .kbd-hint { margin-left: 0; }
-.kbd-hint:hover { color: var(--ink); background: var(--surface); }
-.nudge { display: grid; grid-template-columns: auto 1fr 90px auto; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); color: var(--ink-2); font-size: 13px; }
+.tab.link + .nudge { display: grid; grid-template-columns: auto 1fr 90px auto; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); color: var(--ink-2); font-size: 13px; }
 .nudge > .icon { color: var(--accent); }
 .nudge b { color: var(--ink); }
 .nudge .icon { width: 14px; height: 14px; }
@@ -454,9 +451,9 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
 .switch input:checked + i::after { transform: translateX(16px); }
 .switch input:focus-visible + i { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 520px) { .srow { flex-wrap: wrap; } .sctl input[type=range] { width: 110px; } }
+#profile-menu .menu-list { left: 0; right: auto; }
 @media print { .topbar, .filters, .actions, #toast { display: none; } .paper { break-inside: avoid; box-shadow: none; } }
-@media (hover: none) { .kbd-hint { display: none; } }
-
+@media (hover: none) { 
 /* review of suggested labels */
 .review-sets { margin: 18px 0; }
 .review-sets p { margin: 0 0 12px; color: var(--ink-2); font-size: 14px; }

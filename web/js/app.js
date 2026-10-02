@@ -425,7 +425,7 @@ function rateView(prof) {
     <header class="feed-head">
       <div>
         <h1>${esc(prof.name)}</h1>
-        <p class="interest">${desc ? esc(desc.slice(0, 220)) + (desc.length > 220 ? "…" : "") : esc(fieldNames(prof))} <button class="link" data-act="edit-profile">${icon("edit")}Edit</button></p>
+        <p class="interest">${desc ? esc(desc.slice(0, 220)) + (desc.length > 220 ? "…" : "") : esc(fieldNames(prof))}</p>
       </div>
     </header>
     <div class="rate-progress" role="status">
@@ -493,7 +493,7 @@ function feedView(prof) {
     <header class="feed-head">
       <div>
         <h1>${esc(prof.name)}</h1>
-        <p class="interest">${(prof.focus || prof.description) ? esc((prof.focus || prof.description).slice(0, 220)) + ((prof.focus || prof.description).length > 220 ? "…" : "") : esc(fieldNames(prof))} <button class="link" data-act="edit-profile">${icon("edit")}Edit</button></p>
+        <p class="interest">${(prof.focus || prof.description) ? esc((prof.focus || prof.description).slice(0, 220)) + ((prof.focus || prof.description).length > 220 ? "…" : "") : esc(fieldNames(prof))}</p>
         ${kws.length ? `<div class="kw">${kws.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
       </div>
       <div class="budget" title="Read papers take about ${MINUTES_PER_READ} minutes each">
@@ -514,15 +514,11 @@ function feedView(prof) {
           <div class="chips">${Object.entries(SIGNAL_FILTERS).map(([k, f]) => `<label class="chip-toggle small"><input type="checkbox" data-act="signal-filter" value="${k}" ${A.signalFilters.has(k) ? "checked" : ""}><span>${f.text}</span></label>`).join("")}</div>
           <h3>Fields</h3>
           <div class="chips"><label class="chip-toggle"><input type="checkbox" name="feed-fields-all" ${prof.fields.length ? "" : "checked"}><span>All fields</span></label>${fieldChips(prof.fields, "feed-fields", { noneMeansAll: false })}</div>
-          <h3>Papers</h3>
-          <label class="btn small ghost file">${icon("upload")}Import papers (JSON)<input type="file" accept=".json,application/json" data-act="import-papers" hidden></label>
-          <div class="export-row"><button class="btn small ghost" data-act="digest">${icon("download")}Digest (Markdown)</button></div>
-        </details>
+                  </details>
       </aside>
       <div class="list">
         <div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${A.tab === k}" class="tab ${k}" data-act="tab" data-tab="${k}">${t}<span>${counts[k].toLocaleString()}</span></button>`).join("")}
-          ${hiddenN ? `<button class="tab link ${A.tab === "HIDDEN" ? "on" : ""}" data-act="tab" data-tab="HIDDEN">Hidden ${hiddenN}</button>` : ""}
-          <button class="kbd-hint" data-act="help" title="Keyboard shortcuts">${icon("keyboard")}</button></div>
+          ${hiddenN ? `<button class="tab link ${A.tab === "HIDDEN" ? "on" : ""}" data-act="tab" data-tab="HIDDEN">Hidden ${hiddenN}</button>` : ""}</div>
         ${page.length ? page.map(r => card(r, s.get(r.paper.id) || {})).join("") : emptyTab(prof)}
         ${rows.length > A.shown ? `<button class="btn more" data-act="more">Show ${Math.min(PAGE, rows.length - A.shown)} more <span>${(rows.length - A.shown).toLocaleString()} left</span></button>`
           : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more" title="Fetches the past year's papers from your enabled sources (Settings → Sources). Only your keywords and fields are sent.">${icon("globe")}Load ${PAGE} more papers <span>fresh from the web</span></button>` : ""}
@@ -904,8 +900,8 @@ function accountDialog(message = "") {
     <h3>Starter labels <small>from this project’s labelled data</small></h3>
     <p class="hint">Add a ready-made profile with its labels. Your own labels are saved separately once you add them.</p>
     <ul class="seed-sets" id="seed-sets"><li class="hint">Loading…</li></ul>
-    <div class="dialog-actions"><div><a class="btn small" href="${esc(account.labelsUrl())}" download>${icon("download")}My labels (JSONL)</a></div>
-      <div><button type="button" class="btn ghost" data-act="close-dialog">Close</button><button type="button" class="btn danger ghost" data-act="sign-out">Sign out</button></div></div>
+    <div class="dialog-actions"><button type="button" class="btn danger ghost" data-act="sign-out">Sign out</button>
+      <button type="button" class="btn primary" data-act="close-dialog">Done</button></div>
   </div>`);
   account.seedSets().then(sets => {
     const ul = $("#seed-sets");
@@ -915,13 +911,15 @@ function accountDialog(message = "") {
   }).catch(e => { const ul = $("#seed-sets"); if (ul) ul.innerHTML = `<li class="hint">${esc(e.message)}</li>`; });
 }
 
-/** Merge the account's saved state with this browser's: the account wins, but profiles only this browser has are kept. */
+/** Adopt the account's saved state; a browser that was anonymous until now contributes its own profiles once. */
 function mergeAccountState(remote) {
   const owner = account.acct.user.username;
   // Data left in this browser by a different account must never flow into this one.
   if (A.state.owner && A.state.owner !== owner) A.state = { ...defaultState(), settings: A.state.settings };
   if (remote?.version === 1 && Object.keys(remote.profiles || {}).length) {
-    for (const [id, p] of Object.entries(A.state.profiles)) if (!(id in remote.profiles)) remote.profiles[id] = p;
+    // The account is the source of truth. Only an anonymous browser's own profiles are merged in once;
+    // after that this browser is just a cache, so a profile deleted elsewhere can't come back.
+    if (!A.state.owner) for (const [id, p] of Object.entries(A.state.profiles)) if (!(id in remote.profiles)) remote.profiles[id] = p;
     remote.active = remote.profiles[remote.active] ? remote.active : Object.keys(remote.profiles)[0];
     remote.settings = { semantic: true, labeler: "", ...(A.state.settings || {}), ...(remote.settings || {}) };
     A.state = remote;
@@ -984,7 +982,8 @@ function settingsDialog() {
     </section>
     <section class="sgroup"><h3>Data</h3>
       ${row("Backup", account.acct.user ? "Synced to your account" : "Saved in this browser", `<button type="button" class="btn small" data-act="backup">${icon("download")}Download</button><label class="btn small ghost file">${icon("upload")}Restore<input type="file" accept=".json,application/json" data-act="restore" hidden></label>`)}
-      ${row("Ranked list", "All papers as CSV", `<button type="button" class="btn small ghost" data-act="export-ranked">${icon("download")}Export</button>`)}
+      ${row("Export", "Ranked list or reading digest", `<button type="button" class="btn small ghost" data-act="export-ranked">${icon("download")}CSV</button><button type="button" class="btn small ghost" data-act="digest">${icon("download")}Digest</button>`)}
+      ${row("Import papers", "Your own collection, as JSON", `<label class="btn small ghost file">${icon("upload")}Import<input type="file" accept=".json,application/json" data-act="import-papers" hidden></label>`)}
     </section>
     <div class="dialog-actions"><button type="button" class="btn danger ghost" data-act="erase">Erase all data</button><button type="submit" class="btn primary">Done</button></div>
   </form>`);
@@ -1393,7 +1392,7 @@ document.addEventListener("click", async e => {
       return;
     case "settings": return settingsDialog();
     case "help": return helpDialog();
-    case "live-search": case "load-more": return loadMore();
+    case "load-more": return loadMore();
     case "digest": {
       const rows = rowsFor(prof, { ignoreTab: true }).rows;
       const reasons = Object.fromEntries(rows.filter(r => r.label === "READ").map(r => [r.paper.id, explain(r).reason]));
@@ -1498,6 +1497,7 @@ document.addEventListener("change", async e => {
     try {
       if (t.dataset.act === "restore") { $$("dialog[open]").forEach(d => d.close()); await restoreBackup(text); }
       else if (t.dataset.act === "import-papers") {
+        $$("dialog[open]").forEach(d => d.close());
         const papers = parseImport(text);
         toast(`Importing ${papers.length} papers…`);
         const added = await addVisitorPapers(papers, prof);
