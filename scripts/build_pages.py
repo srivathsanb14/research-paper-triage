@@ -100,7 +100,8 @@ def build(output: Path = OUTPUT, hf_space: bool = False) -> None:
 def _proposals(dest: Path, catalog_ids: set[str]) -> int:
     """Model-proposed labels for the Label tab's review mode (humans accept or correct each one)."""
     folder = ROOT / "data" / "labels" / "proposals"
-    meta = json.loads((folder / "profiles.json").read_text()) if (folder / "profiles.json").exists() else {"profiles": []}
+    profiles_file = folder.parent / "profiles.json"
+    meta = json.loads(profiles_file.read_text()) if profiles_file.exists() else {"profiles": []}
     sets = []
     for prof in meta["profiles"]:
         items = []

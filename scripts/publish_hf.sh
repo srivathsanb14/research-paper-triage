@@ -6,7 +6,7 @@
 #
 # Creates (or updates) four public repos:
 #   <user>/paper-triage                    static Space (the website)
-#   <user>/paper-triage-dataset            papers + manual + synthetic labels, with EDA
+#   <user>/paper-triage-dataset            papers, research profiles and labels, with EDA
 #   <user>/paper-triage-ranker             relevance ranker card, config and evaluation
 #   <user>/paper-triage-minilm-embeddings  how the off-the-shelf MiniLM model is used
 set -euo pipefail

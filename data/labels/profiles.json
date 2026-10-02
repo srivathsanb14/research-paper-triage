@@ -1,0 +1,140 @@
+{
+  "proposer": "Claude (LLM), from title and abstract only; ranker scores not shown",
+  "profiles": [
+    {
+      "slug": "rag-llm-evaluation",
+      "name": "RAG & LLM evaluation",
+      "description": "I build retrieval-augmented generation systems and study how to evaluate whether LLM answers are faithful to the retrieved evidence.",
+      "keywords": [
+        "retrieval augmented generation",
+        "large language models",
+        "evaluation",
+        "hallucination"
+      ],
+      "focus": "",
+      "avoid": [],
+      "fields": [
+        "ai",
+        "computing"
+      ],
+      "proposals": true
+    },
+    {
+      "slug": "climate-adaptation",
+      "name": "Climate adaptation",
+      "description": "Climate change adaptation in coastal cities: flood risk, urban resilience and how communities plan for sea-level rise.",
+      "keywords": [
+        "flood risk",
+        "climate adaptation",
+        "resilience"
+      ],
+      "focus": "",
+      "avoid": [],
+      "fields": [
+        "environment",
+        "society"
+      ],
+      "proposals": true
+    },
+    {
+      "slug": "cancer-immunotherapy",
+      "name": "Cancer immunotherapy",
+      "description": "Cancer immunotherapy, especially T-cell therapies and tumour immune evasion, and clinical evidence for new treatments.",
+      "keywords": [
+        "immunotherapy",
+        "tumor",
+        "T cells"
+      ],
+      "focus": "",
+      "avoid": [],
+      "fields": [
+        "life"
+      ],
+      "proposals": true
+    },
+    {
+      "slug": "materials-discovery",
+      "name": "Materials discovery",
+      "description": "I use machine learning and high-throughput computation to discover new functional materials, such as battery electrolytes, catalysts and perovskites, and I want to close the loop with automated experiments.",
+      "keywords": [
+        "materials discovery",
+        "machine learning interatomic potentials",
+        "high-throughput screening",
+        "crystal structure prediction",
+        "battery materials"
+      ],
+      "focus": "ML-guided discovery of battery and catalyst materials",
+      "avoid": [
+        "social media"
+      ],
+      "fields": [
+        "physical",
+        "computing",
+        "ai"
+      ]
+    },
+    {
+      "slug": "robotics",
+      "name": "Robotics",
+      "description": "I work on robot learning: manipulation, legged locomotion and sim-to-real transfer, and I care about policies that stay reliable outside the lab.",
+      "keywords": [
+        "robot manipulation",
+        "legged locomotion",
+        "sim-to-real transfer",
+        "reinforcement learning for control",
+        "motion planning"
+      ],
+      "focus": "robust sim-to-real policies for manipulation and locomotion",
+      "avoid": [
+        "medical imaging"
+      ],
+      "fields": [
+        "ai",
+        "computing"
+      ]
+    },
+    {
+      "slug": "ai-and-design",
+      "name": "AI and design",
+      "description": "I study how generative AI changes design practice: co-creative tools, interface and prototype generation, and how designers and models collaborate.",
+      "keywords": [
+        "generative design",
+        "human-AI co-creation",
+        "creative tools",
+        "interface generation",
+        "design process"
+      ],
+      "focus": "designer-model collaboration in creative tools",
+      "avoid": [
+        "bioinformatics"
+      ],
+      "fields": [
+        "ai",
+        "computing",
+        "humanities",
+        "society"
+      ]
+    },
+    {
+      "slug": "rag-research-demo",
+      "name": "RAG research (rule-based demo)",
+      "description": "I build retrieval-augmented generation (RAG) systems for question answering over scientific documents, and study how LLM agents use search tools and cite evidence.",
+      "keywords": [
+        "retrieval augmented generation",
+        "question answering",
+        "LLM agents",
+        "information retrieval",
+        "reranking"
+      ],
+      "focus": "evaluating retrieval quality and faithfulness in RAG pipelines",
+      "avoid": [
+        "robotics",
+        "medical imaging"
+      ],
+      "fields": [
+        "ai",
+        "computing"
+      ]
+    }
+  ]
+}

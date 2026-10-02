@@ -63,7 +63,7 @@ const A = {
   newIds: new Set(),
 };
 
-const defaultState = () => ({ version: 1, active: null, profiles: {}, settings: { semantic: true, labeler: "" } });
+const defaultState = () => ({ version: 1, active: null, profiles: {}, settings: { semantic: true } });
 const profile = () => A.state.profiles[A.state.active] || null;
 /** Tab, sort and signal filters are remembered per profile, so the feed looks the same when you come back. */
 const VIEW_DEFAULT = { tab: "READ", sort: "match", signals: [] };
@@ -279,7 +279,7 @@ const hasEnoughSignal = prof => ratingsCount(prof) + Object.keys(prof.labels).le
 function render() {
   if (!A.ready) return;
   const prof = profile();
-  // Labellers can start a review set straight from #/label, before having any profile.
+  // A review set can be started straight from #/label, before having any profile.
   const view = prof ? A.view : A.view === "label" && A.proposals?.sets.length ? "review-start" : "welcome";
   document.body.dataset.view = view;
   renderHeader(prof);
@@ -287,7 +287,7 @@ function render() {
   if (view === "welcome") main.innerHTML = welcomeView();
   else if (view === "review-start") main.innerHTML = `<section class="label-view"><header class="page-head"><h1>Label papers</h1>
       <p>Pick a set to review. The app creates a profile for it and walks you through each paper.</p></header>
-      ${labelerField()}${reviewPanel(null)}</section>`;
+      ${reviewPanel(null)}</section>`;
   else if (A.run?.error) main.innerHTML = `<section class="empty"><h2>Couldn’t rank papers</h2><p>${esc(A.run.error)}</p><button class="btn primary" data-act="edit-profile">Edit research interests</button></section>`;
   else if (!A.run) main.innerHTML = `<section class="empty"><div class="spinner"></div><p>Ranking papers…</p></section>`;
   else if (view === "saved") main.innerHTML = savedView(prof);
@@ -675,13 +675,9 @@ function reviewPanel(prof) {
   }).join("");
   return `<section class="review-sets card-surface">
     <h2>${icon("check")} Review suggested labels</h2>
-    <p>Each paper comes with a suggested label proposed by an AI model from the title and abstract (it never sees the ranker’s scores). Check every suggestion: <kbd>Enter</kbd> accepts, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> give your own answer. Both the suggestion and your answer are saved, so the dataset records these as <i>human-verified, model-proposed</i>.</p>
+    <p>Each paper comes with a suggested label proposed by an AI model from the title and abstract (it never sees the ranker’s scores). Check every suggestion: <kbd>Enter</kbd> accepts, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> give your own answer. Both the suggestion and your answer are saved, so the dataset records these as <i>reviewed</i> labels.</p>
     <ul>${rows}</ul>
   </section>`;
-}
-
-function labelerField() {
-  return `<div class="label-controls labeler-only"><label>Labeller (your initials) <input id="labeler" value="${esc(A.state.settings.labeler || "")}" placeholder="e.g. IM" maxlength="40"></label></div>`;
 }
 
 function labelView(prof) {
@@ -691,7 +687,6 @@ function labelView(prof) {
   const p = A.byId.get(queue[0]);
   const reviewing = A.labelStrategy === "review" && !!reviewSet(prof);
   const sug = p && reviewing ? suggestionFor(prof, p.id) : null;
-  const labeler = A.state.settings.labeler || "";
   return `<section class="label-view">
     <header class="page-head"><h1>Label papers</h1>
       <p>Hand labels are the ground truth for <a href="#/insights">Insights</a> and for the published dataset. The ranker’s prediction is hidden while you label, so it can’t sway you.</p></header>
@@ -705,7 +700,6 @@ function labelView(prof) {
           <option value="balanced" ${A.labelStrategy === "balanced" ? "selected" : ""}>Balanced across relevance</option>
           <option value="random" ${A.labelStrategy === "random" ? "selected" : ""}>Random</option>
           <option value="cutoffs" ${A.labelStrategy === "cutoffs" ? "selected" : ""}>Closest to the cutoffs</option></select></label>
-        <label>Labeller <input id="labeler" value="${esc(labeler)}" placeholder="Your initials" maxlength="40"></label>
       </div>
     </div>
     ${p ? `<article class="label-card" data-id="${esc(p.id)}">
@@ -723,7 +717,7 @@ function labelView(prof) {
     ${reviewing ? reviewPanel(prof) : ""}
     <section class="dataset card-surface">
       <h2>${icon("layers")} Your labels as a dataset</h2>
-      <p>Each row has the paper’s metadata, your label, who labelled it and when, and the research profile it was judged against. Merge files from teammates with <b>Import labels</b>.</p>
+      <p>One row per paper: the research profile, the paper’s id, your label, when you set it, and whether it was labelled from scratch or reviewed from a suggestion. Paper details stay in the catalog. Merge a teammate’s file with <b>Import labels</b>.</p>
       <div class="export-row">
         <button class="btn small" data-act="labels-export" data-fmt="csv" ${n ? "" : "disabled"}>${icon("download")}Labels CSV</button>
         <button class="btn small" data-act="labels-export" data-fmt="jsonl" ${n ? "" : "disabled"}>${icon("download")}Labels JSONL</button>
@@ -733,17 +727,11 @@ function labelView(prof) {
   </section>`;
 }
 
+/** One row per label, in the shape of data/labels/labels.jsonl: no paper details, those live in the catalog. */
 function labelRows(prof) {
-  return Object.entries(prof.labels).map(([id, l]) => {
-    const p = A.byId.get(id) || { id, title: "", authors: [], categories: [] };
-    return {
-      paper_id: id, title: p.title, abstract: p.abstract, authors: p.authors, venue: p.venue, published: p.published, year: p.year,
-      area: p.area, categories: p.categories, url: p.url, work_type: p.work_type, venue_type: p.venue_type, peer_reviewed: p._sig?.peer_reviewed,
-      signal_level: p._sig?.level, label: l.label, labeler: l.labeler || "", labeled_at: l.at,
-      label_source: l.proposed ? "human-verified" : "manual", proposed_label: l.proposed || "", proposal_set: l.proposal || "",
-      profile_name: prof.name, profile_description: prof.description, profile_keywords: prof.keywords, profile_focus: prof.focus,
-    };
-  });
+  return Object.entries(prof.labels).map(([id, l]) => ({
+    profile: slug(prof.name), paper_id: id, label: l.label, labeled_at: l.at, origin: l.proposed ? "reviewed" : "manual",
+  }));
 }
 
 // ----------------------------------------------------------------- insights
@@ -906,7 +894,7 @@ function accountDialog(message = "") {
   account.seedSets().then(sets => {
     const ul = $("#seed-sets");
     if (!ul) return;
-    ul.innerHTML = sets.map(x => `<li><div><b>${esc(x.name)}</b> <span class="pill ${x.kind === "human" ? "ok" : ""}">${x.kind === "human" ? "human-verified" : "simulated"}</span><br><small>${x.n} labels</small></div>
+    ul.innerHTML = sets.map(x => `<li><div><b>${esc(x.name)}</b> <span class="pill ${x.origin === "reviewed" ? "ok" : ""}">${x.origin === "reviewed" ? "reviewed by a person" : x.origin === "rule" ? "rule-based" : "mixed"}</span><br><small>${x.n} labels</small></div>
       <button type="button" class="btn small" data-act="import-seed" data-slug="${esc(x.slug)}">Add</button></li>`).join("") || `<li class="hint">No starter labels on this server.</li>`;
   }).catch(e => { const ul = $("#seed-sets"); if (ul) ul.innerHTML = `<li class="hint">${esc(e.message)}</li>`; });
 }
@@ -921,7 +909,7 @@ function mergeAccountState(remote) {
     // after that this browser is just a cache, so a profile deleted elsewhere can't come back.
     if (!A.state.owner) for (const [id, p] of Object.entries(A.state.profiles)) if (!(id in remote.profiles)) remote.profiles[id] = p;
     remote.active = remote.profiles[remote.active] ? remote.active : Object.keys(remote.profiles)[0];
-    remote.settings = { semantic: true, labeler: "", ...(A.state.settings || {}), ...(remote.settings || {}) };
+    remote.settings = { semantic: true, ...(A.state.settings || {}), ...(remote.settings || {}) };
     A.state = remote;
   }
   A.state.owner = owner;
@@ -944,7 +932,7 @@ async function importSeedSet(slug, button) {
     const taken = new Set(Object.values(A.state.profiles).map(p => p.name));
     let name = set.profile.name, i = 2;
     while (taken.has(name)) name = `${set.profile.name} (${i++})`;
-    const labels = Object.fromEntries(set.labels.filter(l => A.byId.has(l.paper_id)).map(l => [l.paper_id, { label: l.label, at: l.labeled_at || now(), labeler: l.labeler || "starter" }]));
+    const labels = Object.fromEntries(set.labels.filter(l => A.byId.has(l.paper_id)).map(l => [l.paper_id, { label: l.label, at: l.labeled_at || now() }]));
     const p = newProfile({ ...set.profile, name, labels, starter: [], seededFrom: slug });
     A.state.profiles[p.id] = p;
     A.state.active = p.id;
@@ -1165,7 +1153,7 @@ async function restoreBackup(text) {
     prof = newProfile({
       name: r.name, description: r.description || "", keywords: r.keywords || [], focus: r.focus || "", avoid: r.avoid || [], hours: r.hours_per_week || 3,
       seeds: obj.seeds || [], extra: obj.pool || [],
-      labels: Object.fromEntries(Object.entries(obj.labels || {}).map(([pid, l]) => [pid, { label: l, at: obj.label_times?.[pid] || now(), labeler: "imported" }])),
+      labels: Object.fromEntries(Object.entries(obj.labels || {}).map(([pid, l]) => [pid, { label: l, at: obj.label_times?.[pid] || now() }])),
       feedback: (obj.feedback || []).map(f => ({ pid: f.paper_id, action: f.action, value: f.value ?? null, at: f.created_at || now(), predicted: f.predicted_label ?? null, score: f.score ?? null })),
       cutoffs: obj.settings?.cutoffs || { ...DEFAULT_CUTOFFS },
     });
@@ -1207,7 +1195,7 @@ function sanitizeProfile(p) {
   const labels = {};
   for (const [pid, l] of Object.entries(p.labels && typeof p.labels === "object" ? p.labels : {})) {
     const label = typeof l === "string" ? l : l?.label;
-    if (LABELS.includes(label)) labels[pid] = { label, at: str(l?.at, 40) || now(), labeler: str(l?.labeler, 40),
+    if (LABELS.includes(label)) labels[pid] = { label, at: str(l?.at, 40) || now(),
       ...(LABELS.includes(l?.proposed) ? { proposed: l.proposed, proposal: str(l.proposal, 80) } : {}) };
   }
   p.labels = labels;
@@ -1223,9 +1211,9 @@ function importLabels(text, name) {
   if (name.endsWith(".csv")) {
     const lines = text.split(/\r?\n/).filter(Boolean);
     const head = lines.shift().split(",");
-    const iId = head.indexOf("paper_id"), iL = head.indexOf("label"), iB = head.indexOf("labeler"), iT = head.indexOf("labeled_at");
+    const iId = head.indexOf("paper_id"), iL = head.indexOf("label"), iT = head.indexOf("labeled_at");
     if (iId < 0 || iL < 0) throw new Error("The CSV needs paper_id and label columns.");
-    rows = lines.map(l => { const c = parseCsvLine(l); return { paper_id: c[iId], label: c[iL], labeler: c[iB], labeled_at: c[iT] }; });
+    rows = lines.map(l => { const c = parseCsvLine(l); return { paper_id: c[iId], label: c[iL], labeled_at: c[iT] }; });
   } else if (name.endsWith(".jsonl")) rows = text.split(/\r?\n/).filter(Boolean).map(l => JSON.parse(l));
   else {
     const obj = JSON.parse(text);
@@ -1233,7 +1221,7 @@ function importLabels(text, name) {
   }
   let n = 0, skipped = 0;
   for (const r of rows) {
-    if (LABELS.includes(r.label) && A.byId.has(r.paper_id)) { prof.labels[r.paper_id] = { label: r.label, at: r.labeled_at || now(), labeler: r.labeler || "imported" }; n++; }
+    if (LABELS.includes(r.label) && A.byId.has(r.paper_id)) { prof.labels[r.paper_id] = { label: r.label, at: r.labeled_at || now() }; n++; }
     else skipped++;
   }
   save();
@@ -1316,7 +1304,7 @@ function handLabel(v) {
     v = sug.proposed_label;
   }
   if (v) {
-    prof.labels[pid] = { label: v, at: now(), labeler: A.state.settings.labeler || "", ...(sug ? { proposed: sug.proposed_label, proposal: reviewSet(prof).slug } : {}) };
+    prof.labels[pid] = { label: v, at: now(), ...(sug ? { proposed: sug.proposed_label, proposal: reviewSet(prof).slug } : {}) };
     A.labelUndo.push(pid);
     save();
     scheduleRerank();
@@ -1426,7 +1414,6 @@ document.addEventListener("click", async e => {
       A.labelQueue = null;
       A.labelUndo = [];
       save();
-      if (!A.state.settings.labeler) toast("Add your initials as Labeller so the dataset knows who checked each label.", { ms: 6000 });
       if (switching) { A.run = null; render(); await rerank(); return setVisitBaseline(owner); }
       return render();
     }
@@ -1466,7 +1453,6 @@ document.addEventListener("change", async e => {
     save(); A.labelQueue = null; A.shown = PAGE; return render();
   }
   if (t.id === "label-strategy") { A.labelStrategy = t.value; return render(); }
-  if (t.id === "labeler") { A.state.settings.labeler = t.value.trim(); return save(); }
   if (t.form?.id === "settings-form" && t.type !== "file") {
     const f = t.form;
     if (t.name === "read" || t.name === "skim") {
@@ -1657,7 +1643,7 @@ async function boot() {
     A.proposals = proposals?.sets ? proposals : { sets: [] };
     void rules;
     A.state = state && state.version === 1 ? state : defaultState();
-    A.state.settings ||= { semantic: true, labeler: "" };
+    A.state.settings ||= { semantic: true };
     if (account.acct.user) await adoptServerStateAtBoot();
     A.visitor = visitor.map(fromRecord);
     A.catalog = catalog;

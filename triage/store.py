@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS labels (
     profile_id INTEGER NOT NULL,
     paper_id TEXT NOT NULL,
     label TEXT NOT NULL CHECK (label IN ('READ','SKIM','SKIP')),
-    labeler TEXT NOT NULL DEFAULT 'team',
     created_at TEXT NOT NULL,
     PRIMARY KEY (profile_id, paper_id)
 );
@@ -255,15 +254,13 @@ class Store:
             c.execute("DELETE FROM profile_papers WHERE profile_id=?", (profile_id,))
 
     # ------------------------------------------------------------------ labels
-    def set_label(
-        self, profile_id: int, paper_id: str, label: str, labeler: str = "team", created_at: str | None = None
-    ) -> None:
+    def set_label(self, profile_id: int, paper_id: str, label: str, created_at: str | None = None) -> None:
         if label not in config.LABELS:
             raise ValueError(f"label must be one of {config.LABELS}")
         with self._conn() as c:
             c.execute(
-                "INSERT OR REPLACE INTO labels(profile_id, paper_id, label, labeler, created_at) VALUES (?,?,?,?,?)",
-                (profile_id, paper_id, label, labeler, created_at or _now()),
+                "INSERT OR REPLACE INTO labels(profile_id, paper_id, label, created_at) VALUES (?,?,?,?)",
+                (profile_id, paper_id, label, created_at or _now()),
             )
 
     def remove_label(self, profile_id: int, paper_id: str) -> None:

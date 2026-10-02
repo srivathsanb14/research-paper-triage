@@ -13,7 +13,8 @@ import { MODEL, DTYPE } from "./embed_catalog.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CAT = path.join(ROOT, "data/catalog");
-export const PROFILES = JSON.parse(await readFile(path.join(ROOT, "data/labels/proposals/profiles.json"), "utf8")).profiles;
+// Only profiles flagged `proposals` get a review set; the others are labelled by rule or by hand.
+export const PROFILES = JSON.parse(await readFile(path.join(ROOT, "data/labels/profiles.json"), "utf8")).profiles.filter(p => p.proposals);
 const PER_PROFILE = 200;
 
 function rng(seed) { let s = seed; return () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); }

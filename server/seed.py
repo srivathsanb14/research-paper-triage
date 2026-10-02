@@ -1,74 +1,42 @@
-"""Load the repository's labelled data (data/labels/) into the database as starter label sets.
+"""Starter label sets: the shared label dataset (data/labels/) offered as ready-made profiles.
 
-Human-verified labels and rule-generated (synthetic) labels stay separate sets, so a user can
-tell which is which. Re-running replaces the sets; users' own labels are never touched.
+data/labels/profiles.json describes each research profile and data/labels/labels.jsonl holds one
+row per (profile, paper). Both are read from disk, not from the users database.
 """
 
 from __future__ import annotations
 
 import json
-import re
 from collections import defaultdict
+from functools import lru_cache
 
 from . import db
 
-LABELS = ("READ", "SKIM", "SKIP")
 LABEL_DIR = db.ROOT / "data" / "labels"
+ORIGINS = {"reviewed": "reviewed by a person", "rule": "rule-based"}
 
 
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "set"
+@lru_cache(maxsize=1)
+def load() -> dict[str, dict]:
+    """{slug: {"slug", "name", "origin", "profile": {...}, "labels": [{paper_id, label, labeled_at}]}}."""
+    profiles = {p["slug"]: p for p in json.loads((LABEL_DIR / "profiles.json").read_text(encoding="utf-8"))["profiles"]}
+    labels: dict[str, list[dict]] = defaultdict(list)
+    for line in (LABEL_DIR / "labels.jsonl").read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            r = json.loads(line)
+            labels[r["profile"]].append({"paper_id": r["paper_id"], "label": r["label"], "labeled_at": r["labeled_at"], "origin": r["origin"]})
+    out = {}
+    for slug, rows in labels.items():
+        p = profiles[slug]
+        origins = {r["origin"] for r in rows}
+        out[slug] = {
+            "slug": slug, "name": p["name"], "origin": "reviewed" if origins == {"reviewed"} else "rule" if origins == {"rule"} else "mixed",
+            "profile": {k: p.get(k, "" if k in ("description", "focus") else []) for k in ("name", "description", "keywords", "focus", "avoid", "fields")},
+            "labels": rows,
+        }
+    return out
 
 
-def read_rows():
-    for kind, folder in (("human", "manual"), ("synthetic", "synthetic")):
-        for path in sorted((LABEL_DIR / folder).glob("*.jsonl")):
-            for line in path.read_text(encoding="utf-8").splitlines():
-                if not line.strip():
-                    continue
-                row = json.loads(line)
-                if row.get("label") in LABELS and row.get("paper_id"):
-                    yield kind, row
-
-
-def profile_defaults() -> dict[str, dict]:
-    path = LABEL_DIR / "proposals" / "profiles.json"
-    if not path.exists():
-        return {}
-    return {p["name"]: p for p in json.loads(path.read_text(encoding="utf-8")).get("profiles", [])}
-
-
-def load() -> list[dict]:
-    """Rebuild seed_sets / seed_labels. Returns the sets created."""
-    defaults = profile_defaults()
-    sets: dict[str, dict] = {}
-    labels: dict[str, dict[str, tuple]] = defaultdict(dict)  # latest label per paper wins
-    for kind, row in read_rows():
-        name = row.get("profile_name") or "Imported labels"
-        slug = f"{kind}-{slugify(name)}"
-        base = defaults.get(name, {})
-        sets.setdefault(slug, {
-            "slug": slug, "kind": kind,
-            "name": name,
-            "profile": {
-                "name": name,
-                "description": row.get("profile_description") or base.get("description", ""),
-                "keywords": row.get("profile_keywords") or base.get("keywords", []),
-                "focus": row.get("profile_focus") or base.get("focus", ""),
-                "avoid": base.get("avoid", []),
-                "fields": base.get("fields", []),
-            },
-        })
-        stamp = row.get("labeled_at", "")
-        prev = labels[slug].get(row["paper_id"])
-        if prev is None or stamp >= prev[3]:
-            labels[slug][row["paper_id"]] = (row["label"], row.get("labeler", ""), stamp, stamp)
-    with db.session() as conn:
-        conn.execute("DELETE FROM seed_labels")
-        conn.execute("DELETE FROM seed_sets")
-        for slug, s in sets.items():
-            conn.execute("INSERT INTO seed_sets VALUES (?,?,?,?,?)",
-                         (slug, s["name"], s["kind"], db.dumps(s["profile"]), len(labels[slug])))
-            conn.executemany("INSERT INTO seed_labels VALUES (?,?,?,?,?)",
-                             [(slug, pid, lab, who, at) for pid, (lab, who, at, _) in labels[slug].items()])
-    return list(sets.values())
+def summaries() -> list[dict]:
+    return sorted(({"slug": s["slug"], "name": s["name"], "origin": s["origin"], "n": len(s["labels"])} for s in load().values()),
+                  key=lambda s: (s["origin"] != "reviewed", s["name"]))

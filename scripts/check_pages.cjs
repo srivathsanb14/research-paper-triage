@@ -155,8 +155,6 @@ async function main() {
 
     // Hand labelling, then insights.
     await page.locator("#nav").getByRole("link", { name: /^Label/ }).click();
-    await page.locator("#labeler").fill("ci");
-    await page.locator("#labeler").press("Tab");
     for (let i = 0; i < 24; i++) {
       const title = await page.locator(".label-card h2").innerText();
       const good = /retriev|RAG|language model|LLM|hallucinat/i.test(title);
@@ -170,7 +168,7 @@ async function main() {
     await page.getByRole("button", { name: "Labels CSV" }).click();
     const rows = (await fs.readFile(await (await csv).path(), "utf8")).trim().split("\n");
     assert.equal(rows.length, 24);
-    assert.match(rows[0], /^paper_id,title,abstract/);
+    assert.equal(rows[0], "profile,paper_id,label,labeled_at,origin");
     step("keyboard labelling with undo; labels export as a dataset CSV");
 
     await page.locator("#nav").getByRole("link", { name: /^Insights/ }).click();
@@ -235,8 +233,8 @@ async function main() {
       const jsonl = page.waitForEvent("download");
       await page.getByRole("button", { name: "Labels JSONL" }).click();
       const rows = (await fs.readFile(await (await jsonl).path(), "utf8")).trim().split("\n").map(l => JSON.parse(l));
-      assert.ok(rows.every(r => r.label_source === "human-verified" && r.proposed_label));
-      step("review mode records suggestion and human answer; exports as human-verified");
+      assert.ok(rows.every(r => r.origin === "reviewed" && r.profile && !("labeler" in r)));
+      step("review mode records suggestion and human answer; exports as reviewed");
       await page.locator("#nav").getByRole("link", { name: /^For you/ }).click();
       await page.locator("article.paper").first().waitFor();
     }

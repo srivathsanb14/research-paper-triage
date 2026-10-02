@@ -54,7 +54,7 @@ def test_json_only_for_writes(client):
 def test_state_roundtrip_and_label_table(client):
     client.post("/api/register", json={"username": "ada", "password": "correct horse"})
     assert client.get("/api/state").json() == {"state": None, "updated": None}
-    labels = {"doi:10.1/a": {"label": "READ", "at": "2026-10-01T00:00:00Z", "labeler": "AL"}, "doi:10.1/b": {"label": "SKIP"}, "doi:10.1/c": {"label": "bogus"}}
+    labels = {"doi:10.1/a": {"label": "READ", "at": "2026-10-01T00:00:00Z"}, "doi:10.1/b": {"label": "SKIP"}, "doi:10.1/c": {"label": "bogus"}}
     first = client.put("/api/state", json={"state": state_with(labels)}).json()
     assert first["labels"] == 2  # the invalid label is ignored
     got = client.get("/api/state").json()
@@ -78,17 +78,27 @@ def test_stale_write_is_rejected_and_users_are_isolated(client):
     assert client.get("/api/labels").text == ""
 
 
-def test_seed_sets_come_from_data_labels(client):
+def test_seed_sets_come_from_the_label_dataset(client):
     client.post("/api/register", json={"username": "ada", "password": "correct horse"})
     sets = {s["slug"]: s for s in client.get("/api/seed-sets").json()["sets"]}
-    assert "human-rag-llm-evaluation" in sets and sets["human-rag-llm-evaluation"]["kind"] == "human"
-    assert any(s["kind"] == "synthetic" for s in sets.values())
-    full = client.get("/api/seed-sets/human-rag-llm-evaluation").json()
-    assert full["profile"]["keywords"] and len(full["labels"]) == sets["human-rag-llm-evaluation"]["n"]
+    assert sets["rag-llm-evaluation"]["origin"] == "reviewed" and sets["robotics"]["origin"] == "rule"
+    full = client.get("/api/seed-sets/rag-llm-evaluation").json()
+    assert full["profile"]["keywords"] and len(full["labels"]) == sets["rag-llm-evaluation"]["n"]
     assert {x["label"] for x in full["labels"]} <= {"READ", "SKIM", "SKIP"}
+    assert all("labeler" not in x for x in full["labels"])
     assert client.get("/api/seed-sets/nope").status_code == 404
     client.post("/api/logout", json={})
     assert client.get("/api/seed-sets").status_code == 401
+
+
+def test_users_database_holds_only_user_data(tmp_path, monkeypatch):
+    import sqlite3
+
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "users.db")
+    server_app.create_app()
+    tables = {r[0] for r in sqlite3.connect(db.DB_PATH).execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    assert tables == {"users", "sessions", "user_state", "labels"}
+    assert "labeler" not in {r[1] for r in sqlite3.connect(db.DB_PATH).execute("PRAGMA table_info(labels)")}
 
 
 def test_demo_users_have_profiles_and_labels(tmp_path, monkeypatch):

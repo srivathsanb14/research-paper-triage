@@ -12,7 +12,7 @@ Runs in the browser; no API key. **Load more** pulls fresh papers live from Open
 | # | Requirement | How it is met |
 |---|---|---|
 | 1 | **Functional and useful** | Triage for a real reading backlog. Measured with 5-fold cross-validation on our own labels (NDCG@10, average precision, papers to screen for 80% of the good ones, time saved) against profile-only, semantic-only, keyword-only and random baselines: [report](docs/evaluation/report.md), the Insights page, and a learning curve of quality vs. number of labels. |
-| 2 | **≥ 500 manual samples** | 500 labels in [`data/labels/manual/`](data/labels/manual) over a 1,859-paper catalog (OpenAlex, CC0). Rule-generated labels, including the demo accounts' mock data, live apart in [`data/labels/synthetic/`](data/labels/synthetic) and are never counted. Card and EDA: [docs/EDA.md](docs/EDA.md). |
+| 2 | **≥ 500 manual samples** | 1,484 labels over a 1,859-paper catalog of real papers (OpenAlex, CC0) in one table, [`data/labels/labels.jsonl`](data/labels/labels.jsonl): 500 reviewed by a person plus 984 rule-based labels for the demo accounts. Each row has an `origin` (`manual`, `reviewed`, `rule`), so any subset is easy to select. Card and EDA: [docs/EDA.md](docs/EDA.md). |
 | 3 | **≥ 2 model types** | **Off-the-shelf:** all-MiniLM-L6-v2 embeddings ([card](hf/model-embeddings/README.md)). **Trained from scratch:** a per-user ridge ranker over seven readable features, blended with a hand-set profile score by a cross-validated weight ([card](hf/model-ranker/README.md)). |
 | 4 | **Public GUI on Hugging Face Spaces** | Static Space built by `scripts/build_pages.py --hf-space`, published with `scripts/publish_hf.sh`. |
 
@@ -56,12 +56,20 @@ python -m server.demo_users       # demo accounts sri, ishaan, chris (password "
 
 Tests: `pytest -q` · `npm run test:js` · `npm run test:pages` (Playwright end to end; `npx playwright install chromium` first).
 
-## Data workflow
+## Data
 
-1. Label papers in **Label** (predictions hidden) and export **Labels JSONL** into `data/labels/manual/`.
-2. `python scripts/build_dataset.py` validates and merges labels, computes agreement, and writes `_dataset/` and `docs/EDA.md`.
-3. `node scripts/evaluate_web.mjs data/labels/manual/*.jsonl` writes `docs/evaluation/report.md`.
-4. Synthetic labels: `scripts/simulate_labels.py`, `scripts/simulate_users.py`.
+```
+data/catalog/       PAPERS: 1,859 papers, signals and MiniLM vectors (read-only snapshot)
+data/labels/        LABELS: profiles.json (research profiles) + labels.jsonl (profile, paper_id, label, labeled_at, origin)
+data/users.db       USERS: accounts, sessions, each user's saved state and labels (SQLite; nothing about papers)
+```
+
+Papers, labels and users are separate: labels point at papers by id, and a user's labels are their own copy in `users.db`.
+
+1. Label papers in **Label** (predictions hidden) and export **Labels JSONL**; its rows have the same shape as `data/labels/labels.jsonl`, so append them (origin `manual` or `reviewed`).
+2. `python scripts/build_dataset.py` validates labels against the catalog and writes `_dataset/` and `docs/EDA.md`.
+3. `node scripts/evaluate_web.mjs` writes `docs/evaluation/report.md` (5-fold cross-validation per profile).
+4. `python scripts/simulate_labels.py` regenerates the rule-based labels and leaves the others untouched.
 
 ## Publish
 
@@ -76,5 +84,5 @@ Tests: `pytest -q` · `npm run test:js` · `npm run test:pages` (Playwright end 
 
 ## AI assistance
 
-Large parts of the code, tests and docs were written with Claude Code under the team's direction. Claude also proposed labels for the review sets in `data/labels/proposals/`; people reviewed them before they became dataset rows (provenance is stored per row).
+Large parts of the code, tests and docs were written with Claude Code under the team's direction. Claude also proposed labels for the review sets in `data/labels/proposals/`; people reviewed them before they became dataset rows (`origin: reviewed`).
 <!-- Team: add your own reflection: what you asked the tools for, what they got wrong, what you rewrote. -->

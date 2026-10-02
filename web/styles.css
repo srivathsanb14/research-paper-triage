@@ -465,8 +465,6 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
 .suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; color: var(--ink-2); }
 .suggest > span:nth-child(2) { flex: 1; min-width: 180px; }
 .suggest kbd { background: transparent; color: inherit; border-color: currentColor; opacity: .8; }
-.labeler-only { margin-bottom: 16px; }
-.labeler-only input { width: 220px; }
 .chips.one-line { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
 .chips.one-line { gap: 5px; }
 .chips.one-line .chip-toggle span { padding: 5px 9px; font-size: 12px; white-space: nowrap; }

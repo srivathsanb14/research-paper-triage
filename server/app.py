@@ -64,6 +64,7 @@ class StateBody(BaseModel):
 
 def create_app() -> FastAPI:
     db.init()
+    seed.load.cache_clear()
     seed.load()
     app = FastAPI(title="Paper Triage accounts", docs_url=None, redoc_url=None)
 
@@ -176,7 +177,7 @@ def create_app() -> FastAPI:
     @app.get("/api/labels")
     def export_labels(user: dict = Depends(require_user)):
         with db.session() as conn:
-            rows = conn.execute("SELECT profile_id, profile_name, paper_id, label, labeler, labeled_at FROM labels "
+            rows = conn.execute("SELECT profile_id, profile_name, paper_id, label, labeled_at FROM labels "
                                 "WHERE user_id = ? ORDER BY profile_name, labeled_at", (user["id"],)).fetchall()
         text = "".join(db.dumps(dict(r)) + "\n" for r in rows)
         return PlainTextResponse(text, media_type="application/jsonl",
@@ -184,19 +185,14 @@ def create_app() -> FastAPI:
 
     @app.get("/api/seed-sets")
     def seed_sets(user: dict = Depends(require_user)):
-        with db.session() as conn:
-            rows = conn.execute("SELECT slug, name, kind, n FROM seed_sets ORDER BY kind, name").fetchall()
-        return {"sets": [dict(r) for r in rows]}
+        return {"sets": seed.summaries()}
 
     @app.get("/api/seed-sets/{slug}")
     def seed_set(slug: str, user: dict = Depends(require_user)):
-        with db.session() as conn:
-            head = conn.execute("SELECT slug, name, kind, profile FROM seed_sets WHERE slug = ?", (slug,)).fetchone()
-            if not head:
-                raise HTTPException(404, "No such label set.")
-            rows = conn.execute("SELECT paper_id, label, labeler, labeled_at FROM seed_labels WHERE slug = ?", (slug,)).fetchall()
-        return {"slug": head["slug"], "name": head["name"], "kind": head["kind"], "profile": json.loads(head["profile"]),
-                "labels": [dict(r) for r in rows]}
+        found = seed.load().get(slug)
+        if not found:
+            raise HTTPException(404, "No such label set.")
+        return found
 
     if SITE.is_dir():  # the built static site, so one process serves app and API
         app.mount("/", StaticFiles(directory=SITE, html=True), name="site")

@@ -1,4 +1,7 @@
-"""SQLite storage: users, sessions, per-user app state, per-user labels, seed label sets."""
+"""SQLite storage for users only: accounts, sessions, each user's app state and their labels.
+
+Papers live in data/catalog/ and the shared label dataset in data/labels/; neither is stored here.
+"""
 
 from __future__ import annotations
 
@@ -35,24 +38,8 @@ CREATE TABLE IF NOT EXISTS labels (
     profile_name TEXT NOT NULL,
     paper_id TEXT NOT NULL,
     label TEXT NOT NULL CHECK (label IN ('READ','SKIM','SKIP')),
-    labeler TEXT NOT NULL DEFAULT '',
     labeled_at TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (user_id, profile_id, paper_id)
-);
-CREATE TABLE IF NOT EXISTS seed_sets (
-    slug TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    profile TEXT NOT NULL,
-    n INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS seed_labels (
-    slug TEXT NOT NULL REFERENCES seed_sets(slug) ON DELETE CASCADE,
-    paper_id TEXT NOT NULL,
-    label TEXT NOT NULL,
-    labeler TEXT NOT NULL DEFAULT '',
-    labeled_at TEXT NOT NULL DEFAULT '',
-    PRIMARY KEY (slug, paper_id)
 );
 """
 
@@ -79,6 +66,11 @@ def session():
 def init() -> None:
     with session() as conn:
         conn.executescript(SCHEMA)
+        # Older databases also held label sets (now files in data/labels/) and a labeller column.
+        conn.execute("DROP TABLE IF EXISTS seed_labels")
+        conn.execute("DROP TABLE IF EXISTS seed_sets")
+        if "labeler" in {r["name"] for r in conn.execute("PRAGMA table_info(labels)")}:
+            conn.execute("ALTER TABLE labels DROP COLUMN labeler")
 
 
 def sync_labels(conn: sqlite3.Connection, user_id: int, state: dict) -> int:
@@ -92,10 +84,9 @@ def sync_labels(conn: sqlite3.Connection, user_id: int, state: dict) -> int:
             if label not in ("READ", "SKIM", "SKIP"):
                 continue
             meta = lab if isinstance(lab, dict) else {}
-            rows.append((user_id, str(pid), str(prof.get("name", ""))[:200], str(paper_id), label,
-                         str(meta.get("labeler", ""))[:80], str(meta.get("at", ""))[:40]))
+            rows.append((user_id, str(pid), str(prof.get("name", ""))[:200], str(paper_id), label, str(meta.get("at", ""))[:40]))
     conn.execute("DELETE FROM labels WHERE user_id = ?", (user_id,))
-    conn.executemany("INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?,?)", rows)
+    conn.executemany("INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?)", rows)
     return len(rows)
 
 

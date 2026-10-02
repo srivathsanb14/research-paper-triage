@@ -1,630 +1,298 @@
 [
   {
-    "source": "manual",
-    "profile": "RAG & LLM evaluation",
+    "origin": "rule",
+    "profile": "AI and design",
     "space": "MiniLM",
     "good": "read",
-    "n": 200,
+    "n": 160,
     "counts": {
-      "READ": 6,
-      "SKIM": 33,
-      "SKIP": 161
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0,
       "scores": {
-        "0": 1,
-        "0.15": 1,
-        "0.3": 1,
-        "0.5": 0.9761904761904762,
-        "0.7": 0.9761904761904762
+        "0": 0.4861415774958824,
+        "0.15": 0.47898267818268886,
+        "0.3": 0.4817696186478111,
+        "0.5": 0.48046076578470553,
+        "0.7": 0.48149815075992897
       }
     },
-    "randomAp": 0.03,
+    "randomAp": 0.28125,
     "systems": [
       {
         "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9740816258588203,
-        "ap": 1,
-        "spearman": 0.638565224481055,
-        "hit10": 1,
-        "to80": 5
+        "ndcg10": 0.5952687911695045,
+        "ap": 0.4861415774958824,
+        "spearman": 0.46046540516552825,
+        "hit10": 0.5,
+        "to80": 85
       },
       {
         "name": "Profile only (no learning)",
-        "ndcg10": 0.9740816258588203,
-        "ap": 1,
-        "spearman": 0.638565224481055,
-        "hit10": 1,
-        "to80": 5
+        "ndcg10": 0.5952687911695045,
+        "ap": 0.4861415774958824,
+        "spearman": 0.46046540516552825,
+        "hit10": 0.5,
+        "to80": 85
       },
       {
         "name": "Learned from feedback only",
-        "ndcg10": 0.9871983103990516,
-        "ap": 0.9305555555555555,
-        "spearman": 0.6113762158602795,
-        "hit10": 1,
-        "to80": 6
+        "ndcg10": 0.6731275204121299,
+        "ap": 0.5144578649156384,
+        "spearman": 0.4797612413010333,
+        "hit10": 0.5,
+        "to80": 82
       },
       {
         "name": "Semantic similarity only",
-        "ndcg10": 0.9290298957529317,
-        "ap": 0.9333333333333332,
-        "spearman": 0.5756389035340033,
-        "hit10": 1,
-        "to80": 5
+        "ndcg10": 0.5489853181947084,
+        "ap": 0.42054197056743986,
+        "spearman": 0.30915389993286274,
+        "hit10": 0.4,
+        "to80": 115
       },
       {
         "name": "Keyword matches only",
-        "ndcg10": 0.905865071651856,
-        "ap": 0.7827380952380952,
-        "spearman": 0.5647274406887666,
-        "hit10": 0.8333333333333334,
-        "to80": 8
+        "ndcg10": 0.5898829339163991,
+        "ap": 0.428011106369909,
+        "spearman": 0.3107399339264719,
+        "hit10": 0.4,
+        "to80": 115
       }
     ],
-    "random80": 160,
+    "random80": 128,
     "current": {
-      "macroF1": 0.7733766233766234,
-      "accuracy": 0.87,
-      "severe": 0
+      "macroF1": 0.23422431865828094,
+      "accuracy": 0.4125,
+      "severe": 38
     }
   },
   {
-    "source": "manual",
-    "profile": "RAG & LLM evaluation",
+    "origin": "rule",
+    "profile": "AI and design",
     "space": "MiniLM",
     "good": "read_skim",
-    "n": 200,
+    "n": 160,
     "counts": {
-      "READ": 6,
-      "SKIM": 33,
-      "SKIP": 161
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0,
       "scores": {
-        "0": 1,
-        "0.15": 1,
-        "0.3": 1,
-        "0.5": 0.9761904761904762,
-        "0.7": 0.9761904761904762
+        "0": 0.4861415774958824,
+        "0.15": 0.47898267818268886,
+        "0.3": 0.4817696186478111,
+        "0.5": 0.48046076578470553,
+        "0.7": 0.48149815075992897
       }
     },
-    "randomAp": 0.195,
+    "randomAp": 0.59375,
     "systems": [
       {
         "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9740816258588203,
-        "ap": 0.7847411920313103,
-        "spearman": 0.638565224481055,
-        "hit10": 0.9,
-        "to80": 48
+        "ndcg10": 0.5952687911695045,
+        "ap": 0.7905111907393948,
+        "spearman": 0.46046540516552825,
+        "hit10": 0.8,
+        "to80": 106
       },
       {
         "name": "Profile only (no learning)",
-        "ndcg10": 0.9740816258588203,
-        "ap": 0.7847411920313103,
-        "spearman": 0.638565224481055,
-        "hit10": 0.9,
-        "to80": 48
+        "ndcg10": 0.5952687911695045,
+        "ap": 0.7905111907393948,
+        "spearman": 0.46046540516552825,
+        "hit10": 0.8,
+        "to80": 106
       },
       {
         "name": "Learned from feedback only",
-        "ndcg10": 0.9871983103990516,
-        "ap": 0.8003379713726343,
-        "spearman": 0.6113762158602795,
-        "hit10": 1,
-        "to80": 53
+        "ndcg10": 0.6731275204121299,
+        "ap": 0.8083222552623506,
+        "spearman": 0.4797612413010333,
+        "hit10": 0.8,
+        "to80": 103
       },
       {
         "name": "Semantic similarity only",
-        "ndcg10": 0.9290298957529317,
-        "ap": 0.6759056989477015,
-        "spearman": 0.5756389035340033,
+        "ndcg10": 0.5489853181947084,
+        "ap": 0.7579703226355426,
+        "spearman": 0.30915389993286274,
         "hit10": 0.8,
-        "to80": 65
+        "to80": 118
       },
       {
         "name": "Keyword matches only",
-        "ndcg10": 0.905865071651856,
-        "ap": 0.7544305661256605,
-        "spearman": 0.5647274406887666,
-        "hit10": 1,
-        "to80": 70
+        "ndcg10": 0.5898829339163991,
+        "ap": 0.7674440068460691,
+        "spearman": 0.3107399339264719,
+        "hit10": 0.8,
+        "to80": 118
       }
     ],
-    "random80": 160,
+    "random80": 128,
     "current": {
-      "macroF1": 0.7733766233766234,
-      "accuracy": 0.87,
-      "severe": 0
+      "macroF1": 0.23422431865828094,
+      "accuracy": 0.4125,
+      "severe": 38
     }
   },
   {
-    "source": "manual",
-    "profile": "RAG & LLM evaluation",
+    "origin": "rule",
+    "profile": "AI and design",
     "space": "TF-IDF",
     "good": "read",
-    "n": 200,
+    "n": 160,
     "counts": {
-      "READ": 6,
-      "SKIM": 33,
-      "SKIP": 161
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
-      "weight": 0,
+      "weight": 0.5,
       "scores": {
-        "0": 0.83015873015873,
-        "0.15": 0.83015873015873,
-        "0.3": 0.83015873015873,
-        "0.5": 0.83015873015873,
-        "0.7": 0.83015873015873
+        "0": 0.49620081004341743,
+        "0.15": 0.5358617158403296,
+        "0.3": 0.5581025060356221,
+        "0.5": 0.5768631440896744,
+        "0.7": 0.5753494070604374
       }
     },
-    "randomAp": 0.03,
+    "randomAp": 0.28125,
     "systems": [
       {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.83015873015873,
-        "spearman": 0.6160117390633986,
-        "hit10": 1,
-        "to80": 7
-      },
-      {
-        "name": "Profile only (no learning)",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.83015873015873,
-        "spearman": 0.6160117390633986,
-        "hit10": 1,
-        "to80": 7
-      },
-      {
-        "name": "Learned from feedback only",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.83015873015873,
-        "spearman": 0.5835217056680806,
-        "hit10": 1,
-        "to80": 7
-      },
-      {
-        "name": "Semantic similarity only",
-        "ndcg10": 0.910728280863385,
-        "ap": 0.7999999999999999,
-        "spearman": 0.604845678552356,
-        "hit10": 0.8333333333333334,
-        "to80": 10
-      },
-      {
-        "name": "Keyword matches only",
-        "ndcg10": 0.841355635819092,
-        "ap": 0.7257575757575757,
-        "spearman": 0.5710453952127749,
-        "hit10": 0.6666666666666666,
-        "to80": 11
-      }
-    ],
-    "random80": 160,
-    "current": {
-      "macroF1": 0.6101897018970189,
-      "accuracy": 0.845,
-      "severe": 0
-    }
-  },
-  {
-    "source": "manual",
-    "profile": "RAG & LLM evaluation",
-    "space": "TF-IDF",
-    "good": "read_skim",
-    "n": 200,
-    "counts": {
-      "READ": 6,
-      "SKIM": 33,
-      "SKIP": 161
-    },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
-    "ok": true,
-    "message": "",
-    "blend": {
-      "weight": 0,
-      "scores": {
-        "0": 0.83015873015873,
-        "0.15": 0.83015873015873,
-        "0.3": 0.83015873015873,
-        "0.5": 0.83015873015873,
-        "0.7": 0.83015873015873
-      }
-    },
-    "randomAp": 0.195,
-    "systems": [
-      {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.822506384820991,
-        "spearman": 0.6160117390633986,
-        "hit10": 1,
-        "to80": 51
-      },
-      {
-        "name": "Profile only (no learning)",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.822506384820991,
-        "spearman": 0.6160117390633986,
-        "hit10": 1,
-        "to80": 51
-      },
-      {
-        "name": "Learned from feedback only",
-        "ndcg10": 0.9650079626826101,
-        "ap": 0.7904865923994482,
-        "spearman": 0.5835217056680806,
-        "hit10": 1,
-        "to80": 55
-      },
-      {
-        "name": "Semantic similarity only",
-        "ndcg10": 0.910728280863385,
-        "ap": 0.7665412224165556,
-        "spearman": 0.604845678552356,
-        "hit10": 1,
-        "to80": 53
-      },
-      {
-        "name": "Keyword matches only",
-        "ndcg10": 0.841355635819092,
-        "ap": 0.7451866250407194,
-        "spearman": 0.5710453952127749,
-        "hit10": 1,
-        "to80": 66
-      }
-    ],
-    "random80": 160,
-    "current": {
-      "macroF1": 0.6101897018970189,
-      "accuracy": 0.845,
-      "severe": 0
-    }
-  },
-  {
-    "source": "manual",
-    "profile": "Climate adaptation",
-    "space": "MiniLM",
-    "good": "read",
-    "n": 200,
-    "counts": {
-      "READ": 3,
-      "SKIM": 24,
-      "SKIP": 173
-    },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
-    "ok": true,
-    "message": "",
-    "blend": {
-      "weight": 0,
-      "scores": {
-        "0": 0.8333333333333334,
-        "0.15": 0.8333333333333334,
-        "0.3": 0.8333333333333334,
-        "0.5": 0.7916666666666666,
-        "0.7": 0.7916666666666666
-      }
-    },
-    "randomAp": 0.015,
-    "systems": [
-      {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.8952975467736474,
-        "ap": 0.8333333333333334,
-        "spearman": 0.504577281018014,
-        "hit10": 1,
-        "to80": 6
-      },
-      {
-        "name": "Profile only (no learning)",
-        "ndcg10": 0.8952975467736474,
-        "ap": 0.8333333333333334,
-        "spearman": 0.504577281018014,
-        "hit10": 1,
-        "to80": 6
-      },
-      {
-        "name": "Learned from feedback only",
-        "ndcg10": 0.7834138779665583,
-        "ap": 0.6388888888888888,
-        "spearman": 0.47392544613509097,
-        "hit10": 0.6666666666666666,
-        "to80": 12
-      },
-      {
-        "name": "Semantic similarity only",
-        "ndcg10": 0.8811354301883858,
-        "ap": 0.6666666666666666,
-        "spearman": 0.538689494440617,
-        "hit10": 1,
-        "to80": 9
-      },
-      {
-        "name": "Keyword matches only",
-        "ndcg10": 0.7641914184695022,
-        "ap": 0.7066666666666667,
-        "spearman": 0.5218320421595725,
-        "hit10": 0.6666666666666666,
-        "to80": 25
-      }
-    ],
-    "random80": 160,
-    "current": {
-      "macroF1": 0.602075702075702,
-      "accuracy": 0.88,
-      "severe": 0
-    }
-  },
-  {
-    "source": "manual",
-    "profile": "Climate adaptation",
-    "space": "MiniLM",
-    "good": "read_skim",
-    "n": 200,
-    "counts": {
-      "READ": 3,
-      "SKIM": 24,
-      "SKIP": 173
-    },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
-    "ok": true,
-    "message": "",
-    "blend": {
-      "weight": 0,
-      "scores": {
-        "0": 0.8333333333333334,
-        "0.15": 0.8333333333333334,
-        "0.3": 0.8333333333333334,
-        "0.5": 0.7916666666666666,
-        "0.7": 0.7916666666666666
-      }
-    },
-    "randomAp": 0.135,
-    "systems": [
-      {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.8952975467736474,
-        "ap": 0.6227548526632383,
-        "spearman": 0.504577281018014,
-        "hit10": 0.8,
-        "to80": 58
-      },
-      {
-        "name": "Profile only (no learning)",
-        "ndcg10": 0.8952975467736474,
-        "ap": 0.6227548526632383,
-        "spearman": 0.504577281018014,
-        "hit10": 0.8,
-        "to80": 58
-      },
-      {
-        "name": "Learned from feedback only",
-        "ndcg10": 0.7834138779665583,
-        "ap": 0.6213962019143447,
-        "spearman": 0.47392544613509097,
-        "hit10": 0.8,
-        "to80": 59
-      },
-      {
-        "name": "Semantic similarity only",
-        "ndcg10": 0.8811354301883858,
-        "ap": 0.6428550620133675,
-        "spearman": 0.538689494440617,
-        "hit10": 0.9,
-        "to80": 54
-      },
-      {
-        "name": "Keyword matches only",
-        "ndcg10": 0.7641914184695022,
-        "ap": 0.5724261691672654,
-        "spearman": 0.5218320421595725,
+        "name": "Personalised (learning 50%)",
+        "ndcg10": 0.7381086509473175,
+        "ap": 0.5768631440896744,
+        "spearman": 0.5338010328862408,
         "hit10": 0.7,
-        "to80": 52
-      }
-    ],
-    "random80": 160,
-    "current": {
-      "macroF1": 0.602075702075702,
-      "accuracy": 0.88,
-      "severe": 0
-    }
-  },
-  {
-    "source": "manual",
-    "profile": "Climate adaptation",
-    "space": "TF-IDF",
-    "good": "read",
-    "n": 200,
-    "counts": {
-      "READ": 3,
-      "SKIM": 24,
-      "SKIP": 173
-    },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
-    "ok": true,
-    "message": "",
-    "blend": {
-      "weight": 0,
-      "scores": {
-        "0": 0.7777777777777778,
-        "0.15": 0.7666666666666666,
-        "0.3": 0.7666666666666666,
-        "0.5": 0.7666666666666666,
-        "0.7": 0.6555555555555556
-      }
-    },
-    "randomAp": 0.015,
-    "systems": [
-      {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9169518957747925,
-        "ap": 0.7777777777777778,
-        "spearman": 0.4523963494586869,
-        "hit10": 1,
-        "to80": 9
+        "to80": 83
       },
       {
         "name": "Profile only (no learning)",
-        "ndcg10": 0.9169518957747925,
-        "ap": 0.7777777777777778,
-        "spearman": 0.4523963494586869,
-        "hit10": 1,
-        "to80": 9
+        "ndcg10": 0.6671732545298463,
+        "ap": 0.49620081004341743,
+        "spearman": 0.46097872912227483,
+        "hit10": 0.6,
+        "to80": 93
       },
       {
         "name": "Learned from feedback only",
-        "ndcg10": 0.7970159932598041,
-        "ap": 0.5909090909090909,
-        "spearman": 0.42496079005583576,
-        "hit10": 0.6666666666666666,
-        "to80": 11
+        "ndcg10": 0.8551595247651802,
+        "ap": 0.5813037083410681,
+        "spearman": 0.4949706536199627,
+        "hit10": 0.8,
+        "to80": 83
       },
       {
         "name": "Semantic similarity only",
-        "ndcg10": 0.8517876829961759,
-        "ap": 0.6666666666666666,
-        "spearman": 0.5542464793748881,
-        "hit10": 1,
-        "to80": 9
+        "ndcg10": 0.5785518136509968,
+        "ap": 0.34795420118347126,
+        "spearman": 0.06800985637886672,
+        "hit10": 0.5,
+        "to80": 116
       },
       {
         "name": "Keyword matches only",
-        "ndcg10": 0.7638414702647979,
-        "ap": 0.712121212121212,
-        "spearman": 0.5313898152107359,
-        "hit10": 0.6666666666666666,
-        "to80": 22
+        "ndcg10": 0.605796820817231,
+        "ap": 0.3476014674974043,
+        "spearman": 0.06877395631921439,
+        "hit10": 0.5,
+        "to80": 116
       }
     ],
-    "random80": 160,
+    "random80": 128,
     "current": {
-      "macroF1": 0.6541465378421899,
-      "accuracy": 0.89,
-      "severe": 1
+      "macroF1": 0.23626031139757564,
+      "accuracy": 0.4125,
+      "severe": 37
     }
   },
   {
-    "source": "manual",
-    "profile": "Climate adaptation",
+    "origin": "rule",
+    "profile": "AI and design",
     "space": "TF-IDF",
     "good": "read_skim",
-    "n": 200,
+    "n": 160,
     "counts": {
-      "READ": 3,
-      "SKIM": 24,
-      "SKIP": 173
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 200,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
-      "weight": 0,
+      "weight": 0.5,
       "scores": {
-        "0": 0.7777777777777778,
-        "0.15": 0.7666666666666666,
-        "0.3": 0.7666666666666666,
-        "0.5": 0.7666666666666666,
-        "0.7": 0.6555555555555556
+        "0": 0.49620081004341743,
+        "0.15": 0.5358617158403296,
+        "0.3": 0.5581025060356221,
+        "0.5": 0.5768631440896744,
+        "0.7": 0.5753494070604374
       }
     },
-    "randomAp": 0.135,
+    "randomAp": 0.59375,
     "systems": [
       {
-        "name": "Personalised (learning 0%)",
-        "ndcg10": 0.9169518957747925,
-        "ap": 0.6358593361270168,
-        "spearman": 0.4523963494586869,
+        "name": "Personalised (learning 50%)",
+        "ndcg10": 0.7381086509473175,
+        "ap": 0.8307501751463775,
+        "spearman": 0.5338010328862408,
         "hit10": 0.9,
-        "to80": 69
+        "to80": 98
       },
       {
         "name": "Profile only (no learning)",
-        "ndcg10": 0.9169518957747925,
-        "ap": 0.6358593361270168,
-        "spearman": 0.4523963494586869,
-        "hit10": 0.9,
-        "to80": 69
+        "ndcg10": 0.6671732545298463,
+        "ap": 0.7820587221600149,
+        "spearman": 0.46097872912227483,
+        "hit10": 0.8,
+        "to80": 102
       },
       {
         "name": "Learned from feedback only",
-        "ndcg10": 0.7970159932598041,
-        "ap": 0.6583322177883885,
-        "spearman": 0.42496079005583576,
-        "hit10": 0.9,
-        "to80": 52
+        "ndcg10": 0.8551595247651802,
+        "ap": 0.8256282484802843,
+        "spearman": 0.4949706536199627,
+        "hit10": 1,
+        "to80": 102
       },
       {
         "name": "Semantic similarity only",
-        "ndcg10": 0.8517876829961759,
-        "ap": 0.6872655053559482,
-        "spearman": 0.5542464793748881,
-        "hit10": 0.8,
-        "to80": 40
+        "ndcg10": 0.5785518136509968,
+        "ap": 0.6600595277453705,
+        "spearman": 0.06800985637886672,
+        "hit10": 0.7,
+        "to80": 121
       },
       {
         "name": "Keyword matches only",
-        "ndcg10": 0.7638414702647979,
-        "ap": 0.5836278852873826,
-        "spearman": 0.5313898152107359,
+        "ndcg10": 0.605796820817231,
+        "ap": 0.670473061579957,
+        "spearman": 0.06877395631921439,
         "hit10": 0.7,
-        "to80": 41
+        "to80": 121
       }
     ],
-    "random80": 160,
+    "random80": 128,
     "current": {
-      "macroF1": 0.6541465378421899,
-      "accuracy": 0.89,
-      "severe": 1
+      "macroF1": 0.23626031139757564,
+      "accuracy": 0.4125,
+      "severe": 37
     }
   },
   {
-    "source": "manual",
+    "origin": "reviewed",
     "profile": "Cancer immunotherapy",
     "space": "MiniLM",
     "good": "read",
@@ -634,11 +302,6 @@
       "SKIM": 15,
       "SKIP": 82
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 100,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
@@ -702,7 +365,7 @@
     }
   },
   {
-    "source": "manual",
+    "origin": "reviewed",
     "profile": "Cancer immunotherapy",
     "space": "MiniLM",
     "good": "read_skim",
@@ -712,11 +375,6 @@
       "SKIM": 15,
       "SKIP": 82
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 100,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
@@ -780,7 +438,7 @@
     }
   },
   {
-    "source": "manual",
+    "origin": "reviewed",
     "profile": "Cancer immunotherapy",
     "space": "TF-IDF",
     "good": "read",
@@ -790,11 +448,6 @@
       "SKIM": 15,
       "SKIP": 82
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 100,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
@@ -858,7 +511,7 @@
     }
   },
   {
-    "source": "manual",
+    "origin": "reviewed",
     "profile": "Cancer immunotherapy",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -868,11 +521,6 @@
       "SKIM": 15,
       "SKIP": 82
     },
-    "labelers": [
-      "IM"
-    ],
-    "verified": 100,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
@@ -936,8 +584,884 @@
     }
   },
   {
-    "source": "synthetic",
-    "profile": "Demo: RAG research (simulated)",
+    "origin": "reviewed",
+    "profile": "Climate adaptation",
+    "space": "MiniLM",
+    "good": "read",
+    "n": 200,
+    "counts": {
+      "READ": 3,
+      "SKIM": 24,
+      "SKIP": 173
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.8333333333333334,
+        "0.15": 0.8333333333333334,
+        "0.3": 0.8333333333333334,
+        "0.5": 0.7916666666666666,
+        "0.7": 0.7916666666666666
+      }
+    },
+    "randomAp": 0.015,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.8952975467736474,
+        "ap": 0.8333333333333334,
+        "spearman": 0.504577281018014,
+        "hit10": 1,
+        "to80": 6
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8952975467736474,
+        "ap": 0.8333333333333334,
+        "spearman": 0.504577281018014,
+        "hit10": 1,
+        "to80": 6
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7834138779665583,
+        "ap": 0.6388888888888888,
+        "spearman": 0.47392544613509097,
+        "hit10": 0.6666666666666666,
+        "to80": 12
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8811354301883858,
+        "ap": 0.6666666666666666,
+        "spearman": 0.538689494440617,
+        "hit10": 1,
+        "to80": 9
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7641914184695022,
+        "ap": 0.7066666666666667,
+        "spearman": 0.5218320421595725,
+        "hit10": 0.6666666666666666,
+        "to80": 25
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.602075702075702,
+      "accuracy": 0.88,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "Climate adaptation",
+    "space": "MiniLM",
+    "good": "read_skim",
+    "n": 200,
+    "counts": {
+      "READ": 3,
+      "SKIM": 24,
+      "SKIP": 173
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.8333333333333334,
+        "0.15": 0.8333333333333334,
+        "0.3": 0.8333333333333334,
+        "0.5": 0.7916666666666666,
+        "0.7": 0.7916666666666666
+      }
+    },
+    "randomAp": 0.135,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.8952975467736474,
+        "ap": 0.6227548526632383,
+        "spearman": 0.504577281018014,
+        "hit10": 0.8,
+        "to80": 58
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8952975467736474,
+        "ap": 0.6227548526632383,
+        "spearman": 0.504577281018014,
+        "hit10": 0.8,
+        "to80": 58
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7834138779665583,
+        "ap": 0.6213962019143447,
+        "spearman": 0.47392544613509097,
+        "hit10": 0.8,
+        "to80": 59
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8811354301883858,
+        "ap": 0.6428550620133675,
+        "spearman": 0.538689494440617,
+        "hit10": 0.9,
+        "to80": 54
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7641914184695022,
+        "ap": 0.5724261691672654,
+        "spearman": 0.5218320421595725,
+        "hit10": 0.7,
+        "to80": 52
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.602075702075702,
+      "accuracy": 0.88,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "Climate adaptation",
+    "space": "TF-IDF",
+    "good": "read",
+    "n": 200,
+    "counts": {
+      "READ": 3,
+      "SKIM": 24,
+      "SKIP": 173
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.7777777777777778,
+        "0.15": 0.7666666666666666,
+        "0.3": 0.7666666666666666,
+        "0.5": 0.7666666666666666,
+        "0.7": 0.6555555555555556
+      }
+    },
+    "randomAp": 0.015,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9169518957747925,
+        "ap": 0.7777777777777778,
+        "spearman": 0.4523963494586869,
+        "hit10": 1,
+        "to80": 9
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9169518957747925,
+        "ap": 0.7777777777777778,
+        "spearman": 0.4523963494586869,
+        "hit10": 1,
+        "to80": 9
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7970159932598041,
+        "ap": 0.5909090909090909,
+        "spearman": 0.42496079005583576,
+        "hit10": 0.6666666666666666,
+        "to80": 11
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8517876829961759,
+        "ap": 0.6666666666666666,
+        "spearman": 0.5542464793748881,
+        "hit10": 1,
+        "to80": 9
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7638414702647979,
+        "ap": 0.712121212121212,
+        "spearman": 0.5313898152107359,
+        "hit10": 0.6666666666666666,
+        "to80": 22
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.6541465378421899,
+      "accuracy": 0.89,
+      "severe": 1
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "Climate adaptation",
+    "space": "TF-IDF",
+    "good": "read_skim",
+    "n": 200,
+    "counts": {
+      "READ": 3,
+      "SKIM": 24,
+      "SKIP": 173
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.7777777777777778,
+        "0.15": 0.7666666666666666,
+        "0.3": 0.7666666666666666,
+        "0.5": 0.7666666666666666,
+        "0.7": 0.6555555555555556
+      }
+    },
+    "randomAp": 0.135,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9169518957747925,
+        "ap": 0.6358593361270168,
+        "spearman": 0.4523963494586869,
+        "hit10": 0.9,
+        "to80": 69
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9169518957747925,
+        "ap": 0.6358593361270168,
+        "spearman": 0.4523963494586869,
+        "hit10": 0.9,
+        "to80": 69
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7970159932598041,
+        "ap": 0.6583322177883885,
+        "spearman": 0.42496079005583576,
+        "hit10": 0.9,
+        "to80": 52
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8517876829961759,
+        "ap": 0.6872655053559482,
+        "spearman": 0.5542464793748881,
+        "hit10": 0.8,
+        "to80": 40
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7638414702647979,
+        "ap": 0.5836278852873826,
+        "spearman": 0.5313898152107359,
+        "hit10": 0.7,
+        "to80": 41
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.6541465378421899,
+      "accuracy": 0.89,
+      "severe": 1
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Materials discovery",
+    "space": "MiniLM",
+    "good": "read",
+    "n": 160,
+    "counts": {
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0.7,
+      "scores": {
+        "0": 0.5174512988300833,
+        "0.15": 0.5295354114565696,
+        "0.3": 0.5556925277589551,
+        "0.5": 0.5920266304550165,
+        "0.7": 0.6300136379107554
+      }
+    },
+    "randomAp": 0.28125,
+    "systems": [
+      {
+        "name": "Personalised (learning 70%)",
+        "ndcg10": 0.894393898287665,
+        "ap": 0.6300136379107554,
+        "spearman": 0.6102512754738181,
+        "hit10": 0.8,
+        "to80": 69
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.6354611674552129,
+        "ap": 0.5174512988300833,
+        "spearman": 0.5901463405859112,
+        "hit10": 0.4,
+        "to80": 69
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.8532721558012799,
+        "ap": 0.6292568664310482,
+        "spearman": 0.6217087265385584,
+        "hit10": 0.9,
+        "to80": 69
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.6061776265083524,
+        "ap": 0.4501109495177538,
+        "spearman": 0.49431619268049526,
+        "hit10": 0.4,
+        "to80": 79
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.6061776265083524,
+        "ap": 0.4501109495177538,
+        "spearman": 0.49431619268049526,
+        "hit10": 0.4,
+        "to80": 79
+      }
+    ],
+    "random80": 128,
+    "current": {
+      "macroF1": 0.5170661920136026,
+      "accuracy": 0.56875,
+      "severe": 5
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Materials discovery",
+    "space": "MiniLM",
+    "good": "read_skim",
+    "n": 160,
+    "counts": {
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0.7,
+      "scores": {
+        "0": 0.5174512988300833,
+        "0.15": 0.5295354114565696,
+        "0.3": 0.5556925277589551,
+        "0.5": 0.5920266304550165,
+        "0.7": 0.6300136379107554
+      }
+    },
+    "randomAp": 0.59375,
+    "systems": [
+      {
+        "name": "Personalised (learning 70%)",
+        "ndcg10": 0.894393898287665,
+        "ap": 0.881920849034776,
+        "spearman": 0.6102512754738181,
+        "hit10": 1,
+        "to80": 86
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.6354611674552129,
+        "ap": 0.8329369782463188,
+        "spearman": 0.5901463405859112,
+        "hit10": 0.7,
+        "to80": 88
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.8532721558012799,
+        "ap": 0.892052350903161,
+        "spearman": 0.6217087265385584,
+        "hit10": 1,
+        "to80": 85
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.6061776265083524,
+        "ap": 0.8117492596597857,
+        "spearman": 0.49431619268049526,
+        "hit10": 0.7,
+        "to80": 90
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.6061776265083524,
+        "ap": 0.8117492596597857,
+        "spearman": 0.49431619268049526,
+        "hit10": 0.7,
+        "to80": 90
+      }
+    ],
+    "random80": 128,
+    "current": {
+      "macroF1": 0.5170661920136026,
+      "accuracy": 0.56875,
+      "severe": 5
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Materials discovery",
+    "space": "TF-IDF",
+    "good": "read",
+    "n": 160,
+    "counts": {
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0.5,
+      "scores": {
+        "0": 0.616808134343215,
+        "0.15": 0.6411665879047836,
+        "0.3": 0.6641302461279044,
+        "0.5": 0.6732138017315261,
+        "0.7": 0.6696582173119072
+      }
+    },
+    "randomAp": 0.28125,
+    "systems": [
+      {
+        "name": "Personalised (learning 50%)",
+        "ndcg10": 0.8842222191013388,
+        "ap": 0.6732138017315261,
+        "spearman": 0.650163802833874,
+        "hit10": 0.8,
+        "to80": 64
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8358761963562928,
+        "ap": 0.616808134343215,
+        "spearman": 0.6020889712857522,
+        "hit10": 0.7,
+        "to80": 69
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7666888146990527,
+        "ap": 0.6483812071273058,
+        "spearman": 0.6545365922970968,
+        "hit10": 0.7,
+        "to80": 61
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8800456786592188,
+        "ap": 0.49389047696757593,
+        "spearman": 0.3193663991191969,
+        "hit10": 0.8,
+        "to80": 108
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.8800456786592188,
+        "ap": 0.49389047696757593,
+        "spearman": 0.3193663991191969,
+        "hit10": 0.8,
+        "to80": 108
+      }
+    ],
+    "random80": 128,
+    "current": {
+      "macroF1": 0.34768225678835535,
+      "accuracy": 0.48125,
+      "severe": 22
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Materials discovery",
+    "space": "TF-IDF",
+    "good": "read_skim",
+    "n": 160,
+    "counts": {
+      "READ": 45,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0.5,
+      "scores": {
+        "0": 0.616808134343215,
+        "0.15": 0.6411665879047836,
+        "0.3": 0.6641302461279044,
+        "0.5": 0.6732138017315261,
+        "0.7": 0.6696582173119072
+      }
+    },
+    "randomAp": 0.59375,
+    "systems": [
+      {
+        "name": "Personalised (learning 50%)",
+        "ndcg10": 0.8842222191013388,
+        "ap": 0.9059261084470279,
+        "spearman": 0.650163802833874,
+        "hit10": 1,
+        "to80": 89
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8358761963562928,
+        "ap": 0.8839961597308463,
+        "spearman": 0.6020889712857522,
+        "hit10": 1,
+        "to80": 94
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7666888146990527,
+        "ap": 0.9085010652137422,
+        "spearman": 0.6545365922970968,
+        "hit10": 1,
+        "to80": 89
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.8800456786592188,
+        "ap": 0.7825413503307277,
+        "spearman": 0.3193663991191969,
+        "hit10": 1,
+        "to80": 114
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.8800456786592188,
+        "ap": 0.7825413503307277,
+        "spearman": 0.3193663991191969,
+        "hit10": 1,
+        "to80": 114
+      }
+    ],
+    "random80": 128,
+    "current": {
+      "macroF1": 0.34768225678835535,
+      "accuracy": 0.48125,
+      "severe": 22
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "RAG & LLM evaluation",
+    "space": "MiniLM",
+    "good": "read",
+    "n": 200,
+    "counts": {
+      "READ": 6,
+      "SKIM": 33,
+      "SKIP": 161
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 1,
+        "0.15": 1,
+        "0.3": 1,
+        "0.5": 0.9761904761904762,
+        "0.7": 0.9761904761904762
+      }
+    },
+    "randomAp": 0.03,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9740816258588203,
+        "ap": 1,
+        "spearman": 0.638565224481055,
+        "hit10": 1,
+        "to80": 5
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9740816258588203,
+        "ap": 1,
+        "spearman": 0.638565224481055,
+        "hit10": 1,
+        "to80": 5
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.9871983103990516,
+        "ap": 0.9305555555555555,
+        "spearman": 0.6113762158602795,
+        "hit10": 1,
+        "to80": 6
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.9290298957529317,
+        "ap": 0.9333333333333332,
+        "spearman": 0.5756389035340033,
+        "hit10": 1,
+        "to80": 5
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.905865071651856,
+        "ap": 0.7827380952380952,
+        "spearman": 0.5647274406887666,
+        "hit10": 0.8333333333333334,
+        "to80": 8
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.7733766233766234,
+      "accuracy": 0.87,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "RAG & LLM evaluation",
+    "space": "MiniLM",
+    "good": "read_skim",
+    "n": 200,
+    "counts": {
+      "READ": 6,
+      "SKIM": 33,
+      "SKIP": 161
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 1,
+        "0.15": 1,
+        "0.3": 1,
+        "0.5": 0.9761904761904762,
+        "0.7": 0.9761904761904762
+      }
+    },
+    "randomAp": 0.195,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9740816258588203,
+        "ap": 0.7847411920313103,
+        "spearman": 0.638565224481055,
+        "hit10": 0.9,
+        "to80": 48
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9740816258588203,
+        "ap": 0.7847411920313103,
+        "spearman": 0.638565224481055,
+        "hit10": 0.9,
+        "to80": 48
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.9871983103990516,
+        "ap": 0.8003379713726343,
+        "spearman": 0.6113762158602795,
+        "hit10": 1,
+        "to80": 53
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.9290298957529317,
+        "ap": 0.6759056989477015,
+        "spearman": 0.5756389035340033,
+        "hit10": 0.8,
+        "to80": 65
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.905865071651856,
+        "ap": 0.7544305661256605,
+        "spearman": 0.5647274406887666,
+        "hit10": 1,
+        "to80": 70
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.7733766233766234,
+      "accuracy": 0.87,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "RAG & LLM evaluation",
+    "space": "TF-IDF",
+    "good": "read",
+    "n": 200,
+    "counts": {
+      "READ": 6,
+      "SKIM": 33,
+      "SKIP": 161
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.83015873015873,
+        "0.15": 0.83015873015873,
+        "0.3": 0.83015873015873,
+        "0.5": 0.83015873015873,
+        "0.7": 0.83015873015873
+      }
+    },
+    "randomAp": 0.03,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.83015873015873,
+        "spearman": 0.6160117390633986,
+        "hit10": 1,
+        "to80": 7
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.83015873015873,
+        "spearman": 0.6160117390633986,
+        "hit10": 1,
+        "to80": 7
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.83015873015873,
+        "spearman": 0.5835217056680806,
+        "hit10": 1,
+        "to80": 7
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.910728280863385,
+        "ap": 0.7999999999999999,
+        "spearman": 0.604845678552356,
+        "hit10": 0.8333333333333334,
+        "to80": 10
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.841355635819092,
+        "ap": 0.7257575757575757,
+        "spearman": 0.5710453952127749,
+        "hit10": 0.6666666666666666,
+        "to80": 11
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.6101897018970189,
+      "accuracy": 0.845,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "reviewed",
+    "profile": "RAG & LLM evaluation",
+    "space": "TF-IDF",
+    "good": "read_skim",
+    "n": 200,
+    "counts": {
+      "READ": 6,
+      "SKIM": 33,
+      "SKIP": 161
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.83015873015873,
+        "0.15": 0.83015873015873,
+        "0.3": 0.83015873015873,
+        "0.5": 0.83015873015873,
+        "0.7": 0.83015873015873
+      }
+    },
+    "randomAp": 0.195,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.822506384820991,
+        "spearman": 0.6160117390633986,
+        "hit10": 1,
+        "to80": 51
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.822506384820991,
+        "spearman": 0.6160117390633986,
+        "hit10": 1,
+        "to80": 51
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.9650079626826101,
+        "ap": 0.7904865923994482,
+        "spearman": 0.5835217056680806,
+        "hit10": 1,
+        "to80": 55
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.910728280863385,
+        "ap": 0.7665412224165556,
+        "spearman": 0.604845678552356,
+        "hit10": 1,
+        "to80": 53
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.841355635819092,
+        "ap": 0.7451866250407194,
+        "spearman": 0.5710453952127749,
+        "hit10": 1,
+        "to80": 66
+      }
+    ],
+    "random80": 160,
+    "current": {
+      "macroF1": 0.6101897018970189,
+      "accuracy": 0.845,
+      "severe": 0
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "RAG research (rule-based demo)",
     "space": "MiniLM",
     "good": "read",
     "n": 529,
@@ -946,21 +1470,16 @@
       "SKIM": 98,
       "SKIP": 422
     },
-    "labelers": [
-      "rule:demo_rag"
-    ],
-    "verified": 0,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0.7,
       "scores": {
-        "0": 0.4859813244182287,
-        "0.15": 0.49372475407112026,
-        "0.3": 0.49445620652671074,
-        "0.5": 0.4952881592105153,
-        "0.7": 0.5012660388141259
+        "0": 0.4866597295220806,
+        "0.15": 0.49539973044923535,
+        "0.3": 0.496059635845983,
+        "0.5": 0.49800227783909345,
+        "0.7": 0.504445109543634
       }
     },
     "randomAp": 0.017013232514177693,
@@ -968,54 +1487,54 @@
       {
         "name": "Personalised (learning 70%)",
         "ndcg10": 0.6839843186262707,
-        "ap": 0.5012660388141259,
-        "spearman": 0.41870620084691296,
-        "hit10": 0.4444444444444444,
-        "to80": 76
-      },
-      {
-        "name": "Profile only (no learning)",
-        "ndcg10": 0.6819617212195107,
-        "ap": 0.4859813244182287,
-        "spearman": 0.4907826855016322,
-        "hit10": 0.4444444444444444,
-        "to80": 84
-      },
-      {
-        "name": "Learned from feedback only",
-        "ndcg10": 0.6828784134250931,
-        "ap": 0.5071459865712917,
-        "spearman": 0.4183562097798242,
+        "ap": 0.504445109543634,
+        "spearman": 0.431708156649022,
         "hit10": 0.4444444444444444,
         "to80": 72
       },
       {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.6819617212195107,
+        "ap": 0.4866597295220806,
+        "spearman": 0.5041851946456649,
+        "hit10": 0.4444444444444444,
+        "to80": 78
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.6804794315895092,
+        "ap": 0.4975525293978089,
+        "spearman": 0.43052989926431323,
+        "hit10": 0.4444444444444444,
+        "to80": 71
+      },
+      {
         "name": "Semantic similarity only",
         "ndcg10": 0.6862051801607817,
-        "ap": 0.5073152278544142,
-        "spearman": 0.47688515705578177,
+        "ap": 0.5065786958678822,
+        "spearman": 0.47166702698820695,
         "hit10": 0.4444444444444444,
         "to80": 67
       },
       {
         "name": "Keyword matches only",
         "ndcg10": 0.7645838076896744,
-        "ap": 0.5634131246325149,
-        "spearman": 0.47750334152592244,
+        "ap": 0.5628599398688038,
+        "spearman": 0.4720725247290724,
         "hit10": 0.5555555555555556,
         "to80": 69
       }
     ],
     "random80": 424,
     "current": {
-      "macroF1": 0.5068102226462355,
-      "accuracy": 0.8147448015122873,
-      "severe": 4
+      "macroF1": 0.5123614898050989,
+      "accuracy": 0.8166351606805293,
+      "severe": 3
     }
   },
   {
-    "source": "synthetic",
-    "profile": "Demo: RAG research (simulated)",
+    "origin": "rule",
+    "profile": "RAG research (rule-based demo)",
     "space": "MiniLM",
     "good": "read_skim",
     "n": 529,
@@ -1024,21 +1543,16 @@
       "SKIM": 98,
       "SKIP": 422
     },
-    "labelers": [
-      "rule:demo_rag"
-    ],
-    "verified": 0,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0.7,
       "scores": {
-        "0": 0.4859813244182287,
-        "0.15": 0.49372475407112026,
-        "0.3": 0.49445620652671074,
-        "0.5": 0.4952881592105153,
-        "0.7": 0.5012660388141259
+        "0": 0.4866597295220806,
+        "0.15": 0.49539973044923535,
+        "0.3": 0.496059635845983,
+        "0.5": 0.49800227783909345,
+        "0.7": 0.504445109543634
       }
     },
     "randomAp": 0.20226843100189035,
@@ -1046,54 +1560,54 @@
       {
         "name": "Personalised (learning 70%)",
         "ndcg10": 0.6839843186262707,
-        "ap": 0.5991112021487263,
-        "spearman": 0.41870620084691296,
+        "ap": 0.618181331537708,
+        "spearman": 0.431708156649022,
         "hit10": 0.8,
-        "to80": 238
+        "to80": 234
       },
       {
         "name": "Profile only (no learning)",
         "ndcg10": 0.6819617212195107,
-        "ap": 0.5925667021471134,
-        "spearman": 0.4907826855016322,
+        "ap": 0.6042354684919305,
+        "spearman": 0.5041851946456649,
         "hit10": 0.8,
-        "to80": 304
+        "to80": 299
       },
       {
         "name": "Learned from feedback only",
-        "ndcg10": 0.6828784134250931,
-        "ap": 0.5938078321565372,
-        "spearman": 0.4183562097798242,
+        "ndcg10": 0.6804794315895092,
+        "ap": 0.6117413045866207,
+        "spearman": 0.43052989926431323,
         "hit10": 0.8,
-        "to80": 238
+        "to80": 234
       },
       {
         "name": "Semantic similarity only",
         "ndcg10": 0.6862051801607817,
-        "ap": 0.5932628859616986,
-        "spearman": 0.47688515705578177,
+        "ap": 0.5937665704650061,
+        "spearman": 0.47166702698820695,
         "hit10": 0.8,
         "to80": 258
       },
       {
         "name": "Keyword matches only",
         "ndcg10": 0.7645838076896744,
-        "ap": 0.5990438309762673,
-        "spearman": 0.47750334152592244,
+        "ap": 0.5991410991041768,
+        "spearman": 0.4720725247290724,
         "hit10": 0.9,
         "to80": 258
       }
     ],
     "random80": 424,
     "current": {
-      "macroF1": 0.5068102226462355,
-      "accuracy": 0.8147448015122873,
-      "severe": 4
+      "macroF1": 0.5123614898050989,
+      "accuracy": 0.8166351606805293,
+      "severe": 3
     }
   },
   {
-    "source": "synthetic",
-    "profile": "Demo: RAG research (simulated)",
+    "origin": "rule",
+    "profile": "RAG research (rule-based demo)",
     "space": "TF-IDF",
     "good": "read",
     "n": 529,
@@ -1102,21 +1616,16 @@
       "SKIM": 98,
       "SKIP": 422
     },
-    "labelers": [
-      "rule:demo_rag"
-    ],
-    "verified": 0,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0,
       "scores": {
-        "0": 0.542400050724135,
-        "0.15": 0.539683490147499,
-        "0.3": 0.5393015277559979,
-        "0.5": 0.5327421810217435,
-        "0.7": 0.5308186183144278
+        "0": 0.5451915528641872,
+        "0.15": 0.5420183990762516,
+        "0.3": 0.5411973810138542,
+        "0.5": 0.5344643399829672,
+        "0.7": 0.5330747200228817
       }
     },
     "randomAp": 0.017013232514177693,
@@ -1124,26 +1633,26 @@
       {
         "name": "Personalised (learning 0%)",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.542400050724135,
-        "spearman": 0.43872436024588507,
+        "ap": 0.5451915528641872,
+        "spearman": 0.45878431466989783,
         "hit10": 0.4444444444444444,
-        "to80": 156
+        "to80": 148
       },
       {
         "name": "Profile only (no learning)",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.542400050724135,
-        "spearman": 0.43872436024588507,
+        "ap": 0.5451915528641872,
+        "spearman": 0.45878431466989783,
         "hit10": 0.4444444444444444,
-        "to80": 156
+        "to80": 148
       },
       {
         "name": "Learned from feedback only",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.5271364585390148,
-        "spearman": 0.3601710058672163,
+        "ap": 0.5291640831517601,
+        "spearman": 0.3721346378195881,
         "hit10": 0.4444444444444444,
-        "to80": 149
+        "to80": 152
       },
       {
         "name": "Semantic similarity only",
@@ -1170,8 +1679,8 @@
     }
   },
   {
-    "source": "synthetic",
-    "profile": "Demo: RAG research (simulated)",
+    "origin": "rule",
+    "profile": "RAG research (rule-based demo)",
     "space": "TF-IDF",
     "good": "read_skim",
     "n": 529,
@@ -1180,21 +1689,16 @@
       "SKIM": 98,
       "SKIP": 422
     },
-    "labelers": [
-      "rule:demo_rag"
-    ],
-    "verified": 0,
-    "changed": 0,
     "ok": true,
     "message": "",
     "blend": {
       "weight": 0,
       "scores": {
-        "0": 0.542400050724135,
-        "0.15": 0.539683490147499,
-        "0.3": 0.5393015277559979,
-        "0.5": 0.5327421810217435,
-        "0.7": 0.5308186183144278
+        "0": 0.5451915528641872,
+        "0.15": 0.5420183990762516,
+        "0.3": 0.5411973810138542,
+        "0.5": 0.5344643399829672,
+        "0.7": 0.5330747200228817
       }
     },
     "randomAp": 0.20226843100189035,
@@ -1202,26 +1706,26 @@
       {
         "name": "Personalised (learning 0%)",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.5945236286370131,
-        "spearman": 0.43872436024588507,
+        "ap": 0.6155504061178975,
+        "spearman": 0.45878431466989783,
         "hit10": 1,
-        "to80": 307
+        "to80": 300
       },
       {
         "name": "Profile only (no learning)",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.5945236286370131,
-        "spearman": 0.43872436024588507,
+        "ap": 0.6155504061178975,
+        "spearman": 0.45878431466989783,
         "hit10": 1,
-        "to80": 307
+        "to80": 300
       },
       {
         "name": "Learned from feedback only",
         "ndcg10": 0.7406041865200498,
-        "ap": 0.5722457049133836,
-        "spearman": 0.3601710058672163,
+        "ap": 0.5842638754319186,
+        "spearman": 0.3721346378195881,
         "hit10": 1,
-        "to80": 301
+        "to80": 298
       },
       {
         "name": "Semantic similarity only",
@@ -1245,6 +1749,298 @@
       "macroF1": 0.4775752178392443,
       "accuracy": 0.8071833648393195,
       "severe": 5
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Robotics",
+    "space": "MiniLM",
+    "good": "read",
+    "n": 135,
+    "counts": {
+      "READ": 20,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.5871147935176576,
+        "0.15": 0.5844033404338872,
+        "0.3": 0.5852607899360567,
+        "0.5": 0.5843601669647456,
+        "0.7": 0.5797833461381325
+      }
+    },
+    "randomAp": 0.14814814814814814,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.8501591578697533,
+        "ap": 0.5871147935176576,
+        "spearman": 0.49084161372885643,
+        "hit10": 0.7,
+        "to80": 46
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8501591578697533,
+        "ap": 0.5871147935176576,
+        "spearman": 0.49084161372885643,
+        "hit10": 0.7,
+        "to80": 46
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7889169364578399,
+        "ap": 0.5658158410192773,
+        "spearman": 0.48235985468848364,
+        "hit10": 0.6,
+        "to80": 50
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.821029976188305,
+        "ap": 0.5765228352269525,
+        "spearman": 0.4994526120346943,
+        "hit10": 0.7,
+        "to80": 59
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.821029976188305,
+        "ap": 0.5765228352269525,
+        "spearman": 0.4994526120346943,
+        "hit10": 0.7,
+        "to80": 59
+      }
+    ],
+    "random80": 108,
+    "current": {
+      "macroF1": 0.37435083822518384,
+      "accuracy": 0.5333333333333333,
+      "severe": 14
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Robotics",
+    "space": "MiniLM",
+    "good": "read_skim",
+    "n": 135,
+    "counts": {
+      "READ": 20,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.5871147935176576,
+        "0.15": 0.5844033404338872,
+        "0.3": 0.5852607899360567,
+        "0.5": 0.5843601669647456,
+        "0.7": 0.5797833461381325
+      }
+    },
+    "randomAp": 0.5185185185185185,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.8501591578697533,
+        "ap": 0.7850580379204949,
+        "spearman": 0.49084161372885643,
+        "hit10": 1,
+        "to80": 90
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.8501591578697533,
+        "ap": 0.7850580379204949,
+        "spearman": 0.49084161372885643,
+        "hit10": 1,
+        "to80": 90
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.7889169364578399,
+        "ap": 0.7765376743816329,
+        "spearman": 0.48235985468848364,
+        "hit10": 0.9,
+        "to80": 86
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.821029976188305,
+        "ap": 0.7786487775368625,
+        "spearman": 0.4994526120346943,
+        "hit10": 0.9,
+        "to80": 97
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.821029976188305,
+        "ap": 0.7786487775368625,
+        "spearman": 0.4994526120346943,
+        "hit10": 0.9,
+        "to80": 97
+      }
+    ],
+    "random80": 108,
+    "current": {
+      "macroF1": 0.37435083822518384,
+      "accuracy": 0.5333333333333333,
+      "severe": 14
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Robotics",
+    "space": "TF-IDF",
+    "good": "read",
+    "n": 135,
+    "counts": {
+      "READ": 20,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.5439247605246706,
+        "0.15": 0.5253773794103858,
+        "0.3": 0.5329362478679741,
+        "0.5": 0.5185566687971178,
+        "0.7": 0.5084360494543968
+      }
+    },
+    "randomAp": 0.14814814814814814,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.6925904614552044,
+        "ap": 0.5439247605246706,
+        "spearman": 0.5516814203559401,
+        "hit10": 0.4,
+        "to80": 35
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.6925904614552044,
+        "ap": 0.5439247605246706,
+        "spearman": 0.5516814203559401,
+        "hit10": 0.4,
+        "to80": 35
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.6954005414364947,
+        "ap": 0.4783512568701188,
+        "spearman": 0.5121663120374329,
+        "hit10": 0.6,
+        "to80": 40
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.7084882714427311,
+        "ap": 0.4297844835879923,
+        "spearman": 0.3386970381344079,
+        "hit10": 0.5,
+        "to80": 74
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7084882714427311,
+        "ap": 0.4297844835879923,
+        "spearman": 0.3386970381344079,
+        "hit10": 0.5,
+        "to80": 74
+      }
+    ],
+    "random80": 108,
+    "current": {
+      "macroF1": 0.21775544388609716,
+      "accuracy": 0.48148148148148145,
+      "severe": 19
+    }
+  },
+  {
+    "origin": "rule",
+    "profile": "Robotics",
+    "space": "TF-IDF",
+    "good": "read_skim",
+    "n": 135,
+    "counts": {
+      "READ": 20,
+      "SKIM": 50,
+      "SKIP": 65
+    },
+    "ok": true,
+    "message": "",
+    "blend": {
+      "weight": 0,
+      "scores": {
+        "0": 0.5439247605246706,
+        "0.15": 0.5253773794103858,
+        "0.3": 0.5329362478679741,
+        "0.5": 0.5185566687971178,
+        "0.7": 0.5084360494543968
+      }
+    },
+    "randomAp": 0.5185185185185185,
+    "systems": [
+      {
+        "name": "Personalised (learning 0%)",
+        "ndcg10": 0.6925904614552044,
+        "ap": 0.8145697062493321,
+        "spearman": 0.5516814203559401,
+        "hit10": 1,
+        "to80": 83
+      },
+      {
+        "name": "Profile only (no learning)",
+        "ndcg10": 0.6925904614552044,
+        "ap": 0.8145697062493321,
+        "spearman": 0.5516814203559401,
+        "hit10": 1,
+        "to80": 83
+      },
+      {
+        "name": "Learned from feedback only",
+        "ndcg10": 0.6954005414364947,
+        "ap": 0.8045220475568898,
+        "spearman": 0.5121663120374329,
+        "hit10": 1,
+        "to80": 90
+      },
+      {
+        "name": "Semantic similarity only",
+        "ndcg10": 0.7084882714427311,
+        "ap": 0.7161051043985025,
+        "spearman": 0.3386970381344079,
+        "hit10": 0.9,
+        "to80": 99
+      },
+      {
+        "name": "Keyword matches only",
+        "ndcg10": 0.7084882714427311,
+        "ap": 0.7161051043985025,
+        "spearman": 0.3386970381344079,
+        "hit10": 0.9,
+        "to80": 99
+      }
+    ],
+    "random80": 108,
+    "current": {
+      "macroF1": 0.21775544388609716,
+      "accuracy": 0.48148148148148145,
+      "severe": 19
     }
   }
 ]
