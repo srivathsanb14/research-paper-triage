@@ -95,36 +95,3 @@ def test_catalog_preferences_survive_backup(store, rag_profile, corpus):
     store.set_setting(rag_profile.id, "catalog_fields", ["humanities", "life"])
     restored = restore_profile(store, export_profile(store, rag_profile))
     assert store.get_setting(restored.id, "catalog_fields") == ["humanities", "life"]
-
-
-def test_new_browser_visitor_can_start_without_account_or_import(tmp_path, monkeypatch):
-    import streamlit as st
-    from streamlit.testing.v1 import AppTest
-    from triage import config
-    from triage.store import Store
-
-    monkeypatch.setattr(config, "BROWSER_MODE", True)
-    monkeypatch.setattr(config, "DB_PATH", tmp_path / "visitor.db")
-    monkeypatch.setattr(config, "EMBEDDING_BACKEND", "tfidf")
-    st.cache_resource.clear()
-    st.cache_data.clear()
-    app = AppTest.from_file(config.ROOT / "app.py", default_timeout=45)
-    app.query_params["view"] = "ALL"
-    try:
-        app.run()
-        assert not app.exception
-        assert Store(config.DB_PATH).list_profiles() == []
-        next(w for w in app.text_area if w.label == "What are you interested in?").set_value("Environmental history and society")
-        next(w for w in app.multiselect if w.label == "Research fields").set_value(["humanities", "environment"])
-        next(w for w in app.select_slider if w.label == "Papers to load").set_value(100)
-        next(b for b in app.button if b.label == "Find papers").click().run()
-        assert not app.exception, [e.message for e in app.exception]
-        saved = Store(config.DB_PATH)
-        profile = saved.get_profile("My reading list")
-        assert len(saved.pool_ids(profile.id)) == 100
-        assert saved.get_labels(profile.id) == {}
-        assert saved.get_feedback(profile.id) == []
-        assert saved.get_setting(profile.id, "catalog_fields") == ["humanities", "environment"]
-    finally:
-        st.cache_resource.clear()
-        st.cache_data.clear()

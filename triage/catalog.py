@@ -8,7 +8,6 @@ import os
 import re
 import sys
 from itertools import zip_longest
-from pathlib import Path
 from urllib.parse import urljoin
 
 from . import config

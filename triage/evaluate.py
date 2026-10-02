@@ -20,7 +20,7 @@ import numpy as np
 from . import config
 from .models import Paper
 from .ranking import Cutoffs, labels_for
-from .relevance import BLEND_GRID, FEATURES, RelevanceModel, build_examples
+from .relevance import BLEND_GRID, FEATURES, build_examples
 
 GAIN = {"READ": 2.0, "SKIM": 1.0, "SKIP": 0.0}
 MIN_LABELS = 6

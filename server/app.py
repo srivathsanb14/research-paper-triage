@@ -11,7 +11,6 @@ import secrets
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import PlainTextResponse

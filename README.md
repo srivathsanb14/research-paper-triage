@@ -73,7 +73,6 @@ Tests: `pytest -q` · `npm run test:js` · `npm run test:pages` (Playwright end 
 * The catalog is a bounded recent sample (~270 papers per area); use *Load more* or import your own papers for depth.
 * English abstracts only. Signals come from metadata and abstract wording and inherit OpenAlex errors.
 * Without the optional server, data lives in one browser; use Settings → Download backup.
-* The original Streamlit app is still in `app.py` (`streamlit run app.py`) as the server-side research edition.
 
 ## AI assistance
 

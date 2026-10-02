@@ -45,8 +45,7 @@ its evaluation.
    macro-F1). Read is capped by the weekly reading time (30 min per paper); overflow moves to Skim.
    A person's own correction always overrides the model.
 
-The same model is implemented twice: `triage/relevance.py` (Python reference, used by the
-Streamlit server edition) and `web/js/engine.js` (browser). `tests/test_web_parity.py` checks
+The same model is implemented twice: `triage/relevance.py` (Python reference) and `web/js/engine.js` (browser). `tests/test_web_parity.py` checks
 that both agree, including ridge coefficients against scikit-learn to 1e-9.
 
 ## Why this design
@@ -100,7 +99,7 @@ The cross-validated blend chose a learning weight of **0%** for all three profil
 Caveats: only 3–6 Read papers per profile, so AP for Read moves a lot with a single paper; labels began as suggestions from a language model reading the same title and abstract, which makes agreement with text-similarity rankers optimistic. Full tables (including good = Read or Skim and TF-IDF): `docs/evaluation/report.md`.
 
 Pipeline check on **synthetic** labels (529 AI/computing papers labelled by the keyword rule in
-`triage/demo.py`, "good" = Read). This only shows the pipeline works. The rule is keyword-based,
+`scripts/simulate_labels.py`, "good" = Read). This only shows the pipeline works. The rule is keyword-based,
 so keyword matching is expected to win:
 
 | Method (MiniLM space) | NDCG@10 | AP | Good in top 10 | Papers to find 80% of good |

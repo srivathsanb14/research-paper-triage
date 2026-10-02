@@ -257,7 +257,7 @@ helps researchers decide which papers deserve their time.
 |---|---|---|
 | `papers.jsonl` | {n_papers} | Paper metadata (title, abstract, authors, venue, dates, links, OpenAlex type, venue type, open-access status, FWCI) plus computed signals |
 | `labels_manual.jsonl` | {n_manual} | **Human** labels from the app's Label tab: paper, label, labeller, time, and the research profile it was judged against. `label_source` is `manual` (labelled from scratch) or `human-verified` (an AI model proposed a label from title and abstract and a person accepted or changed it; `proposed_label` and `changed_by_human` record which) |
-| `labels_synthetic.jsonl` | {n_synth} | **Synthetic** labels from a keyword rule (`triage/demo.py`). For pipeline tests only, never mixed with manual labels |
+| `labels_synthetic.jsonl` | {n_synth} | **Synthetic** labels from a keyword rule (`scripts/simulate_labels.py`). For pipeline tests only, never mixed with manual labels |
 
 ## Collection
 

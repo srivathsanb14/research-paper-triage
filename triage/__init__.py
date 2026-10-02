@@ -1,14 +1,8 @@
-"""Personalized Research Paper Triage System.
+"""Python reference engine for Paper Triage.
 
-Pipeline (mirrors the project workflow figure):
-
-    user context ──► interest profile (CONFIGURED)
-    paper API    ──► preprocessing ──► paper vectors
-    profile + vectors + feedback ──► relevance model (TRAINED)
-    scores ──► ranking + triage READ / SKIM / SKIP (TUNED)
-    paper + interests + label ──► one-line explanation (CONFIGURED)
-    predictions vs. hand labels ──► evaluation (EVALUATED)
-    UI feedback ──► labels + feedback log ──► future ranking
+The browser app (`web/js/`) is the product. This package is the reference implementation that
+`tests/test_web_parity.py` checks it against, and it provides the catalog, dataset and quality
+tooling used by the scripts in `scripts/`.
 """
 
 __version__ = "1.0.0"
