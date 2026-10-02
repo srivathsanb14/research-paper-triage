@@ -3,7 +3,7 @@
 Too many papers, too little time. Describe your research and every recent paper is sorted into
 **Read / Skim / Skip** with a one-line reason and separate "worth-it" signals (peer review, released
 code or data, study design, citation impact, cautions). It learns from your ratings and labels.
-Runs in the browser; no API key.
+Runs in the browser; no API key. **Load more** pulls fresh papers live from OpenAlex, Europe PMC and Crossref (Settings → Sources).
 
 **Live:** Hugging Face Space (see [Publish](#publish)) · GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/`
 
@@ -19,7 +19,7 @@ Runs in the browser; no API key.
 ## Use it
 
 1. Pick your fields and optionally describe your research, then **Show papers**.
-2. Rate at least 5 of the first 20 as 👍 or 👎 (or hand-label in **Label**). The rest are sorted into Read / Skim / Skip and re-sorted with every rating.
+2. Rate at least 5 of the first 20 (more papers: **Load more**, de-duplicated across sources) as 👍 or 👎 (or hand-label in **Label**). The rest are sorted into Read / Skim / Skip and re-sorted with every rating.
 3. **Insights** shows how well the ranking finds what you would pick, and how fast it learns you.
 4. **Saved** exports BibTeX, RIS or CSV. **Settings** has cutoffs and backups.
 

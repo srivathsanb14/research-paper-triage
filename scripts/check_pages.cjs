@@ -44,6 +44,7 @@ async function main() {
     authorships: [{ author: { display_name: "T. Tester" } }], primary_location: { source: { display_name: "Test Journal", type: "journal" }, version: "publishedVersion" },
     publication_date: "2026-09-01", publication_year: 2026, cited_by_count: 3, fwci: 2.1, referenced_works_count: 40,
   }] }) }));
+  await context.route(/api\.crossref\.org/, r => r.fulfill({ status: 503, body: "down" })); // one source failing must not break Load more
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
   const errors = [];
@@ -76,12 +77,13 @@ async function main() {
     assert.equal(await page.locator(".rate-count").innerText(), "0/5", "pressing again clears the rating");
     step("rate, undo and un-rate work");
 
-    // Load more pulls fresh papers from OpenAlex (stubbed) into the list.
+    // Load more merges every enabled source (stubbed). Crossref is "down" and Europe PMC is skipped
+    // because this profile is AI/computing only; neither may break the list.
     await page.locator('.list [data-act="load-more"]').click();
-    await page.getByText(/Loaded 1 papers from OpenAlex/).waitFor();
+    await page.getByText(/Loaded 1 papers \(1 from OpenAlex, Crossref unavailable\)/).waitFor();
     assert.equal(await cards.count(), 40);
     await page.locator("article.paper.unrated h2", { hasText: "Live OpenAlex Test Paper" }).waitFor();
-    step("Load more adds OpenAlex papers to the list");
+    step("Load more adds live papers and survives a failing source");
 
     // Five ratings unlock the algorithm's Read / Skim / Skip.
     for (let i = 0; i < 5; i++) await cards.nth(i).getByRole("button", { name: i < 3 ? "Relevant" : "Not relevant", exact: true }).click();

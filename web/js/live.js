@@ -1,5 +1,7 @@
-// Optional live lookups against the public OpenAlex API (free, no key, CORS-enabled).
-// Only search terms or identifiers are sent; never ratings, labels or profiles.
+// Optional live lookups against public, keyless, CORS-enabled scholarly APIs: OpenAlex
+// (default), Europe PMC and Crossref. Only search terms or identifiers are sent; never
+// ratings, labels or profiles. Papers from every source share one shape and are
+// de-duplicated by DOI, so the same paper from two sources appears once.
 import { cleanPaper } from "./data.js";
 
 const API = "https://api.openalex.org/works";
@@ -113,4 +115,132 @@ export async function resolveIdentifiers(ids) {
   if (dois.length) found.push(...(await get({ filter: `doi:${dois.join("|")}`, per_page: "50", select: SELECT })).results);
   if (works.length) found.push(...(await get({ filter: `openalex:${works.join("|")}`, per_page: "50", select: SELECT })).results);
   return found.map(w => paperFromWork(w, 0)).filter(Boolean);
+}
+
+// ------------------------------------------------------------ Europe PMC and Crossref
+
+const EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
+const CROSSREF = "https://api.crossref.org/works";
+const safeUrl = u => (typeof u === "string" && /^https?:\/\//i.test(u) ? u : "");
+const stripTags = t => String(t || "").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
+const doiId = doi => `doi:${String(doi).trim().toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, "")}`;
+
+async function getJson(url, name) {
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    try { res = await fetch(url); break; } catch (e) { if (attempt >= 2) throw e; await new Promise(r => setTimeout(r, 800 * (attempt + 1))); }
+  }
+  if (res.status === 429) throw new Error(`${name} is busy right now.`);
+  if (!res.ok) throw new Error(`${name} returned HTTP ${res.status}.`);
+  return res.json();
+}
+
+/** Europe PMC "core" record → paper (null without a DOI or a real abstract). */
+export function paperFromEuropePmc(r, minWords = 30) {
+  const abstract = stripTags(r.abstractText);
+  if (!r.title || !r.doi || abstract.split(" ").length < minWords) return null;
+  const preprint = r.source === "PPR" || /preprint/i.test(r.pubType || "");
+  const review = /review/i.test(r.pubType || "");
+  const journal = r.journalInfo?.journal?.title || (preprint ? r.bookOrReportDetails?.publisher || "" : "");
+  const pdf = (r.fullTextUrlList?.fullTextUrl || []).find(u => u.documentStyle === "pdf" && u.availability !== "Subscription required");
+  return cleanPaper({
+    id: doiId(r.doi),
+    title: stripTags(r.title).replace(/\.$/, ""),
+    abstract,
+    authors: (r.authorList?.author || []).map(a => a.fullName).filter(Boolean),
+    venue: journal,
+    published: r.firstPublicationDate || "",
+    year: Number(r.pubYear) || null,
+    url: safeUrl(`https://doi.org/${String(r.doi).toLowerCase()}`),
+    pdf_url: safeUrl(pdf?.url),
+    categories: ["Life sciences"],
+    source: "europepmc",
+    citation_count: Number.isFinite(r.citedByCount) ? r.citedByCount : null,
+    work_type: preprint ? "preprint" : review ? "review" : "article",
+    venue_type: preprint ? "repository" : journal ? "journal" : "",
+    oa_status: r.isOpenAccess === "Y" ? "open" : "",
+  });
+}
+
+/** Crossref work → paper (null without a title or a real abstract; Crossref abstracts are JATS XML). */
+export function paperFromCrossref(w, minWords = 30) {
+  const title = Array.isArray(w.title) ? w.title[0] : w.title;
+  const abstract = stripTags(w.abstract).replace(/^abstract\s*/i, "");
+  if (!title || !w.DOI || abstract.split(" ").length < minWords) return null;
+  const parts = w.issued?.["date-parts"]?.[0] || [];
+  const published = parts.length ? [parts[0], String(parts[1] || 1).padStart(2, "0"), String(parts[2] || 1).padStart(2, "0")].join("-") : "";
+  const preprint = w.type === "posted-content";
+  const venue = Array.isArray(w["container-title"]) ? w["container-title"][0] || "" : "";
+  return cleanPaper({
+    id: doiId(w.DOI),
+    title: stripTags(title),
+    abstract,
+    authors: (w.author || []).map(a => [a.given, a.family].filter(Boolean).join(" ") || a.name).filter(Boolean),
+    venue: venue || (preprint ? w.institution?.[0]?.name || "" : ""),
+    published,
+    year: parts[0] ?? null,
+    url: safeUrl(`https://doi.org/${String(w.DOI).toLowerCase()}`),
+    categories: [],
+    source: "crossref",
+    citation_count: Number.isFinite(w["is-referenced-by-count"]) ? w["is-referenced-by-count"] : null,
+    work_type: preprint ? "preprint" : "article",
+    venue_type: preprint ? "repository" : w.type === "proceedings-article" ? "conference" : venue ? "journal" : "",
+  });
+}
+
+const isoDay = daysAgo => new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10);
+
+export async function searchEuropePmc(query, { days = 365, limit = 40, page = 1 } = {}) {
+  const q = query.trim();
+  if (!q) return [];
+  const url = new URL(EPMC);
+  url.search = new URLSearchParams({
+    query: `(${q.slice(0, 300)}) AND (FIRST_PDATE:[${isoDay(days)} TO ${isoDay(0)}]) AND (HAS_ABSTRACT:y) AND (LANG:eng)`,
+    format: "json", resultType: "core", pageSize: String(limit), page: String(page), sort: "P_PDATE_D desc",
+  });
+  const data = await getJson(url, "Europe PMC");
+  return (data.resultList?.result || []).map(r => paperFromEuropePmc(r)).filter(Boolean);
+}
+
+export async function searchCrossref(query, { days = 365, limit = 40, page = 1 } = {}) {
+  const q = query.trim();
+  if (!q) return [];
+  const url = new URL(CROSSREF);
+  url.search = new URLSearchParams({
+    "query.bibliographic": q.slice(0, 300),
+    filter: `from-pub-date:${isoDay(days)},has-abstract:true,type:journal-article`,
+    rows: String(limit), offset: String((page - 1) * limit),
+    select: "DOI,title,abstract,author,container-title,issued,is-referenced-by-count,type",
+  });
+  const data = await getJson(url, "Crossref");
+  return (data.message?.items || []).map(w => paperFromCrossref(w)).filter(Boolean);
+}
+
+export const SOURCES = {
+  openalex: { label: "OpenAlex", hint: "All fields" },
+  europepmc: { label: "Europe PMC", hint: "Biomedicine and life sciences, including preprints" },
+  crossref: { label: "Crossref", hint: "Journal articles from publishers" },
+};
+export const DEFAULT_SOURCES = { openalex: true, europepmc: true, crossref: true };
+
+/**
+ * Search every enabled source at once. One failing source never blocks the others.
+ * Europe PMC and Crossref need search terms; OpenAlex also works from fields alone.
+ * Returns {papers (de-duplicated), status: {source: {n} | {error}}}.
+ */
+export async function searchAll(query, { sources = DEFAULT_SOURCES, fields = [], limit = 40, page = 1, bio = true } = {}) {
+  const jobs = {
+    openalex: () => searchRecent(query, { fields, limit, page }),
+    europepmc: () => searchEuropePmc(query, { limit, page }),
+    crossref: () => searchCrossref(query, { limit, page }),
+  };
+  const names = Object.keys(jobs).filter(n => sources[n] && (n !== "europepmc" || bio)); // Europe PMC only makes sense for life-science profiles
+  const settled = await Promise.allSettled(names.map(n => jobs[n]()));
+  const papers = [], seen = new Set(), status = {};
+  settled.forEach((r, i) => {
+    if (r.status === "rejected") { status[names[i]] = { error: r.reason?.message || "failed" }; return; }
+    status[names[i]] = { n: r.value.length };
+    for (const p of r.value) if (!seen.has(p.id)) { seen.add(p.id); papers.push(p); }
+  });
+  return { papers, status };
 }

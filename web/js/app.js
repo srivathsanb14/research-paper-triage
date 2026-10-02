@@ -9,7 +9,7 @@ import {
 } from "./engine.js";
 import { evaluate, learningCurve, SCREEN_MINUTES } from "./evaluate.js";
 import { digestMarkdown, download, slug, toBibtex, toCsv, toRis } from "./export.js";
-import { parseIdentifiers, resolveIdentifiers, searchRecent } from "./live.js";
+import { DEFAULT_SOURCES, SOURCES, parseIdentifiers, resolveIdentifiers, searchAll } from "./live.js";
 import { badges, loadRules, signals } from "./quality.js";
 import * as store from "./store.js";
 import { parseList, tokenize } from "./text.js";
@@ -343,7 +343,7 @@ function welcomeView() {
     </form>
     <ol class="how">
       <li><b>Pick</b><span>Choose your fields, and describe your research if you like. You get 20 papers to start.</span></li>
-      <li><b>Rate</b><span>Mark at least ${MIN_RATINGS} as relevant or not. Load more from OpenAlex whenever you want.</span></li>
+      <li><b>Rate</b><span>Mark at least ${MIN_RATINGS} as relevant or not. Load more papers from OpenAlex, Europe PMC and Crossref whenever you want.</span></li>
       <li><b>Triage</b><span>The algorithm sorts every other paper into Read, Skim and Skip with a reason and trust signals, and re-sorts as you keep rating.</span></li>
     </ol>
     ${A.proposals?.sets.length ? `<p class="fine">${icon("check")}<span>Labelling papers for the project dataset? <a href="#/label">Review suggested labels</a>.</span></p>` : ""}
@@ -414,7 +414,7 @@ function rateView(prof) {
     </div>
     <div class="list rate-list">
       ${ids.map(id => rateCard(A.byId.get(id), st.get(id) || {})).join("")}
-      <button class="btn more" data-act="load-more">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>
+      <button class="btn more" data-act="load-more">${icon("globe")}Load ${PAGE} more papers <span>fresh from the web</span></button>
     </div>
   </section>`;
 }
@@ -427,7 +427,7 @@ function fieldNames(prof) {
 function rateCard(p, st) {
   const open = A.expanded.has(p.id);
   const url = safeUrl(p.url);
-  const area = A.catalog.areas.find(a => a.id === p.area)?.label || "From OpenAlex";
+  const area = areaLabel(p);
   const meta = [authors(p.authors), p.venue, date(p.published || String(p.year || ""))].filter(Boolean).map(esc).join(" · ");
   const abs = p.abstract || "No abstract available.";
   const b = badges(p._sig, p);
@@ -505,7 +505,7 @@ function feedView(prof) {
           <button class="kbd-hint" data-act="help" title="Keyboard shortcuts">${icon("keyboard")}</button></div>
         ${page.length ? page.map(r => card(r, s.get(r.paper.id) || {})).join("") : emptyTab(prof)}
         ${rows.length > A.shown ? `<button class="btn more" data-act="more">Show ${Math.min(PAGE, rows.length - A.shown)} more <span>${(rows.length - A.shown).toLocaleString()} left</span></button>`
-          : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more" title="Fetches the past year's papers in your fields from OpenAlex. Only your fields and keywords are sent.">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>` : ""}
+          : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more" title="Fetches the past year's papers from your enabled sources (Settings → Sources). Only your keywords and fields are sent.">${icon("globe")}Load ${PAGE} more papers <span>fresh from the web</span></button>` : ""}
       </div>
     </div>
   </section>`;
@@ -515,7 +515,7 @@ const fmtHours = min => (min < 60 ? `${min} min` : `${Math.round((min / 60) * 10
 
 function emptyTab(prof) {
   if (A.query || A.signalFilters.size) return `<div class="empty small"><p>No papers match these filters.</p><button class="btn small" data-act="clear-filters">Clear filters</button></div>`;
-  if (A.tab === "READ") return `<div class="empty small"><p>Nothing clears the Read bar yet. Check <b>Skim</b>, rate a few more papers, or <button class="link" data-act="load-more">load more papers from OpenAlex</button>.</p></div>`;
+  if (A.tab === "READ") return `<div class="empty small"><p>Nothing clears the Read bar yet. Check <b>Skim</b>, rate a few more papers, or <button class="link" data-act="load-more">load more papers from the web</button>.</p></div>`;
   return `<div class="empty small"><p>No papers here.</p></div>`;
 }
 
@@ -525,7 +525,7 @@ function card(r, st) {
   const { reason: why, ev } = explain({ ...r, label });
   const sig = p._sig;
   const open = A.expanded.has(p.id);
-  const area = A.catalog.areas.find(a => a.id === p.area)?.label || (p.area === "imported" ? "Added by you" : "");
+  const area = areaLabel(p);
   const url = safeUrl(p.url);
   const meta = [authors(p.authors), p.venue, date(p.published || String(p.year || ""))].filter(Boolean).map(esc).join(" · ");
   const b = badges(sig, p);
@@ -846,7 +846,7 @@ function profileDialog(prof, isNew = false) {
     <h2>${isNew ? "New profile" : "Research interests"}</h2>
     <label class="field"><span>Profile name</span><input name="name" required maxlength="80" value="${esc(isNew ? "" : p.name)}" placeholder="e.g. Thesis: RAG evaluation"></label>
     <label class="field"><span>Research description</span><textarea name="description" rows="4" placeholder="A few sentences about your current research.">${esc(p.description)}</textarea></label>
-    <label class="field"><span>Keywords <small>comma-separated · matched exactly and used for OpenAlex search</small></span><input name="keywords" value="${esc(p.keywords.join(", "))}"></label>
+    <label class="field"><span>Keywords <small>comma-separated · matched exactly and used for live search</small></span><input name="keywords" value="${esc(p.keywords.join(", "))}"></label>
     <label class="field"><span>Current focus <small>weighted most heavily</small></span><input name="focus" value="${esc(p.focus)}" placeholder="What you’re working on this month"></label>
     <label class="field"><span>Exclude topics <small>comma-separated</small></span><input name="avoid" value="${esc(p.avoid.join(", "))}"></label>
     <label class="field narrow"><span>Reading time per week (hours)</span><input name="hours" type="number" min="0.5" max="40" step="0.5" value="${p.hours}"></label>
@@ -955,6 +955,9 @@ function settingsDialog() {
       ${row("Weekly reading cap", `${readBudget(prof.hours)} papers in Read`, sw("budget", prof.budget))}
       ${row("Group similar papers", "One card for near-duplicates", sw("group", prof.group))}
     </section>
+    <section class="sgroup"><h3>Sources <small>for Load more · only keywords are sent</small></h3>
+      ${Object.entries(SOURCES).map(([k, v]) => row(v.label, v.hint, sw(`src-${k}`, enabledSources()[k]))).join("")}
+    </section>
     <section class="sgroup"><h3>Model</h3>
       ${row("Semantic ranking", "MiniLM, about 23 MB, downloaded once", sw("semantic", A.state.settings.semantic !== false))}
     </section>
@@ -1055,6 +1058,15 @@ function openalexFields(prof) {
   return [...ids];
 }
 
+/** Catalog area, or where an outside paper came from. */
+function areaLabel(p) {
+  const known = A.catalog.areas.find(a => a.id === p.area)?.label;
+  if (known) return known;
+  return SOURCES[p.source] ? `From ${SOURCES[p.source].label}` : p.area === "imported" ? "Added by you" : "";
+}
+
+const enabledSources = () => ({ ...DEFAULT_SOURCES, ...(A.state.settings.sources || {}) });
+
 function areaFor(p) {
   if (p._subfield === 1702 || p._subfield === 1707) return "ai";
   const a = A.catalog.manifest.areas.find(x => x.id !== "ai" && x.fields.includes(p._field));
@@ -1072,17 +1084,20 @@ function searchTerms(prof) {
 }
 
 let loadingMore = false;
-/** "Load more": fresh papers for your fields from OpenAlex; falls back to the built-in catalog. */
+/** "Load more": fresh papers from the enabled sources (OpenAlex, Europe PMC, Crossref); falls back to the built-in catalog. */
 async function loadMore() {
   const prof = profile();
   if (!prof || loadingMore) return;
   loadingMore = true;
   $$('[data-act="load-more"]').forEach(b => { b.disabled = true; b.classList.add("busy"); });
   const rating = !hasEnoughSignal(prof) || A.run?.discover;
-  let found = [], failed = false;
+  let found = [], failed = false, status = {};
   try {
     prof.livePage = (prof.livePage || 0) + 1;
-    found = await searchRecent(searchTerms(prof), { fields: openalexFields(prof), limit: 40, page: prof.livePage });
+    // Europe PMC covers life sciences, so skip it when the profile's fields exclude them.
+    const bio = !prof.fields.length || prof.fields.some(f => ["life", "environment"].includes(f));
+    ({ papers: found, status } = await searchAll(searchTerms(prof), { sources: enabledSources(), fields: openalexFields(prof), limit: 40, page: prof.livePage, bio }));
+    failed = Object.values(status).length > 0 && Object.values(status).every(x => x.error);
     for (const p of found) p.area = areaFor(p);
     await addVisitorPapers(found, prof);
     await rerank();
@@ -1101,7 +1116,9 @@ async function loadMore() {
   } else A.shown += PAGE;
   loadingMore = false;
   render();
-  toast(failed ? "Couldn’t reach OpenAlex, so here are more papers from the built-in catalog." : found.length ? `Loaded ${found.length} papers from OpenAlex.` : "OpenAlex had nothing new, so here are more from the built-in catalog.");
+  const parts = Object.entries(status).map(([k, v]) => (v.error ? `${SOURCES[k].label} unavailable` : `${v.n} from ${SOURCES[k].label}`));
+  const some = Object.values(status).some(v => v.error);
+  toast(failed ? "Couldn’t reach any source, so here are more papers from the built-in catalog." : found.length ? `Loaded ${found.length} papers (${parts.join(", ")}).` : `Nothing new from your sources${some ? ` (${parts.filter(x => x.includes("unavailable")).join(", ")})` : ""}, so here are more from the built-in catalog.`, { ms: some ? 7000 : 4200 });
 }
 
 function backupJson(prof) {
@@ -1439,6 +1456,11 @@ document.addEventListener("change", async e => {
     if (t.name === "budget") prof.budget = t.checked;
     if (t.name === "adaptive") prof.adaptive = t.checked;
     if (t.name === "group") prof.group = t.checked;
+    if (t.name.startsWith("src-")) {
+      A.state.settings.sources = { ...enabledSources(), [t.name.slice(4)]: t.checked };
+      if (!Object.values(A.state.settings.sources).some(Boolean)) { A.state.settings.sources.openalex = true; t.form["src-openalex"].checked = true; toast("At least one source stays on."); }
+      return save();
+    }
     if (t.name === "semantic") {
       A.state.settings.semantic = t.checked;
       if (t.checked) startEmbedder();

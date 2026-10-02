@@ -7,7 +7,7 @@ import {
 } from "../../web/js/engine.js";
 import { curveSizes, evaluate, learningCurve } from "../../web/js/evaluate.js";
 import { toBibtex, toCsv } from "../../web/js/export.js";
-import { parseIdentifiers, paperFromWork } from "../../web/js/live.js";
+import { paperFromCrossref, paperFromEuropePmc, parseIdentifiers, paperFromWork, searchAll } from "../../web/js/live.js";
 
 const RAG = [
   ["Retrieval-Augmented Generation for Scientific Question Answering", "We present a retrieval-augmented generation pipeline that answers questions over scientific papers using dense retrieval and a reranker."],
@@ -151,4 +151,52 @@ test("learning curve trains only on k labels and scores the rest", () => {
   const avg = key => curve.points.reduce((a, p) => a + p[key], 0) / curve.points.length;
   assert.ok(avg("model") > avg("random"), "learned model beats a random order");
   assert.equal(learningCurve(ctx(papers(), { labels: { p0: { label: "READ" }, p6: { label: "SKIP" } } })).ok, false);
+});
+
+const LONG = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
+
+test("Europe PMC and Crossref records map to the shared paper shape", () => {
+  const e = paperFromEuropePmc({
+    title: "A cohort study.", doi: "10.1000/ABC", abstractText: `<h4>Background</h4><p>${LONG} &amp; more</p>`, pubType: "research-article; journal article",
+    authorList: { author: [{ fullName: "Ada L" }] }, journalInfo: { journal: { title: "J Health" } }, firstPublicationDate: "2026-09-03", pubYear: "2026", citedByCount: 4, isOpenAccess: "Y", source: "MED",
+  });
+  assert.equal(e.id, "doi:10.1000/abc");
+  assert.equal(e.title, "A cohort study");
+  assert.equal(e.venue_type, "journal");
+  assert.equal(e.source, "europepmc");
+  assert.ok(!/[<>]/.test(e.abstract) && e.abstract.includes("& more"));
+  assert.equal(paperFromEuropePmc({ title: "x", doi: "10.1/x", abstractText: "too short" }), null);
+  assert.equal(paperFromEuropePmc({ title: "x", abstractText: LONG }), null); // no DOI, so it can't be de-duplicated
+  assert.equal(paperFromEuropePmc({ title: "P", doi: "10.1/p", abstractText: LONG, source: "PPR" }).venue_type, "repository");
+
+  const c = paperFromCrossref({
+    DOI: "10.1002/AIDI.1", title: ["From Data to Discovery"], abstract: `<jats:p>Abstract ${LONG}</jats:p>`, type: "journal-article",
+    author: [{ given: "Zhi", family: "Cao" }], "container-title": ["Adv Discovery"], issued: { "date-parts": [[2026, 6, 28]] }, "is-referenced-by-count": 2,
+  });
+  assert.equal(c.id, "doi:10.1002/aidi.1");
+  assert.equal(c.published, "2026-06-28");
+  assert.deepEqual(c.authors, ["Zhi Cao"]);
+  assert.ok(c.abstract.startsWith("word0"));
+  assert.equal(c.work_type, "article");
+});
+
+test("searching several sources merges, de-duplicates and survives a failing source", async () => {
+  const real = globalThis.fetch;
+  const work = doi => ({ id: `https://openalex.org/W${doi.length}`, doi: `https://doi.org/${doi}`, title: `T ${doi}`, abstract_inverted_index: Object.fromEntries(LONG.split(" ").map((w, i) => [w, [i]])), publication_date: "2026-09-01", publication_year: 2026, primary_location: {} });
+  globalThis.fetch = async url => {
+    const u = String(url);
+    if (u.includes("openalex")) return { ok: true, status: 200, json: async () => ({ results: [work("10.1/a"), work("10.1/b")] }) };
+    if (u.includes("europepmc")) return { ok: true, status: 200, json: async () => ({ resultList: { result: [{ title: "Dup", doi: "10.1/a", abstractText: LONG, journalInfo: { journal: { title: "J" } } }, { title: "New", doi: "10.1/c", abstractText: LONG }] } }) };
+    return { ok: false, status: 503, json: async () => ({}) }; // Crossref down
+  };
+  try {
+    const { papers, status } = await searchAll("rag", { limit: 10 });
+    assert.deepEqual(papers.map(p => p.id).sort(), ["doi:10.1/a", "doi:10.1/b", "doi:10.1/c"]);
+    assert.equal(status.openalex.n, 2);
+    assert.ok(status.crossref.error);
+    const only = await searchAll("rag", { sources: { openalex: true }, limit: 10 });
+    assert.deepEqual(Object.keys(only.status), ["openalex"]);
+    const skipBio = await searchAll("rag", { sources: { europepmc: true }, bio: false });
+    assert.deepEqual(skipBio, { papers: [], status: {} }); // not asked, not reported
+  } finally { globalThis.fetch = real; }
 });
