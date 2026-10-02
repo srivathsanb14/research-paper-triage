@@ -1,185 +1,81 @@
 # Paper Triage
 
-*"Which papers are actually worth my time?"*
+Too many papers, too little time. Describe your research and every recent paper is sorted into
+**Read / Skim / Skip** with a one-line reason and separate "worth-it" signals (peer review, released
+code or data, study design, citation impact, cautions). It learns from your ratings and labels.
+Runs in the browser; no API key.
 
-Papers are cheaper to write than ever: preprint servers, paper mills and AI-assisted writing
-mean more new papers every week than anyone can screen. Paper Triage helps a researcher spend
-their limited reading time on the right ones:
+**Live:** Hugging Face Space (see [Publish](#publish)) · GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/`
 
-* **Relevance, personalised.** Describe your research in a sentence. Every paper is sorted into
-  **Read / Skim / Skip** with a one-line reason that only cites words actually in the paper.
-* **Worth-it signals, separately.** Is it peer-reviewed? Does it release code or data? What study
-  design does the abstract describe? Is it cited above its field's average? Any cautions (very
-  short abstract, promotional wording)? Filter or sort by these; they never change relevance.
-* **Learns your taste, honestly.** Thumbs up/down, corrections and hand labels train a small model
-  in your browser. It only gets a say when cross-validation on your own labels shows it helps,
-  and the Insights page shows by how much.
-* **No setup, private.** A static website: no account, no server, no API key. Your interests,
-  ratings and labels never leave the browser.
+## Requirements
 
-**Live:** GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/` and a Hugging
-Face static Space (see [Publish](#publish)).
+| # | Requirement | How it is met |
+|---|---|---|
+| 1 | **Functional and useful** | Triage for a real reading backlog. Measured with 5-fold cross-validation on our own labels (NDCG@10, average precision, papers to screen for 80% of the good ones, time saved) against profile-only, semantic-only, keyword-only and random baselines: [report](docs/evaluation/report.md), the Insights page, and a learning curve of quality vs. number of labels. |
+| 2 | **≥ 500 manual samples** | 500 labels in [`data/labels/manual/`](data/labels/manual) over a 1,859-paper catalog (OpenAlex, CC0). Rule-generated labels, including the demo accounts' mock data, live apart in [`data/labels/synthetic/`](data/labels/synthetic) and are never counted. Card and EDA: [docs/EDA.md](docs/EDA.md). |
+| 3 | **≥ 2 model types** | **Off-the-shelf:** all-MiniLM-L6-v2 embeddings ([card](hf/model-embeddings/README.md)). **Trained from scratch:** a per-user ridge ranker over seven readable features, blended with a hand-set profile score by a cross-validated weight ([card](hf/model-ranker/README.md)). |
+| 4 | **Public GUI on Hugging Face Spaces** | Static Space built by `scripts/build_pages.py --hf-space`, published with `scripts/publish_hf.sh`. |
 
-## Try it
+## Use it
 
-1. Open the site, pick your fields (and describe your research if you like, or click an example), then **Show papers**.
-2. You get 20 papers. Mark at least **5** as 👍 Relevant or 👎 Not relevant (press again to undo).
-   **Load more** below the list fetches fresh papers for your fields from OpenAlex.
-3. After 5 ratings the algorithm sorts every paper you haven't rated into **Read / Skim / Skip**, with a
-   one-line reason and trust signals. Each further rating re-sorts the lists; rated papers move to **Rated**.
-   Read is capped by your weekly reading time, and adaptive cutoffs keep it filled with your best matches.
-   Keyboard: `J`/`K` move, `U`/`N` rate, `S` save, `X` hide, `Enter` details, `?` help.
-4. **Label** papers with predictions hidden, or review suggested labels, and open **Insights** to see how
-   well the ranking finds what you would pick: good papers in the top 10, papers to screen for 80% of good
-   ones, time saved, NDCG@10 / AP / Spearman against baselines.
-5. **Saved** exports BibTeX / RIS / CSV for Zotero, Mendeley or EndNote. Settings has backups.
-
-## Accounts and a label backend (optional)
-
-The static site needs no server. To keep each person's profiles, ratings and labels on a server
-instead of only in their browser, run the bundled backend (FastAPI + SQLite):
-
-```bash
-pip install -r requirements.txt
-python scripts/build_pages.py        # builds _site/
-python -m server                     # http://localhost:8000: site + accounts
-```
-
-* **Sign in / create account** (top right). Passwords are scrypt-hashed, sessions are httpOnly cookies, login is rate-limited.
-  Your profiles, ratings and labels then sync to your account, and anything this browser already had is merged in.
-  On the static (GitHub Pages) site the button is hidden and everything stays in the browser.
-* **Starter labels.** The account dialog can add a ready-made profile with the project's labelled data
-  (`data/labels/`: human-verified sets and the simulated demo set, kept separate). They are loaded into SQLite at startup.
-* **Your labels in the backend.** Every hand label is also written to a `labels` table (`GET /api/labels` exports it as JSONL).
-  The database lives in `data/users.db` (git-ignored; override with `TRIAGE_DB`). Set `TRIAGE_SECURE_COOKIES=1` behind HTTPS.
-* Papers you import from OpenAlex are not synced; labels on them only count on the browser that holds those papers.
-
-**Insights → "How fast does it learn you?"** plots NDCG@10 on held-out labels against the number of labels
-the model learned from (5, 10, 15 … ), next to the profile-only and random baselines. Needs about 15+ hand labels.
-
-## Project 1 checklist
-
-| Requirement | Where it is met |
-|---|---|
-| Functional and useful, with justification and a measure | Triage for a real reading backlog; need and design choices above; measured by cross-validated NDCG@10, AP and time saved ([report](docs/evaluation/report.md), Insights page, learning curve) |
-| ≥ 500 manual samples, synthetic stored separately | 500 manual labels in `data/labels/manual/` (provenance per row; see the dataset card, [EDA](docs/EDA.md)); all rule-generated labels, including the demo accounts' mock data, are in `data/labels/synthetic/` and excluded from the count |
-| ≥ 2 model types | Off-the-shelf all-MiniLM-L6-v2 embeddings + a ridge ranker trained from scratch per user ([cards](hf/)) |
-| Public GUI on Hugging Face Spaces | Static Space built by `scripts/build_pages.py --hf-space`, published with `scripts/publish_hf.sh <hf-user>` (needs your Hugging Face login) |
-| Best practices | Held-out cross-validation, baselines, validated learning weight, model and dataset cards, tests (pytest, node:test, Playwright), accessibility and privacy notes, CI |
+1. Pick your fields and optionally describe your research, then **Show papers**.
+2. Rate at least 5 of the first 20 as 👍 or 👎 (or hand-label in **Label**). The rest are sorted into Read / Skim / Skip and re-sorted with every rating.
+3. **Insights** shows how well the ranking finds what you would pick, and how fast it learns you.
+4. **Saved** exports BibTeX, RIS or CSV. **Settings** has cutoffs and backups.
 
 ## How it works
 
 ```
- your description ─┐                       ┌─ profile score (hand-set weights, works on day one)
- papers ───────────┼─ MiniLM embeddings ─ 7 readable features ─┤
- your ratings ─────┘   (off-the-shelf)                         └─ ridge regression (trained from scratch, per person)
-                                                                     final = (1−w)·profile + w·learned,  w by cross-validation
+ description ─┐                    ┌─ profile score (hand-set weights)
+ papers ──────┼─ MiniLM ─ 7 features ─┤
+ ratings ─────┘                    └─ ridge regression (trained per user)
+                                       final = (1−w)·profile + w·learned, w by cross-validation
  metadata + abstract ─ rules ─ worth-it signals (shown beside the score, never mixed in)
 ```
 
-| Part | What | Where |
-|---|---|---|
-| Catalog | ~1,900 recent papers across all 26 OpenAlex fields + AI/ML subfields; half newest, half most-cited in the past 180 days; refreshed daily by GitHub Actions | `scripts/build_catalog.py`, `data/catalog/` |
-| Off-the-shelf model | all-MiniLM-L6-v2 (q8 ONNX via transformers.js). Catalog vectors precomputed; your text embedded in a Web Worker | `scripts/embed_catalog.mjs`, `web/js/embed-worker.js`, [card](hf/model-embeddings/README.md) |
-| Model trained from scratch | 7-feature ridge ranker with a cross-validated blend, Read/Skim/Skip cutoffs and a weekly reading budget | `web/js/engine.js` (browser), `triage/relevance.py` (Python reference), [card](hf/model-ranker/README.md) |
-| Worth-it signals | Transparent rules shared by Python and the browser | `triage/quality_rules.json`, `triage/quality.py`, `web/js/quality.js` |
-| Explanations | Deterministic evidence (keyword hits, shared terms, best sentence); reasons state only that evidence | `web/js/engine.js` → `evidence`, `reason` |
-| Evaluation | 5-fold CV against profile-only, learned-only, semantic-only, keyword-only and random | `web/js/evaluate.js`, `scripts/evaluate_web.mjs`, [report](docs/evaluation/report.md) |
-| Dataset | Papers + signals, manual labels, synthetic labels (separate), card with EDA | `scripts/build_dataset.py`, [EDA](docs/EDA.md) |
+* **Relevance ≠ quality.** Signals are checkable cues, not a verdict, and they never change relevance.
+* **Validated learning.** A few subjective labels can make a learned model worse, so its weight stays 0 unless it beats the profile alone in cross-validation.
+* **Grounded reasons.** Explanations cite only words found in the paper.
 
-Design decisions worth knowing:
+Code: `web/js/engine.js` (browser), `triage/relevance.py` (Python reference, checked for parity), `web/js/evaluate.js`, `triage/quality_rules.json`.
 
-* **Relevance ≠ quality.** Mixing "is it about my work?" with "is it trustworthy?" into one number
-  hides both. Signals are cues you can check (each badge has a tooltip saying why it's there), not a
-  verdict, and they are field-dependent (humanities papers rarely mention code).
-* **Validated learning.** A handful of subjective labels can make a learned model worse than the
-  profile. The learned weight is picked from {0, 0.15, 0.3, 0.5, 0.7} by cross-validated average
-  precision and stays 0 unless it beats the profile alone.
-* **Grounded explanations.** The original design flagged that an LLM "may invent overlap". Reasons
-  are built only from verified evidence; the server edition's optional Claude explanations must cite
-  terms that are then checked against the abstract.
-* **Fast first visit.** The page is interactive in ~0.5 s with TF-IDF ranking; MiniLM (~23 MB, cached)
-  loads in the background and the ranking switches over automatically.
-
-## Run locally
-
-Website (only Python 3.11+ needed to build and serve):
+## Run
 
 ```bash
-python3 scripts/build_pages.py
-python3 -m http.server 8000 --bind 127.0.0.1 --directory _site    # open http://127.0.0.1:8000
+python3 scripts/build_pages.py                                  # builds _site/
+python3 -m http.server 8000 --bind 127.0.0.1 --directory _site  # static site, browser-only
 ```
 
-For sign-in and synced labels use the bundled server instead (`python -m server`, see below); demo accounts:
-`python -m server.demo_users` (sri, ishaan, chris, password `demo`, mock data).
-
-Rebuild the catalog and its embeddings (network access to OpenAlex and the Hugging Face Hub):
+Optional accounts (sign-in, per-user profiles and labels in SQLite, starter label sets):
 
 ```bash
-python3.12 -m venv .venv && .venv/bin/pip install -r requirements-core.txt
-npm ci
-.venv/bin/python scripts/build_catalog.py    # optional OPENALEX_API_KEY for a larger quota
-node scripts/embed_catalog.mjs               # only changed shards are re-embedded
+pip install -r requirements.txt
+python -m server                  # http://localhost:8000, serves _site/ and /api
+python -m server.demo_users       # demo accounts sri, ishaan, chris (password "demo", simulated labels)
 ```
 
-Tests:
+Tests: `pytest -q` · `npm run test:js` · `npm run test:pages` (Playwright end to end; `npx playwright install chromium` first).
 
-```bash
-.venv/bin/pip install -r requirements-core.txt 'anthropic>=1.0' 'pytest>=8.0'
-.venv/bin/python -m pytest -q        # Python engine, catalog, signals, and JS↔Python parity (needs Node)
-npm run test:js                      # browser engine unit tests
-npx playwright install chromium
-python3 scripts/build_pages.py && npm run test:pages   # end-to-end: onboarding → feedback → labels → insights → backup, desktop + mobile
-```
+## Data workflow
 
-## Data and evaluation workflow
-
-1. Each labeller creates a profile for their own research, labels papers in **Label**
-   (balanced sampling, predictions hidden), and exports **Labels JSONL**.
-2. Put the files in `data/labels/manual/`. Rule-generated labels live in `data/labels/synthetic/`
-   (`python scripts/simulate_labels.py`) and are never mixed with manual ones.
-3. `python scripts/build_dataset.py` validates and merges labels (latest per labeller, profile and
-   paper), computes inter-annotator agreement (Cohen's κ) and writes `_dataset/` plus `docs/EDA.md`.
-4. `node scripts/evaluate_web.mjs data/labels/manual/*.jsonl` writes `docs/evaluation/report.md`,
-   the numbers quoted in the model cards.
+1. Label papers in **Label** (predictions hidden) and export **Labels JSONL** into `data/labels/manual/`.
+2. `python scripts/build_dataset.py` validates and merges labels, computes agreement, and writes `_dataset/` and `docs/EDA.md`.
+3. `node scripts/evaluate_web.mjs data/labels/manual/*.jsonl` writes `docs/evaluation/report.md`.
+4. Synthetic labels: `scripts/simulate_labels.py`, `scripts/simulate_users.py`.
 
 ## Publish
 
-* **GitHub Pages**: Settings → Pages → Source: GitHub Actions; merge to `main`. The workflow
-  tests everything, refreshes the catalog daily (06:23 UTC), embeds new papers and deploys.
-  Pages on a private repository requires a paid plan; public repositories can use GitHub Free.
-* **Hugging Face**: `pip install -U huggingface_hub && hf auth login`, then
-  `scripts/publish_hf.sh <your-hf-user>` creates/updates the Space (`sdk: static`), the dataset and
-  both model cards. To keep the Space in sync automatically, add the repository secret `HF_TOKEN`
-  and variable `HF_SPACE` (e.g. `user/paper-triage`); the workflow then mirrors every deploy.
-
-Import format for your own papers (**Import papers (JSON)**): a JSON array of up to 2,000 objects with a
-unique `id` and a `title`; `abstract`, `authors`, `venue`, `published`, `url` (http/https) and the other
-fields of `triage.models.Paper` are optional.
-
-## Server edition (Streamlit)
-
-The original Python app is still here for research use: `pip install -r requirements.txt && streamlit run app.py`.
-It adds live arXiv / Semantic Scholar fetching, DOI/BibTeX seed papers, full-text re-scoring of borderline
-papers, sentence-transformers on the server, optional Claude-written explanations (verified against the
-abstract) and Slack/email digests. Environment variables: `ANTHROPIC_API_KEY`, `TRIAGE_LLM_MODEL`,
-`S2_API_KEY`, `TRIAGE_EMBEDDING_BACKEND` (`auto`/`sbert`/`tfidf`), `TRIAGE_DB_PATH`, `SLACK_WEBHOOK_URL`, SMTP
-variables. Its profile backups can be restored in the website.
+* **Hugging Face:** `hf auth login`, then `scripts/publish_hf.sh <hf-user>` creates the Space, dataset and both model cards.
+* **GitHub Pages:** Settings → Pages → Source: GitHub Actions. The workflow tests, refreshes the catalog daily and deploys.
 
 ## Limitations
 
-* The catalog is a bounded, recent sample (~270 papers per area), not complete coverage; use
-  *Find more on OpenAlex* or import your own collection for depth.
-* English abstracts only. Ranking quality depends on the profile text and the abstract.
-* Signals come from metadata and abstract wording and inherit OpenAlex metadata errors.
-* Data lives in one browser; use Settings → Download backup to move or keep it.
+* The catalog is a bounded recent sample (~270 papers per area); use *Load more* or import your own papers for depth.
+* English abstracts only. Signals come from metadata and abstract wording and inherit OpenAlex errors.
+* Without the optional server, data lives in one browser; use Settings → Download backup.
+* The original Streamlit app is still in `app.py` (`streamlit run app.py`) as the server-side research edition.
 
 ## AI assistance
 
-Parts of this repository (the browser app, the JavaScript port of the engine, tests, build
-scripts, the accounts backend, the learning curve, the simulated demo users and documentation) were
-written with Claude Code (Anthropic) under the team's direction. Claude also proposed Read/Skim/Skip
-labels for the review sets in `data/labels/proposals/`; those are model-proposed and only become
-dataset rows after a person reviews them (provenance is stored per row). The mock data for the demo
-accounts is rule-generated, labelled `synthetic-rule`, and kept apart from the manual labels.
-<!-- Team: add your own reflection here: what you asked the tools for, what they got wrong, what you reviewed or rewrote yourselves. -->
+Large parts of the code, tests and docs were written with Claude Code under the team's direction. Claude also proposed labels for the review sets in `data/labels/proposals/`; people reviewed them before they became dataset rows (provenance is stored per row).
+<!-- Team: add your own reflection: what you asked the tools for, what they got wrong, what you rewrote. -->
