@@ -1,12 +1,13 @@
 // Paper Triage — browser app. Everything personal stays in this browser.
-import { bindCharts, discoveryChart } from "./chart.js";
+import * as account from "./account.js";
+import { bindCharts, discoveryChart, learningChart } from "./chart.js";
 import { fromRecord, loadCatalog, parseImport, toRecord } from "./data.js";
 import { Embedder, paperText } from "./embedder.js";
 import {
   DEFAULT_CUTOFFS, DenseSpace, FEATURES, FEATURE_NAMES, LABELS, MIN_LABELS, MINUTES_PER_READ, PRIOR_WEIGHTS, SparseSpace,
   buildProfileVectors, documentFrequencies, evidence, highlightTerms, isEmptyProfile, profileTexts, rank, readBudget, reason,
 } from "./engine.js";
-import { evaluate, SCREEN_MINUTES } from "./evaluate.js";
+import { evaluate, learningCurve, SCREEN_MINUTES } from "./evaluate.js";
 import { digestMarkdown, download, slug, toBibtex, toCsv, toRis } from "./export.js";
 import { parseIdentifiers, resolveIdentifiers, searchRecent } from "./live.js";
 import { badges, loadRules, signals } from "./quality.js";
@@ -56,6 +57,7 @@ const A = {
   labelStrategy: "balanced",
   labelUndo: [],
   report: null,
+  curve: null,
   embedder: new Embedder(),
   vecCache: new Map(),
   newIds: new Set(),
@@ -63,7 +65,7 @@ const A = {
 
 const defaultState = () => ({ version: 1, active: null, profiles: {}, settings: { semantic: true, labeler: "" } });
 const profile = () => A.state.profiles[A.state.active] || null;
-const save = () => store.saveState(A.state);
+const save = () => { store.saveState(A.state); account.queue(A.state); };
 const now = () => new Date().toISOString();
 
 function newProfile(fields = {}) {
@@ -167,6 +169,7 @@ async function rerank({ quiet = true } = {}) {
     A.run = { ...out, space: ctx?.space ?? A.sparse, ctx, byId: new Map(out.results.map(r => [r.paper.id, r])) };
     A.explained.clear();
     A.report = null;
+    A.curve = null;
     if (!quiet && before) {
       const after = out.results.filter(r => r.label === "READ").map(r => r.paper.id);
       const moved = after.filter(id => !before.has(id)).length;
@@ -247,6 +250,8 @@ function likedIds(prof) {
   return [...states(prof)].filter(([, x]) => x.vote === "useful" || (x.saved && x.vote !== "not_useful")).map(([id]) => id);
 }
 const ratingsCount = prof => ratedIds(prof).length;
+/** Hand labels tell the algorithm what you like just as well as feed ratings, so they also end the rating phase. */
+const hasEnoughSignal = prof => ratingsCount(prof) + Object.keys(prof.labels).length >= MIN_RATINGS;
 
 // -------------------------------------------------------------------- shell
 
@@ -273,6 +278,9 @@ function render() {
 }
 
 function renderHeader(prof) {
+  const accountBtn = $("#account-btn");
+  accountBtn.hidden = !account.acct.available;
+  accountBtn.innerHTML = account.acct.user ? `${icon("user")}${esc(account.acct.user.username)}` : "Sign in";
   const nav = $("#nav");
   nav.hidden = !prof;
   if (prof) {
@@ -437,27 +445,29 @@ function rateCard(p, st) {
 }
 
 function feedView(prof) {
-  const n = ratingsCount(prof);
-  if (n < MIN_RATINGS || A.run.discover) return rateView(prof);
+  if (!hasEnoughSignal(prof) || A.run.discover) return rateView(prof);
   const all = rowsFor(prof, { ignoreTab: true }).rows;
   const s = states(prof);
   const count = lab => all.filter(r => (s.get(r.paper.id)?.corrected || r.label) === lab).length;
   const counts = { READ: count("READ"), SKIM: count("SKIM"), SKIP: count("SKIP"), ALL: all.length, NEW: all.filter(r => A.newIds.has(r.paper.id) && (s.get(r.paper.id)?.corrected || r.label) !== "SKIP").length };
   const hiddenN = [...s.values()].filter(x => x.hidden).length;
-  counts.RATED = n;
+  counts.RATED = ratingsCount(prof);
   const { rows } = rowsFor(prof);
   const page = rows.slice(0, A.shown);
   const tabs = [["READ", "Read"], ["SKIM", "Skim"], ["SKIP", "Skip"], ["ALL", "All"], ["RATED", "Rated"]];
   if (counts.NEW) tabs.unshift(["NEW", "New"]);
-  const minutes = counts.READ * MINUTES_PER_READ;
+  // The weekly budget is about what the algorithm suggests; papers you already labelled or rated are decided.
+  const decided = id => prof.labels[id] || s.get(id)?.corrected || s.get(id)?.vote || s.get(id)?.saved;
+  const toRead = all.filter(r => (s.get(r.paper.id)?.corrected || r.label) === "READ" && !decided(r.paper.id)).length;
+  const minutes = toRead * MINUTES_PER_READ;
   const budget = prof.hours * 60;
-  const ratings = ratingsCount(prof);
   const m = A.run.model;
-  const blend = A.run.blend;
-  const engineLine = A.run.space === A.dense ? "MiniLM semantic ranking" : "Keyword (TF-IDF) ranking";
-  const learning = m.info.learned
-    ? `sorted by the algorithm from your ${ratings} ratings (learned model weight ${pct(m.learnedWeight)}${blend.validated ? ", validated on your labels" : ""})`
-    : `sorted by the algorithm from your ${ratings} ratings`;
+  const teachers = counts.RATED + Object.keys(prof.labels).length; // ratings and hand labels both teach the model
+  const engineLine = [
+    A.run.space === A.dense ? "MiniLM semantic ranking" : "Keyword (TF-IDF) ranking",
+    m.info.learned ? `learned from ${teachers} ratings and labels (weight ${pct(m.learnedWeight)}${A.run.blend.validated ? ", validated" : ""})` : `${teachers} ratings so far`,
+    ...(A.run.space !== A.dense && A.embedder.status === "loading" ? ["switches to semantic ranking when the model loads"] : []),
+  ].join(" · ");
   const kws = [...prof.keywords.slice(0, 5)];
   return `<section class="feed">
     <header class="feed-head">
@@ -467,12 +477,12 @@ function feedView(prof) {
         ${kws.length ? `<div class="kw">${kws.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
       </div>
       <div class="budget" title="Read papers take about ${MINUTES_PER_READ} minutes each">
-        <div class="budget-num"><b>${counts.READ}</b> to read <span>· ${counts.SKIM} to skim</span></div>
+        <div class="budget-num"><b>${toRead}</b> new to read</div>
         <div class="meter" role="img" aria-label="${Math.round(minutes / 60 * 10) / 10} of ${prof.hours} hours"><i style="width:${Math.min(100, (minutes / Math.max(1, budget)) * 100)}%"></i></div>
         <div class="budget-sub">≈ ${fmtHours(minutes)} of your ${prof.hours} h a week${prof.budget ? ` · Read capped at ${readBudget(prof.hours)}` : ""}</div>
       </div>
     </header>
-    <p class="engine">${icon("spark")} ${engineLine}, ${learning}. Keep rating with ${icon("up")} / ${icon("down")} and the lists re-sort. ${A.run.space !== A.dense && A.embedder.status === "loading" ? "Switches to semantic ranking when the model finishes loading." : ""}</p>
+    <p class="engine">${icon("spark")} ${engineLine}</p>
     <div class="feed-grid">
       <aside class="filters" aria-label="Filters">
         <details class="filters-box" ${(A.filtersOpen ?? matchMedia("(min-width: 900px)").matches) ? "open" : ""}>
@@ -484,9 +494,7 @@ function feedView(prof) {
           <div class="chips">${Object.entries(SIGNAL_FILTERS).map(([k, f]) => `<label class="chip-toggle small"><input type="checkbox" data-act="signal-filter" value="${k}" ${A.signalFilters.has(k) ? "checked" : ""}><span>${f.text}</span></label>`).join("")}</div>
           <h3>Fields</h3>
           <div class="chips">${fieldChips(prof.fields, "feed-fields")}</div>
-          <h3>More papers</h3>
-          <button class="btn small" data-act="load-more">${icon("globe")}Load more from OpenAlex</button>
-          <p class="hint">Fetches papers from the past year in your fields from OpenAlex. Only your fields and keywords are sent.</p>
+          <h3>Papers</h3>
           <label class="btn small ghost file">${icon("upload")}Import papers (JSON)<input type="file" accept=".json,application/json" data-act="import-papers" hidden></label>
           <div class="export-row"><button class="btn small ghost" data-act="digest">${icon("download")}Digest (Markdown)</button></div>
         </details>
@@ -497,7 +505,7 @@ function feedView(prof) {
           <button class="kbd-hint" data-act="help" title="Keyboard shortcuts">${icon("keyboard")}</button></div>
         ${page.length ? page.map(r => card(r, s.get(r.paper.id) || {})).join("") : emptyTab(prof)}
         ${rows.length > A.shown ? `<button class="btn more" data-act="more">Show ${Math.min(PAGE, rows.length - A.shown)} more <span>${(rows.length - A.shown).toLocaleString()} left</span></button>`
-          : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>` : ""}
+          : A.tab !== "RATED" && A.tab !== "HIDDEN" ? `<button class="btn more" data-act="load-more" title="Fetches the past year's papers in your fields from OpenAlex. Only your fields and keywords are sent.">${icon("globe")}Load ${PAGE} more papers <span>fresh from OpenAlex</span></button>` : ""}
       </div>
     </div>
   </section>`;
@@ -728,7 +736,35 @@ function computeReport() {
   const prof = profile();
   if (!prof || !A.run?.ctx) return;
   try { A.report = evaluate(A.run.ctx, prof.good || "read"); } catch (e) { console.error(e); A.report = { ok: false, message: e.message }; }
+  if (A.view === "insights") { render(); setTimeout(computeCurve, 30); }
+}
+
+function computeCurve() {
+  const prof = profile();
+  if (!prof || !A.run?.ctx || A.curve) return;
+  const seq = rankSeq;
+  let curve;
+  try { curve = learningCurve(A.run.ctx); } catch (e) { console.error(e); curve = { ok: false, message: e.message }; }
+  if (seq !== rankSeq) return; // ranking changed while computing: the next report recomputes
+  A.curve = curve;
   if (A.view === "insights") render();
+}
+
+function learningSection() {
+  if (!A.curve) return `<div class="card-surface"><h2>How fast does it learn you?</h2><div class="empty"><div class="spinner"></div><p>Training on growing subsets of your labels…</p></div></div>`;
+  if (!A.curve.ok) return `<div class="card-surface"><h2>How fast does it learn you?</h2><p class="hint">${esc(A.curve.message)}</p></div>`;
+  const { points, gain, learned, testN } = A.curve;
+  const last = points[points.length - 1];
+  const verdict = gain > 0.01 ? `With ${last.k} labels the learned model ranks unseen papers ${fix(gain * 100)} NDCG points better than the profile alone.`
+    : gain < -0.01 ? `With ${last.k} labels the profile alone still ranks unseen papers slightly better (${fix(-gain * 100)} points): learning hasn’t paid off yet.`
+    : `With ${last.k} labels learning and the profile alone rank unseen papers about equally well.`;
+  return `<div class="card-surface"><h2>How fast does it learn you?</h2>
+    ${learningChart(points, [
+      { name: "Learns from your labels", key: "model", cls: "s1" },
+      { name: "Profile only", key: "prior", cls: "s2" },
+      { name: "Random order", key: "random", cls: "ref" },
+    ])}
+    <p class="hint">${verdict} (Scored on ${testN} labels held out from training.) Going from ${points[0].k} to ${last.k} labels moved the personalised model by ${learned >= 0 ? "+" : "−"}${fix(Math.abs(learned) * 100)} points.</p></div>`;
 }
 
 function insightsView(prof) {
@@ -775,6 +811,7 @@ function insightsView(prof) {
       ${tile("Learning weight", pct(rep.blend.weight ?? 0), rep.blend.weight ? "beats profile-only in validation" : "off: learning didn’t beat profile-only yet")}
     </div>
     <div class="card-surface">${chart}</div>
+    ${learningSection()}
     <div class="two">
       <div class="card-surface"><h2>Ranking quality</h2>
         <table class="metrics"><thead><tr><th>Method</th><th title="Ranking quality of the top 10 (1 = perfect)">NDCG@10</th><th title="Average precision for good papers">AP</th><th title="Rank correlation with your labels">Spearman ρ</th></tr></thead>
@@ -825,25 +862,106 @@ function profileDialog(prof, isNew = false) {
   A.pendingSeeds = [...p.seeds];
 }
 
+// ------------------------------------------------------------------ account
+
+function accountDialog(message = "") {
+  const { user } = account.acct;
+  if (!user) {
+    openDialog("#account-dialog", `<form method="dialog" id="account-form">
+      <h2>Your account</h2>
+      <p class="hint">Sign in to keep your profiles, ratings and labels on the server, so the ranking is personal to you on any device. Without an account everything stays in this browser.</p>
+      <label class="field"><span>Username</span><input name="username" autocomplete="username" required minlength="3" maxlength="40" autofocus></label>
+      <label class="field"><span>Password <small>at least 8 characters</small></span><input name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></label>
+      <p class="form-error" ${message ? "" : "hidden"}>${esc(message)}</p>
+      <div class="dialog-actions"><button type="button" class="btn ghost" data-act="close-dialog">Cancel</button>
+        <div><button type="submit" class="btn" value="register">Create account</button><button type="submit" class="btn primary" value="login">Sign in</button></div></div>
+    </form>`);
+    return;
+  }
+  openDialog("#account-dialog", `<div id="account-panel">
+    <h2>${icon("user")}${esc(user.username)}</h2>
+    <p class="hint">Your profiles, ratings and labels sync to your account${account.acct.conflict ? ". <b>Syncing is paused: your account changed on another device. Reload to continue.</b>" : "."}</p>
+    <h3>Starter labels <small>from this project’s labelled data</small></h3>
+    <p class="hint">Add a ready-made profile with its labels. Your own labels are saved separately once you add them.</p>
+    <ul class="seed-sets" id="seed-sets"><li class="hint">Loading…</li></ul>
+    <div class="dialog-actions"><div><a class="btn small" href="${esc(account.labelsUrl())}" download>${icon("download")}My labels (JSONL)</a></div>
+      <div><button type="button" class="btn ghost" data-act="close-dialog">Close</button><button type="button" class="btn danger ghost" data-act="sign-out">Sign out</button></div></div>
+  </div>`);
+  account.seedSets().then(sets => {
+    const ul = $("#seed-sets");
+    if (!ul) return;
+    ul.innerHTML = sets.map(x => `<li><div><b>${esc(x.name)}</b> <span class="pill ${x.kind === "human" ? "ok" : ""}">${x.kind === "human" ? "human-verified" : "simulated"}</span><br><small>${x.n} labels</small></div>
+      <button type="button" class="btn small" data-act="import-seed" data-slug="${esc(x.slug)}">Add</button></li>`).join("") || `<li class="hint">No starter labels on this server.</li>`;
+  }).catch(e => { const ul = $("#seed-sets"); if (ul) ul.innerHTML = `<li class="hint">${esc(e.message)}</li>`; });
+}
+
+/** Merge the account's saved state with this browser's: the account wins, but profiles only this browser has are kept. */
+function mergeAccountState(remote) {
+  const owner = account.acct.user.username;
+  // Data left in this browser by a different account must never flow into this one.
+  if (A.state.owner && A.state.owner !== owner) A.state = { ...defaultState(), settings: A.state.settings };
+  if (remote?.version === 1 && Object.keys(remote.profiles || {}).length) {
+    for (const [id, p] of Object.entries(A.state.profiles)) if (!(id in remote.profiles)) remote.profiles[id] = p;
+    remote.active = remote.profiles[remote.active] ? remote.active : Object.keys(remote.profiles)[0];
+    remote.settings = { semantic: true, labeler: "", ...(A.state.settings || {}), ...(remote.settings || {}) };
+    A.state = remote;
+  }
+  A.state.owner = owner;
+}
+
+async function adoptAccountState() {
+  mergeAccountState(await account.pullState());
+  save(); // uploads the merge (or this browser's state, for a new account)
+  A.run = null; A.report = null; A.curve = null; A.labelQueue = null;
+  render();
+  if (profile()) { await rerank(); setVisitBaseline(profile()); }
+  render();
+}
+
+async function importSeedSet(slug, button) {
+  button.disabled = true;
+  try {
+    const set = await account.seedSet(slug);
+    const taken = new Set(Object.values(A.state.profiles).map(p => p.name));
+    let name = set.profile.name, i = 2;
+    while (taken.has(name)) name = `${set.profile.name} (${i++})`;
+    const labels = Object.fromEntries(set.labels.filter(l => A.byId.has(l.paper_id)).map(l => [l.paper_id, { label: l.label, at: l.labeled_at || now(), labeler: l.labeler || "starter" }]));
+    const p = newProfile({ ...set.profile, name, labels, starter: [], seededFrom: slug });
+    A.state.profiles[p.id] = p;
+    A.state.active = p.id;
+    save();
+    $$("dialog[open]").forEach(d => d.close());
+    A.view = "insights"; location.hash = "#/insights";
+    A.run = null; A.report = null; A.curve = null;
+    render();
+    await rerank();
+    setVisitBaseline(p);
+    toast(`Added “${name}” with ${Object.keys(labels).length} labels.`);
+  } catch (e) { toast(e.message); button.disabled = false; }
+}
+
 function settingsDialog() {
   const prof = profile();
-  openDialog("#settings-dialog", `<form method="dialog" id="settings-form">
-    <h2>Settings</h2>
-    <h3>Triage cutoffs <small>(the fixed ones; adaptive cutoffs can only lower them)</small></h3>
-    <label class="slider"><span>Read when relevance ≥ <b id="read-v">${prof.cutoffs.read.toFixed(2)}</b></span><input type="range" name="read" min="0" max="1" step="0.01" value="${prof.cutoffs.read}"></label>
-    <label class="slider"><span>Skim when relevance ≥ <b id="skim-v">${prof.cutoffs.skim.toFixed(2)}</b></span><input type="range" name="skim" min="0" max="1" step="0.01" value="${prof.cutoffs.skim}"></label>
-    <label class="toggle"><input type="checkbox" name="adaptive" ${prof.adaptive !== false ? "checked" : ""}><span>Adaptive cutoffs: fill Read with my best matches (up to my reading budget) when scores run low${A.run?.cutoffs && prof.adaptive !== false ? ` · now Read ≥ ${A.run.cutoffs.read.toFixed(2)}, Skim ≥ ${A.run.cutoffs.skim.toFixed(2)}` : ""}</span></label>
-    <label class="toggle"><input type="checkbox" name="budget" ${prof.budget ? "checked" : ""}><span>Cap Read at what fits my reading time (${readBudget(prof.hours)} papers a week)</span></label>
-    <label class="toggle"><input type="checkbox" name="group" ${prof.group ? "checked" : ""}><span>Group near-identical papers under one card</span></label>
-    <h3>Ranking model</h3>
-    <label class="toggle"><input type="checkbox" name="semantic" ${A.state.settings.semantic !== false ? "checked" : ""}><span>Use the MiniLM semantic model (downloads ~23 MB once from the Hugging Face Hub)</span></label>
-    <h3>Your data</h3>
-    <p class="hint">Saved in this browser only. Clearing site data deletes it, so download a backup to keep a copy or move to another device.</p>
-    <div class="export-row">
-      <button type="button" class="btn small" data-act="backup">${icon("download")}Download backup</button>
-      <label class="btn small ghost file">${icon("upload")}Restore backup<input type="file" accept=".json,application/json" data-act="restore" hidden></label>
-      <button type="button" class="btn small ghost" data-act="export-ranked">${icon("download")}Ranked list (CSV)</button>
-    </div>
+  const live = A.run?.cutoffs && prof.adaptive !== false ? `Now Read ≥ ${A.run.cutoffs.read.toFixed(2)} · Skim ≥ ${A.run.cutoffs.skim.toFixed(2)}` : "Lowers cutoffs when scores run low";
+  const row = (title, hint, control) => `<div class="srow"><div class="stext"><b>${title}</b><span>${hint}</span></div><div class="sctl">${control}</div></div>`;
+  const sw = (name, on) => `<label class="switch"><input type="checkbox" name="${name}" ${on ? "checked" : ""}><i></i></label>`;
+  const range = (name, v) => `<output id="${name}-v">${v.toFixed(2)}</output><input type="range" name="${name}" min="0" max="1" step="0.01" value="${v}">`;
+  openDialog("#settings-dialog", `<form method="dialog" id="settings-form" class="settings">
+    <header class="shead"><h2>Settings</h2><span class="muted">${esc(prof.name)}</span></header>
+    <section class="sgroup"><h3>Triage</h3>
+      ${row("Read cutoff", "Minimum relevance for Read", range("read", prof.cutoffs.read))}
+      ${row("Skim cutoff", "Minimum relevance for Skim", range("skim", prof.cutoffs.skim))}
+      ${row("Adaptive cutoffs", live, sw("adaptive", prof.adaptive !== false))}
+      ${row("Weekly reading cap", `${readBudget(prof.hours)} papers in Read`, sw("budget", prof.budget))}
+      ${row("Group similar papers", "One card for near-duplicates", sw("group", prof.group))}
+    </section>
+    <section class="sgroup"><h3>Model</h3>
+      ${row("Semantic ranking", "MiniLM, about 23 MB, downloaded once", sw("semantic", A.state.settings.semantic !== false))}
+    </section>
+    <section class="sgroup"><h3>Data</h3>
+      ${row("Backup", account.acct.user ? "Synced to your account" : "Saved in this browser", `<button type="button" class="btn small" data-act="backup">${icon("download")}Download</button><label class="btn small ghost file">${icon("upload")}Restore<input type="file" accept=".json,application/json" data-act="restore" hidden></label>`)}
+      ${row("Ranked list", "All papers as CSV", `<button type="button" class="btn small ghost" data-act="export-ranked">${icon("download")}Export</button>`)}
+    </section>
     <div class="dialog-actions"><button type="button" class="btn danger ghost" data-act="erase">Erase all data</button><button type="submit" class="btn primary">Done</button></div>
   </form>`);
 }
@@ -960,7 +1078,7 @@ async function loadMore() {
   if (!prof || loadingMore) return;
   loadingMore = true;
   $$('[data-act="load-more"]').forEach(b => { b.disabled = true; b.classList.add("busy"); });
-  const rating = ratingsCount(prof) < MIN_RATINGS || A.run?.discover;
+  const rating = !hasEnoughSignal(prof) || A.run?.discover;
   let found = [], failed = false;
   try {
     prof.livePage = (prof.livePage || 0) + 1;
@@ -1227,6 +1345,14 @@ document.addEventListener("click", async e => {
       A.pendingSeeds = A.pendingSeeds.filter(id => id !== li.dataset.id);
       return li.remove();
     }
+    case "account": return accountDialog();
+    case "import-seed": return importSeedSet(el.dataset.slug, el);
+    case "sign-out":
+      await account.signOut();
+      await store.clearAll(); // don't leave this account's data behind in the browser
+      location.hash = "";
+      location.reload();
+      return;
     case "settings": return settingsDialog();
     case "help": return helpDialog();
     case "live-search": case "load-more": return loadMore();
@@ -1278,7 +1404,7 @@ document.addEventListener("click", async e => {
       if (el.dataset.fmt === "jsonl") return download(`labels-${slug(prof.name)}-${stamp}.jsonl`, rows.map(r => JSON.stringify(r)).join("\n") + "\n", "application/jsonl");
       return download(`labels-${slug(prof.name)}-${stamp}.csv`, toCsv(rows, Object.keys(rows[0])), "text/csv");
     }
-    case "good-mode": prof.good = el.dataset.v; save(); A.report = null; return render();
+    case "good-mode": prof.good = el.dataset.v; save(); A.report = null; A.curve = null; return render();
     case "apply-cutoffs":
       prof.cutoffs = { read: +el.dataset.read, skim: +el.dataset.skim }; save(); toast("Cutoffs applied."); return rerank();
     case "backup": return download(`paper-triage-${slug(prof.name)}.json`, backupJson(prof), "application/json");
@@ -1358,7 +1484,24 @@ document.addEventListener("submit", e => {
   if (e.target.id === "start-form") { e.preventDefault(); startFromWelcome(e.target); }
   if (e.target.id === "profile-form") { e.preventDefault(); submitProfile(e.target); }
   if (e.target.id === "settings-form") { e.preventDefault(); e.target.closest("dialog").close(); }
+  if (e.target.id === "gate-form") { e.preventDefault(); submitGate(e.target, e.submitter?.value); }
+  if (e.target.id === "account-form") { e.preventDefault(); submitAccount(e.target, e.submitter?.value); }
 });
+
+async function submitAccount(form, mode) {
+  const username = form.username.value.trim(), password = form.password.value;
+  const buttons = $$("button", form);
+  buttons.forEach(b => { b.disabled = true; });
+  try {
+    await (mode === "register" ? account.register : account.signIn)(username, password);
+    $$("dialog[open]").forEach(d => d.close());
+    await adoptAccountState();
+    toast(mode === "register" ? "Account created. Your work now syncs." : `Signed in as ${username}.`);
+  } catch (e) {
+    accountDialog(e.message);
+    $("#account-form").username.value = username;
+  }
+}
 
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey || $$("dialog[open]").length) return;
@@ -1409,8 +1552,8 @@ function route() {
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
-window.addEventListener("pagehide", () => store.flush());
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") store.flush(); });
+window.addEventListener("pagehide", () => { store.flush(); account.flush(true); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { store.flush(); account.flush(true); } });
 
 // --------------------------------------------------------------------- boot
 
@@ -1421,8 +1564,44 @@ function startEmbedder() {
   }).catch(e => console.warn("Semantic model unavailable:", e));
 }
 
+account.onSyncConflict(() => toast("Your account was changed on another device. Reload to get the latest; syncing is paused until you do.", { ms: 9000 }));
+
+async function adoptServerStateAtBoot() {
+  try { mergeAccountState(await account.pullState()); account.queue(A.state); } catch (e) { console.warn("Could not load your account state", e); }
+}
+
+/** With the account backend present, nothing loads until the visitor signs in. */
+function showLoginGate(message = "") {
+  document.body.classList.add("gated");
+  $("#main").innerHTML = `<section class="gate"><form id="gate-form" class="card-surface">
+    <div class="mark" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1>Paper Triage</h1>
+    <p class="hint">Sign in to see your papers.</p>
+    <label class="field"><span>Username</span><input name="username" autocomplete="username" required maxlength="40" autofocus></label>
+    <label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
+    <p class="form-error" ${message ? "" : "hidden"}>${esc(message)}</p>
+    <button type="submit" class="btn primary" value="login">Sign in</button>
+    <button type="submit" class="btn ghost" value="register" formnovalidate>Create account</button>
+  </form></section>`;
+}
+
+async function submitGate(form, mode) {
+  const username = form.username.value.trim(), password = form.password.value;
+  $$("button", form).forEach(b => { b.disabled = true; });
+  try {
+    await (mode === "register" ? account.register : account.signIn)(username, password);
+    location.hash = "#/feed"; // land on For you
+    location.reload();
+  } catch (e) {
+    showLoginGate(e.message);
+    $("#gate-form").username.value = username;
+  }
+}
+
 async function boot() {
   const status = $("#boot-status");
+  await account.init();
+  if (account.acct.available && !account.acct.user) return showLoginGate();
   try {
     const [rules, state, visitor, catalog, proposals] = await Promise.all([
       loadRules(new URL("quality-rules.json", ROOT)),
@@ -1435,6 +1614,7 @@ async function boot() {
     void rules;
     A.state = state && state.version === 1 ? state : defaultState();
     A.state.settings ||= { semantic: true, labeler: "" };
+    if (account.acct.user) await adoptServerStateAtBoot();
     A.visitor = visitor.map(fromRecord);
     A.catalog = catalog;
     buildCorpus();

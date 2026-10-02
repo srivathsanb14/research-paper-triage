@@ -5,7 +5,7 @@ import { parseImport } from "../../web/js/data.js";
 import {
   DEFAULT_CUTOFFS, SparseSpace, adaptiveCutoffs, buildExamples, buildProfileVectors, groupSimilar, profileTexts, rank, readBudget,
 } from "../../web/js/engine.js";
-import { evaluate } from "../../web/js/evaluate.js";
+import { curveSizes, evaluate, learningCurve } from "../../web/js/evaluate.js";
 import { toBibtex, toCsv } from "../../web/js/export.js";
 import { parseIdentifiers, paperFromWork } from "../../web/js/live.js";
 
@@ -134,4 +134,21 @@ test("adaptive cutoffs fill Read when scores run low, and never raise the fixed 
 test("pressing a rating again clears it", () => {
   const ex = buildExamples({}, [{ pid: "a", action: "useful" }, { pid: "a", action: "clear_vote" }, { pid: "b", action: "not_useful" }]);
   assert.deepEqual(ex.map(e => e.pid), ["b"]);
+});
+
+test("learning curve trains only on k labels and scores the rest", () => {
+  assert.deepEqual(curveSizes(8), [5]);
+  assert.deepEqual(curveSizes(42), [5, 10, 15, 20, 30, 45].filter(k => k <= 42).concat(42));
+  const ps = Array.from({ length: 5 }, (_, j) => papers().map(p => ({ ...p, id: `${p.id}-${j}`, title: `${p.title} (${j})` }))).flat();
+  const labels = Object.fromEntries(ps.map(p => [p.id, { label: RAG.some(([t]) => p.title.startsWith(t)) ? "READ" : "SKIP" }]));
+  const curve = learningCurve(ctx(ps, { labels }), { repeats: 2 });
+  assert.ok(curve.ok);
+  assert.equal(curve.n, 60);
+  assert.equal(curve.points[0].k, 5);
+  assert.equal(curve.testN, 18);
+  assert.ok(curve.points.at(-1).k <= 60 - curve.testN, "never trains on the held-out papers");
+  for (const pt of curve.points) for (const key of ["model", "prior", "random"]) assert.ok(pt[key] >= 0 && pt[key] <= 1);
+  const avg = key => curve.points.reduce((a, p) => a + p[key], 0) / curve.points.length;
+  assert.ok(avg("model") > avg("random"), "learned model beats a random order");
+  assert.equal(learningCurve(ctx(papers(), { labels: { p0: { label: "READ" }, p6: { label: "SKIP" } } })).ok, false);
 });

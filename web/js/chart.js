@@ -33,9 +33,70 @@ export function discoveryChart(series, { title = "Good papers found as you read 
   </figure>`;
 }
 
+/**
+ * Learning curve: quality (0..1) against number of labels learned from.
+ * points: [{k, <key>: value}]; series: [{name, key, cls}]. Points sit at their
+ * true x position, so the uneven label counts are not misleading.
+ */
+export function learningChart(points, series, { title = "Ranking quality as the model learns from more labels", yLabel = "NDCG@10 on papers it hasn’t seen" } = {}) {
+  const lo = points[0].k, hi = points[points.length - 1].k;
+  const x = k => M.l + ((k - lo) / Math.max(1, hi - lo)) * (W - M.l - M.r);
+  const y = v => M.t + (1 - v) * (H - M.t - M.b);
+  const path = key => points.map((p, i) => `${i ? "L" : "M"}${x(p.k).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+  const grid = [0, 0.25, 0.5, 0.75, 1].map(v => `<line class="grid" x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}"/><text class="tick" x="${M.l - 8}" y="${y(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("");
+  const ticks = points.length > 8 ? points.filter((_, i) => i % 2 === 0 || i === points.length - 1) : points;
+  const xt = ticks.map(p => `<text class="tick" x="${x(p.k)}" y="${H - M.b + 18}" text-anchor="middle">${p.k}</text>`).join("");
+  const lines = series.map(s => `<path class="line ${s.cls}" d="${path(s.key)}"/>${points.map(p => `<circle class="pt ${s.cls}" cx="${x(p.k).toFixed(1)}" cy="${y(p[s.key]).toFixed(1)}" r="2.5"/>`).join("")}`).join("");
+  const legend = series.map(s => `<span class="lg"><i class="sw ${s.cls}"></i>${esc(s.name)}</span>`).join("");
+  const data = esc(JSON.stringify({ points: points.map(p => ({ k: p.k, ...Object.fromEntries(series.map(s => [s.key, Math.round(p[s.key] * 1000) / 10])) })), series }));
+  return `<figure class="chart" data-kind="curve" data-curve="${data}">
+    <figcaption>${esc(title)}</figcaption>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">
+        ${grid}<line class="axis" x1="${M.l}" x2="${W - M.r}" y1="${y(0)}" y2="${y(0)}"/>${xt}
+        <text class="axis-title" x="${(M.l + W - M.r) / 2}" y="${H - 4}" text-anchor="middle">Labels the model learned from</text>
+        ${lines}
+        <line class="cross" x1="0" x2="0" y1="${M.t}" y2="${y(0)}" visibility="hidden"/>
+        <g class="dots"></g>
+        <rect class="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>
+      </svg>
+      <div class="tip" hidden></div>
+    </div>
+    <div class="legend">${legend}</div>
+    <p class="hint">${esc(yLabel)}. Every point is scored on the same held-out labels and averages several random train/test splits.</p>
+  </figure>`;
+}
+
+function bindCurve(fig) {
+  const { points, series } = JSON.parse(fig.dataset.curve);
+  const svg = fig.querySelector("svg");
+  const lo = points[0].k, hi = points[points.length - 1].k;
+  const x = k => M.l + ((k - lo) / Math.max(1, hi - lo)) * (W - M.l - M.r);
+  const y = v => M.t + (1 - v / 100) * (H - M.t - M.b);
+  const cross = fig.querySelector(".cross"), dots = fig.querySelector(".dots"), tip = fig.querySelector(".tip");
+  const show = evt => {
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const p = points.reduce((best, q) => (Math.abs(x(q.k) - loc.x) < Math.abs(x(best.k) - loc.x) ? q : best));
+    cross.setAttribute("x1", x(p.k)); cross.setAttribute("x2", x(p.k)); cross.setAttribute("visibility", "visible");
+    dots.innerHTML = series.map(s => `<circle class="dot ${s.cls}" cx="${x(p.k)}" cy="${y(p[s.key])}" r="4.5"/>`).join("");
+    tip.innerHTML = `<b>After ${p.k} labels</b>` + series.map(s => `<div><i class="sw ${s.cls}"></i>${esc(s.name)}<span>${Math.round(p[s.key])}%</span></div>`).join("");
+    tip.hidden = false;
+    const box = fig.querySelector(".chart-wrap").getBoundingClientRect();
+    tip.style.left = `${Math.min(evt.clientX - box.left + 14, box.width - tip.offsetWidth - 4)}px`;
+    tip.style.top = "8px";
+  };
+  const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dots.innerHTML = ""; };
+  const hit = fig.querySelector(".hit");
+  hit.addEventListener("pointermove", show);
+  hit.addEventListener("pointerleave", hide);
+}
+
 /** Wire hover behaviour for every chart inside `root`. */
 export function bindCharts(root) {
   for (const fig of root.querySelectorAll("figure.chart")) {
+    if (fig.dataset.kind === "curve") { bindCurve(fig); continue; }
     const series = JSON.parse(fig.dataset.series);
     const n = +fig.dataset.n;
     const svg = fig.querySelector("svg");

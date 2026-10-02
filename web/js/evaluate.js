@@ -1,7 +1,7 @@
 // Evaluation against your hand labels (ported from triage/evaluate.py).
 // Every number comes from cross-validation: no paper is scored by a model that
 // saw its label. Baselines are reported next to the personalised model.
-import { LABELS, MIN_LABELS, averagePrecision, labelFor, selectBlend } from "./engine.js";
+import { LABELS, MIN_LABELS, MIN_TRAIN_EXAMPLES, RelevanceModel, averagePrecision, buildExamples, labelFor, selectBlend } from "./engine.js";
 
 const GAIN = { READ: 2, SKIM: 1, SKIP: 0 };
 export const SCREEN_MINUTES = 2; // reading a title + abstract and deciding
@@ -117,4 +117,62 @@ export function evaluate(ctx, good = "read") {
     minutesSaved: model.disc.p80 ? Math.max(0, (random80 - model.disc.p80) * SCREEN_MINUTES) : null,
     truth,
   };
+}
+
+function hashOf(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** Training sizes to try: every 5 up to 20, then roughly +50% each step, up to `pool` labels. */
+export function curveSizes(pool) {
+  const sizes = [];
+  for (let k = MIN_TRAIN_EXAMPLES; k <= pool; k = k < 20 ? k + 5 : Math.round((k * 1.5) / 5) * 5) sizes.push(k);
+  if (sizes.length > 1 && pool - sizes[sizes.length - 1] >= 5 && pool > 20) sizes.push(pool);
+  return sizes;
+}
+
+/** Share of labels held out for scoring: enough for a stable NDCG@10, never fewer than 10. */
+export const curveTestSize = n => Math.min(n - MIN_TRAIN_EXAMPLES, Math.max(10, Math.round(n * 0.3)));
+
+/**
+ * Learning curve: how ranking quality on papers the model has NOT seen grows
+ * with the number of labels it learned from. Each repeat holds out a fixed test
+ * set (about 30% of your labels, so every point is scored on the same papers),
+ * then trains on the first k of the remaining labels in a random order (labels
+ * only: no votes, no seeds). It reports NDCG@10 for the model as the app would
+ * run it with k ratings, for the hand-set profile alone, and for a random order.
+ * Averaged over `repeats` random splits because one split is noisy.
+ */
+export function learningCurve(ctx, { repeats = 4 } = {}) {
+  const { labels, byId } = ctx;
+  const ids = Object.keys(labels).filter(id => byId.has(id) && ctx.space.vec(byId.get(id)));
+  const labelOf = id => labels[id].label ?? labels[id];
+  const testN = curveTestSize(ids.length);
+  const sizes = curveSizes(ids.length - testN);
+  if (ids.length < MIN_TRAIN_EXAMPLES + 10 || new Set(ids.map(labelOf)).size < 2 || sizes.length < 2) {
+    return { ok: false, n: ids.length, message: `Label at least ${MIN_TRAIN_EXAMPLES + 10} papers, with at least two different labels, to see a learning curve.` };
+  }
+  const acc = sizes.map(() => ({ model: [], prior: [], random: [] }));
+  for (let r = 0; r < repeats; r++) {
+    const order = [...ids].sort((a, b) => hashOf(`${r}|${a}`) - hashOf(`${r}|${b}`));
+    sizes.forEach((k, si) => {
+      const test = order.slice(0, testN);
+      const train = order.slice(testN, testN + k);
+      const trainLabels = Object.fromEntries(train.map(id => [id, labels[id]]));
+      const model = new RelevanceModel(ctx.space, ctx.pv, { today: ctx.today }).fit(buildExamples(trainLabels, []), byId);
+      const rows = model.score(test.map(id => byId.get(id)));
+      const truth = test.map(labelOf);
+      const m = ndcgAt(rows.map(x => x.final), truth);
+      const pr = ndcgAt(rows.map(x => x.prior), truth);
+      const rnd = [0, 1, 2, 3, 4, 5, 6, 7].reduce((a, d) => a + ndcgAt(test.map(id => hashOf(`${r}|${k}|${d}|${id}`)), truth), 0) / 8; // a steadier baseline than one draw
+      if (![m, pr, rnd].some(Number.isNaN)) { acc[si].model.push(m); acc[si].prior.push(pr); acc[si].random.push(rnd); }
+    });
+  }
+  const mean = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
+  const points = sizes.map((k, i) => ({ k, model: mean(acc[i].model), prior: mean(acc[i].prior), random: mean(acc[i].random) })).filter(p => !Number.isNaN(p.model));
+  if (points.length < 2) return { ok: false, n: ids.length, message: "Not enough variety in your labels yet for a learning curve." };
+  const first = points[0], last = points[points.length - 1];
+  return { ok: true, n: ids.length, testN, repeats, points, gain: last.model - last.prior, learned: last.model - first.model };
 }

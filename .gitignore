@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 data/triage.db*
+data/users.db*
 .streamlit/secrets.toml
 .streamlit/cache/
 .DS_Store

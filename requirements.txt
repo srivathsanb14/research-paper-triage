@@ -2,3 +2,6 @@
 anthropic>=1.0          # optional: LLM explanations (needs ANTHROPIC_API_KEY)
 sentence-transformers>=3.0  # optional but recommended; falls back to TF-IDF without it
 pytest>=8.0
+fastapi>=0.115   # optional: accounts backend (python -m server)
+uvicorn>=0.30
+httpx>=0.27      # test client for the backend

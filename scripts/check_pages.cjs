@@ -163,11 +163,20 @@ async function main() {
 
     await page.locator("#nav").getByRole("link", { name: /^Insights/ }).click();
     await page.locator(".tiles .tile").first().waitFor();
-    await page.locator("figure.chart svg").waitFor();
-    const box = await page.locator("figure.chart .hit").boundingBox();
+    const discovery = page.locator("figure.chart:not([data-kind])");
+    await discovery.locator("svg").waitFor();
+    const box = await discovery.locator(".hit").boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.locator("figure.chart .tip").waitFor();
+    await discovery.locator(".tip").waitFor();
     step("insights show cross-validated metrics and an interactive discovery curve");
+
+    const curve = page.locator('figure.chart[data-kind="curve"]');
+    await curve.locator("svg").waitFor({ timeout: 30000 });
+    await curve.scrollIntoViewIfNeeded();
+    const cbox = await curve.locator(".hit").boundingBox();
+    await page.mouse.move(cbox.x + cbox.width / 2, cbox.y + cbox.height / 2);
+    await curve.locator(".tip").waitFor();
+    step("insights show a learning curve against held-out labels");
 
     // Persistence and backup round-trip.
     await page.reload();
@@ -176,7 +185,7 @@ async function main() {
     assert.equal(after[0], 23);
     await page.getByRole("button", { name: "Settings" }).click();
     const dl = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Download backup" }).click();
+    await page.getByRole("button", { name: "Download" }).click();
     const backupPath = await (await dl).path();
     const backup = JSON.parse(await fs.readFile(backupPath, "utf8"));
     assert.equal(backup.format, "paper-triage-web-profile");

@@ -34,6 +34,39 @@ Face static Space (see [Publish](#publish)).
    ones, time saved, NDCG@10 / AP / Spearman against baselines.
 5. **Saved** exports BibTeX / RIS / CSV for Zotero, Mendeley or EndNote. Settings has backups.
 
+## Accounts and a label backend (optional)
+
+The static site needs no server. To keep each person's profiles, ratings and labels on a server
+instead of only in their browser, run the bundled backend (FastAPI + SQLite):
+
+```bash
+pip install -r requirements.txt
+python scripts/build_pages.py        # builds _site/
+python -m server                     # http://localhost:8000: site + accounts
+```
+
+* **Sign in / create account** (top right). Passwords are scrypt-hashed, sessions are httpOnly cookies, login is rate-limited.
+  Your profiles, ratings and labels then sync to your account, and anything this browser already had is merged in.
+  On the static (GitHub Pages) site the button is hidden and everything stays in the browser.
+* **Starter labels.** The account dialog can add a ready-made profile with the project's labelled data
+  (`data/labels/`: human-verified sets and the simulated demo set, kept separate). They are loaded into SQLite at startup.
+* **Your labels in the backend.** Every hand label is also written to a `labels` table (`GET /api/labels` exports it as JSONL).
+  The database lives in `data/users.db` (git-ignored; override with `TRIAGE_DB`). Set `TRIAGE_SECURE_COOKIES=1` behind HTTPS.
+* Papers you import from OpenAlex are not synced; labels on them only count on the browser that holds those papers.
+
+**Insights → "How fast does it learn you?"** plots NDCG@10 on held-out labels against the number of labels
+the model learned from (5, 10, 15 … ), next to the profile-only and random baselines. Needs about 15+ hand labels.
+
+## Project 1 checklist
+
+| Requirement | Where it is met |
+|---|---|
+| Functional and useful, with justification and a measure | Triage for a real reading backlog; need and design choices above; measured by cross-validated NDCG@10, AP and time saved ([report](docs/evaluation/report.md), Insights page, learning curve) |
+| ≥ 500 manual samples, synthetic stored separately | 500 manual labels in `data/labels/manual/` (provenance per row; see the dataset card, [EDA](docs/EDA.md)); all rule-generated labels, including the demo accounts' mock data, are in `data/labels/synthetic/` and excluded from the count |
+| ≥ 2 model types | Off-the-shelf all-MiniLM-L6-v2 embeddings + a ridge ranker trained from scratch per user ([cards](hf/)) |
+| Public GUI on Hugging Face Spaces | Static Space built by `scripts/build_pages.py --hf-space`, published with `scripts/publish_hf.sh <hf-user>` (needs your Hugging Face login) |
+| Best practices | Held-out cross-validation, baselines, validated learning weight, model and dataset cards, tests (pytest, node:test, Playwright), accessibility and privacy notes, CI |
+
 ## How it works
 
 ```
@@ -76,6 +109,9 @@ Website (only Python 3.11+ needed to build and serve):
 python3 scripts/build_pages.py
 python3 -m http.server 8000 --bind 127.0.0.1 --directory _site    # open http://127.0.0.1:8000
 ```
+
+For sign-in and synced labels use the bundled server instead (`python -m server`, see below); demo accounts:
+`python -m server.demo_users` (sri, ishaan, chris, password `demo`, mock data).
 
 Rebuild the catalog and its embeddings (network access to OpenAlex and the Hugging Face Hub):
 
@@ -141,5 +177,9 @@ variables. Its profile backups can be restored in the website.
 ## AI assistance
 
 Parts of this repository (the browser app, the JavaScript port of the engine, tests, build
-scripts and documentation) were written with Claude Code (Anthropic) under the team's direction.
-<!-- Team: describe here how you used AI tools and what you reviewed or changed yourselves. -->
+scripts, the accounts backend, the learning curve, the simulated demo users and documentation) were
+written with Claude Code (Anthropic) under the team's direction. Claude also proposed Read/Skim/Skip
+labels for the review sets in `data/labels/proposals/`; those are model-proposed and only become
+dataset rows after a person reviews them (provenance is stored per row). The mock data for the demo
+accounts is rule-generated, labelled `synthetic-rule`, and kept apart from the manual labels.
+<!-- Team: add your own reflection here: what you asked the tools for, what they got wrong, what you reviewed or rewrote yourselves. -->

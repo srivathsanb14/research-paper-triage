@@ -30,6 +30,7 @@
           <summary aria-label="Profiles"><span id="profile-name">Profile</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
           <div class="menu-list" id="profile-list" role="menu"></div>
         </details>
+        <button id="account-btn" class="btn small ghost" type="button" data-act="account" hidden></button>
         <button class="icon-only" type="button" data-act="settings" aria-label="Settings" title="Settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="icon-only" type="button" data-act="help" aria-label="Help and keyboard shortcuts" title="Help"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
       </div>
@@ -45,6 +46,7 @@
 
     <dialog id="profile-dialog" aria-label="Research interests"><div class="dialog-body"></div></dialog>
     <dialog id="settings-dialog" aria-label="Settings"><div class="dialog-body"></div></dialog>
+    <dialog id="account-dialog" aria-label="Account"><div class="dialog-body"></div></dialog>
     <dialog id="help-dialog" aria-label="Help"><div class="dialog-body"></div></dialog>
     <div id="toast" role="status" aria-live="polite" hidden></div>
     <noscript><p class="noscript">Paper Triage needs JavaScript. Enable it and reload this page.</p></noscript>
