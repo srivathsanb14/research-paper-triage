@@ -24,6 +24,14 @@ class Paper:
     categories: list[str] = field(default_factory=list)
     source: str = ""  # "arxiv" | "semantic_scholar" | "sample"
     citation_count: int | None = None
+    # Publication metadata behind the "worth it" signals (see triage/quality.py).
+    work_type: str = ""  # "article" | "review" | "preprint" | …
+    venue_type: str = ""  # "journal" | "conference" | "repository" | …
+    venue_core: bool = False  # venue is in the CWTS core list (established, indexed)
+    version: str = ""  # "publishedVersion" | "acceptedVersion" | "submittedVersion"
+    oa_status: str = ""  # "gold" | "green" | "hybrid" | "bronze" | "diamond" | "closed"
+    fwci: float | None = None  # field-weighted citation impact
+    references_count: int | None = None
     full_text: str = ""  # introduction + conclusion, fetched for borderline papers
     full_text_status: str = ""  # "" (not tried) | "ok" | "unavailable"
 

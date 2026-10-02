@@ -1,10 +1,14 @@
 {
-  "name": "paper-triage-pages-checks",
+  "name": "paper-triage-web",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test:pages": "node scripts/check_pages.cjs"
+    "test:js": "node --test tests/js/*.test.mjs",
+    "test:pages": "node scripts/check_pages.cjs",
+    "embed": "node scripts/embed_catalog.mjs"
   },
   "devDependencies": {
+    "@huggingface/transformers": "3.8.1",
     "playwright": "1.63.0"
   }
 }

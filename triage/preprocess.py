@@ -154,6 +154,13 @@ def clean_paper(p: Paper) -> Paper:
         categories=list(dict.fromkeys(p.categories or [])),
         source=p.source,
         citation_count=p.citation_count,
+        work_type=p.work_type,
+        venue_type=p.venue_type,
+        venue_core=p.venue_core,
+        version=p.version,
+        oa_status=p.oa_status,
+        fwci=p.fwci,
+        references_count=p.references_count,
         full_text=clean_text(p.full_text)[:20000],
         full_text_status=p.full_text_status,
     )

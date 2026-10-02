@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 from datetime import date, datetime, timedelta, timezone
+from itertools import zip_longest
 from pathlib import Path
 
 import requests
@@ -23,9 +24,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from triage.catalog import AREAS, CATALOG_DIR, balanced_papers  # noqa: E402
 from triage.models import Paper  # noqa: E402
+from triage.preprocess import title_key  # noqa: E402
 from triage.transfer import parse_papers  # noqa: E402
 
-SELECT = "id,doi,title,abstract_inverted_index,authorships,primary_location,best_oa_location,publication_date,publication_year,primary_topic,cited_by_count"
+SELECT = ("id,doi,title,type,abstract_inverted_index,authorships,primary_location,best_oa_location,open_access,"
+          "publication_date,publication_year,primary_topic,cited_by_count,fwci,referenced_works_count")
 
 
 def abstract_text(index: dict | None) -> str:
@@ -46,6 +49,7 @@ def paper_from_work(work: dict) -> Paper | None:
     if len(abstract.split()) < 30 or not work.get("title"):
         return None
     location = work.get("primary_location") or {}
+    source = location.get("source") or {}
     oa = work.get("best_oa_location") or {}
     topic = work.get("primary_topic") or {}
     field = topic.get("field") or {}
@@ -55,13 +59,20 @@ def paper_from_work(work: dict) -> Paper | None:
         "title": work["title"], "abstract": abstract,
         "authors": [a["author"]["display_name"] for a in work.get("authorships", [])
                     if a.get("author", {}).get("display_name")],
-        "venue": (location.get("source") or {}).get("display_name") or "",
+        "venue": source.get("display_name") or "",
         "published": work.get("publication_date") or "",
         "year": work.get("publication_year"), "source": "openalex",
         "url": doi or location.get("landing_page_url") or work["id"],
         "pdf_url": oa.get("pdf_url") or "",
         "categories": [name for name in [field.get("display_name"), topic.get("display_name")] if name],
         "citation_count": work.get("cited_by_count"),
+        "work_type": work.get("type") or "",
+        "venue_type": source.get("type") or "",
+        "venue_core": source.get("is_core") is True,
+        "version": location.get("version") or "",
+        "oa_status": (work.get("open_access") or {}).get("oa_status") or "",
+        "fwci": work["fwci"] if isinstance(work.get("fwci"), (int, float)) else None,
+        "references_count": work.get("referenced_works_count"),
     }
     try:
         paper = parse_papers([row])[0]
@@ -70,12 +81,11 @@ def paper_from_work(work: dict) -> Paper | None:
         return None
 
 
-def fetch_field(session, field: int, count: int, since: str, until: str) -> list[Paper]:
-    papers, seen = [], set()
+def _fetch_sorted(session, filters: str, sort: str, count: int, seen: set[str]) -> list[Paper]:
+    papers = []
     # Bound API use even if some records have missing or unusable abstracts.
     for page in range(1, math.ceil(count / 100) + 3):
-        params = {"filter": f"primary_topic.field.id:{field},from_publication_date:{since},to_publication_date:{until},has_abstract:true,is_retracted:false,language:en,type:article|review|preprint",
-                  "sort": "publication_date:desc", "per_page": 100, "page": page, "select": SELECT}
+        params = {"filter": filters, "sort": sort, "per_page": 100, "page": page, "select": SELECT}
         if os.environ.get("OPENALEX_API_KEY"):
             params["api_key"] = os.environ["OPENALEX_API_KEY"]
         for attempt in range(3):
@@ -103,6 +113,22 @@ def fetch_field(session, field: int, count: int, since: str, until: str) -> list
     return papers
 
 
+def fetch_field(session, field: int, count: int, since: str, until: str) -> list[Paper]:
+    """Half the newest papers, half the most-cited ones from the same window.
+
+    Newest-first alone fills the feed with whatever was uploaded last (repository
+    dumps, theses); the cited half shows what the field is already engaging with.
+    Ids of 1000 and above are OpenAlex subfields, smaller ones are fields.
+    """
+    level = "subfield" if field >= 1000 else "field"
+    filters = (f"primary_topic.{level}.id:{field},from_publication_date:{since},to_publication_date:{until},"
+               "has_abstract:true,is_retracted:false,language:en,type:article|review|preprint")
+    seen: set[str] = set()
+    newest = _fetch_sorted(session, filters, "publication_date:desc", math.ceil(count / 2), seen)
+    cited = _fetch_sorted(session, filters, "cited_by_count:desc", count - len(newest), seen)
+    return [p for pair in zip_longest(newest, cited) for p in pair if p is not None]
+
+
 def build(output: Path = CATALOG_DIR, per_area: int = 300, days: int = 180) -> None:
     if not 30 <= per_area <= 1000 or not 1 <= days <= 730:
         raise ValueError("Use 30–1,000 papers per area and 1–730 days.")
@@ -118,9 +144,13 @@ def build(output: Path = CATALOG_DIR, per_area: int = 300, days: int = 180) -> N
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as temporary:
         stage = Path(temporary)
+        taken: set[str] = set()  # areas overlap ("ai" is part of Computer Science): first area keeps a paper
         for key, (label, fields) in AREAS.items():
             groups = [fetch_field(session, field, math.ceil(per_area / len(fields)), since, today.isoformat()) for field in fields]
+            groups = [[p for p in g if p.id not in taken and title_key(p.title) not in taken] for g in groups]
             papers = balanced_papers(groups, per_area)
+            taken.update(p.id for p in papers)
+            taken.update(title_key(p.title) for p in papers)
             if len(papers) < min(30, per_area):
                 raise RuntimeError(f"Insufficient papers for {label}; keeping the previous catalog.")
             raw = (json.dumps([p.to_dict() for p in papers], ensure_ascii=False, separators=(",", ":")) + "\n").encode()

@@ -11,8 +11,9 @@ from triage.transfer import export_profile, restore_profile
 
 
 def test_areas_cover_every_openalex_field_once():
-    fields = [field for _, fields in catalog.AREAS.values() for field in fields]
+    fields = [field for _, fields in catalog.AREAS.values() for field in fields if field < 1000]
     assert sorted(fields) == list(range(11, 37))
+    assert catalog.AREAS["ai"][1] == [1702, 1707]  # AI and computer vision subfields
 
 
 def test_balanced_selection_deduplicates_without_starving_small_fields():

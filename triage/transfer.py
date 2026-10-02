@@ -59,9 +59,15 @@ def parse_papers(rows) -> list[Paper]:
             value = row[key]
             if key in ("authors", "categories"):
                 value = _strings(value, key)
-            elif key in ("year", "citation_count"):
+            elif key in ("year", "citation_count", "references_count"):
                 if value is not None and (type(value) is not int or value < 0):
                     raise ValueError(f"{key} must be a non-negative integer or null.")
+            elif key == "fwci":
+                if value is not None:
+                    value = _number(value, key)
+            elif key == "venue_core":
+                if type(value) is not bool:
+                    raise ValueError("venue_core must be true or false.")
             else:
                 value = _text(value, key)
             values[key] = value

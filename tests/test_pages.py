@@ -1,5 +1,4 @@
 import json
-from zipfile import ZipFile
 
 import pytest
 
@@ -11,21 +10,26 @@ from triage.transfer import export_profile, load_json, parse_papers, restore_pro
 
 
 def test_pages_artifact_contains_only_public_app_files(tmp_path):
-    build(tmp_path)
-    assert {p.name for p in tmp_path.iterdir()} == {
-        "index.html", "loader.js", "site.css", "app.zip", "app-config.json", ".nojekyll", "catalog"
-    }
-    with ZipFile(tmp_path / "app.zip") as bundle:
-        names = bundle.namelist()
-        assert "app.py" in names
-        assert "data/sample_papers.json" in names
-        assert "triage/transfer.py" in names
-        assert "data/catalog/manifest.json" in names
-        assert all(name in ("app.py", "data/sample_papers.json", "data/catalog/manifest.json") or
-                   (name.startswith("triage/") and name.endswith(".py")) for name in names)
-        assert len(json.loads(bundle.read("data/sample_papers.json"))) > 400
-        manifest = json.loads(bundle.read("data/catalog/manifest.json"))
-        assert {p.name for p in (tmp_path / "catalog").iterdir()} == {"manifest.json", *(a["file"] for a in manifest["areas"])}
+    out = tmp_path / "site"
+    build(out)
+    assert {p.name for p in out.iterdir()} == {"index.html", "styles.css", "js", "catalog", "quality-rules.json", ".nojekyll"}
+    assert {p.name for p in (out / "js").iterdir()} == {p.name for p in (config.ROOT / "web" / "js").glob("*.js")}
+    manifest = json.loads((out / "catalog" / "manifest.json").read_text())
+    embeddings = json.loads((out / "catalog" / "embeddings.json").read_text())
+    expected = {"manifest.json", "embeddings.json", *(a["file"] for a in manifest["areas"]), *(e["file"] for e in embeddings["areas"].values())}
+    assert {p.name for p in (out / "catalog").iterdir()} == expected | {"proposals.json"}
+    # Every published vector file belongs to a published paper shard of the same size.
+    shards = {a["id"]: a for a in manifest["areas"]}
+    for area, e in embeddings["areas"].items():
+        assert e["papers_sha256"] == shards[area]["sha256"]
+        assert (out / "catalog" / e["file"]).stat().st_size == e["count"] * (4 + embeddings["dim"])
+    assert not any(p.suffix in (".db", ".py", ".toml") for p in out.rglob("*"))
+
+
+def test_hugging_face_space_build_has_front_matter(tmp_path):
+    build(tmp_path / "space", hf_space=True)
+    readme = (tmp_path / "space" / "README.md").read_text()
+    assert readme.startswith("---\n") and "sdk: static" in readme and "app_file: index.html" in readme
 
 
 @pytest.mark.parametrize("row", [

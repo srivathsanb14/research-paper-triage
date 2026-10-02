@@ -17,8 +17,10 @@ from .preprocess import title_key
 from .transfer import load_json, parse_papers
 
 CATALOG_DIR = config.DATA_DIR / "catalog"
-# All 26 OpenAlex fields appear once. IDs follow OpenAlex's field taxonomy.
+# All 26 OpenAlex fields (2-digit ids) appear once. "ai" additionally selects two
+# subfields (4-digit ids) of Computer Science, so ML researchers get a dense feed.
 AREAS = {
+    "ai": ("AI & machine learning", [1702, 1707]),
     "computing": ("Computing & engineering", [17, 21, 22, 25]),
     "physical": ("Maths & physical sciences", [15, 16, 26, 31]),
     "life": ("Biology & medicine", [13, 24, 27, 28, 29, 30, 34, 35, 36]),

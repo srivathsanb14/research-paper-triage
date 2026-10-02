@@ -1,0 +1,68 @@
+{
+  "_comment": "Shared by triage/quality.py and web/js/quality.js. Patterns are case-insensitive and must use syntax valid in both Python re and JavaScript RegExp.",
+  "version": 1,
+  "code": [
+    "github\\.com",
+    "gitlab\\.com",
+    "huggingface\\.co",
+    "bitbucket\\.org",
+    "\\bcode (?:is |are |will be )?(?:publicly |freely |openly )?(?:available|released)",
+    "\\b(?:source code|implementation|software|code and (?:data|models?))(?: is| are)? (?:publicly |freely |openly )?(?:available|released)",
+    "open[- ]source (?:code|implementation|software|toolkit|library|package|framework|tool)",
+    "\\bwe (?:release|open[- ]source|publish|make (?:publicly )?available) (?:our |the |all )?(?:code|implementation|software|models?)"
+  ],
+  "data": [
+    "zenodo",
+    "figshare",
+    "osf\\.io",
+    "datadryad|\\bdryad\\b",
+    "\\b(?:data|dataset|datasets|benchmark|corpus|data and code)(?: is| are| will be)? (?:publicly |freely |openly )?(?:available|released|accessible)",
+    "\\bwe (?:release|publish|make (?:publicly |freely )?available|introduce|present|construct|curate) (?:a |an |our |the )?(?:new |novel |open |large[- ]scale )*(?:data ?set|dataset|benchmark|corpus)",
+    "publicly available (?:data|dataset|benchmark|corpus)",
+    "\\bopen (?:data|dataset)\\b",
+    "data availability"
+  ],
+  "evidence": {
+    "Randomized trial": "randomi[sz]ed (?:controlled |clinical |double-blind )*trials?|\\bRCTs?\\b",
+    "Meta-analysis": "meta-analys[ie]s",
+    "Systematic review": "systematic (?:literature )?review|scoping review|\\bPRISMA\\b",
+    "Preregistered": "pre-?registered|registered report",
+    "Large sample": "\\bn ?= ?\\d{1,3}(?:,\\d{3})+\\b|\\bn ?= ?\\d{4,}\\b|\\b\\d{1,3}(?:,\\d{3})+ (?:participants|patients|respondents|subjects|individuals|adults|children|students|households|firms)\\b",
+    "Cohort or longitudinal": "cohort study|longitudinal (?:study|data|analysis|survey)|prospective (?:study|cohort)",
+    "Replication": "\\breplicat(?:ion|es|ed|e) (?:study|of|the|prior|previous)",
+    "Multiple benchmarks": "\\b(?:several|multiple|\\d+|three|four|five|six|seven|eight|nine|ten|diverse) (?:public |standard |widely[- ]used |real-world |benchmark |challenging )*(?:benchmarks|datasets)\\b",
+    "Ablation study": "\\bablations?\\b",
+    "Field or clinical data": "field (?:experiments?|trials?|data|survey)|\\bin vivo\\b|clinical (?:data|cohort|records)|real-world (?:data|deployment)"
+  },
+  "hype": [
+    "revolutioni[sz]e|revolutionary",
+    "groundbreaking",
+    "unprecedented",
+    "game[- ]chang",
+    "paradigm[- ]shift",
+    "first[- ]ever",
+    "breakthrough",
+    "remarkabl[ey]",
+    "dramatically",
+    "unparalleled"
+  ],
+  "review_title": "\\b(?:survey|review|overview|meta-analysis|tutorial|primer|state of the art|state-of-the-art review)\\b",
+  "peer_reviewed_venues": ["journal", "conference", "book series", "book"],
+  "thin_abstract_words": 100,
+  "few_references": 10,
+  "impact_fwci": 1.5,
+  "points": {
+    "peer_reviewed": 2,
+    "established_venue": 1,
+    "code": 2,
+    "data": 2,
+    "evidence_each": 1,
+    "evidence_max": 2,
+    "open_access": 1,
+    "impact": 1,
+    "thin_abstract": -2,
+    "promotional": -1,
+    "few_references": -1
+  },
+  "levels": {"strong": 5, "moderate": 2}
+}

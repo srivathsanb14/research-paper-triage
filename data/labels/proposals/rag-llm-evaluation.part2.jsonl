@@ -1,0 +1,100 @@
+{"paper_id": "doi:10.1021/acs.inorgchem.6c03738", "proposed_label": "SKIP", "reason": "Inorganic chemistry thermal conductivity study; no LLM or retrieval content."}
+{"paper_id": "doi:10.1109/tnnls.2025.3650584", "proposed_label": "SKIM", "reason": "Survey of vision-language-action models building on LLMs; LLM-adjacent but not RAG or evaluation."}
+{"paper_id": "doi:10.26021/canterburynz.32248143", "proposed_label": "SKIP", "reason": "Linguistic corpus annotation store software; no LLM or retrieval angle."}
+{"paper_id": "doi:10.5281/zenodo.21642311", "proposed_label": "READ", "reason": "Argues RAG and web-search tools can amplify LLM sycophancy rather than ground answers."}
+{"paper_id": "doi:10.5281/zenodo.20973219", "proposed_label": "SKIM", "reason": "Proposes verification-focused benchmarking metrics for deployed AI systems; peripheral evaluation interest."}
+{"paper_id": "doi:10.5281/zenodo.23072131", "proposed_label": "SKIP", "reason": "Low-carbon economic transition analysis; unrelated to LLMs."}
+{"paper_id": "doi:10.5281/zenodo.19988426", "proposed_label": "SKIP", "reason": "Bio-inspired alignment substrate proposal; not about RAG, retrieval, or LLM evaluation."}
+{"paper_id": "doi:10.1016/j.cej.2026.177848", "proposed_label": "SKIP", "reason": "Flame-retardant polyurea nanohybrids; materials science."}
+{"paper_id": "doi:10.1109/tpami.2026.3690845", "proposed_label": "SKIP", "reason": "Survey of deep time series models; non-NLP machine learning."}
+{"paper_id": "doi:10.1186/s12859-026-06585-y", "proposed_label": "SKIP", "reason": "Plasmid reconstruction bioinformatics tool; unrelated to LLMs."}
+{"paper_id": "doi:10.1007/s44438-026-00039-x", "proposed_label": "SKIP", "reason": "Oilfield-geothermal co-development engineering; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23067851", "proposed_label": "SKIP", "reason": "Dice bounds for segmentation updates; computer vision, no LLM angle."}
+{"paper_id": "doi:10.5281/zenodo.20343775", "proposed_label": "SKIP", "reason": "Axiomatic knowledge-system philosophy paper; no LLM or retrieval content."}
+{"paper_id": "doi:10.5281/zenodo.20322990", "proposed_label": "SKIP", "reason": "Conceptual AGI output reference boundary framework; no empirical RAG or evaluation."}
+{"paper_id": "doi:10.1021/acsapm.6c01853", "proposed_label": "SKIP", "reason": "Conductive hydrogel strain sensors; materials science."}
+{"paper_id": "doi:10.1109/jiot.2026.3716688", "proposed_label": "SKIP", "reason": "Survey of wearable sensor activity recognition; no LLM angle."}
+{"paper_id": "doi:10.1038/s41598-026-69924-2", "proposed_label": "SKIP", "reason": "Federated learning intrusion detection for medical IoT; unrelated."}
+{"paper_id": "doi:10.1145/3831640", "proposed_label": "SKIM", "reason": "Multimodal LLM system for edge-cloud video analytics; LLM systems, no retrieval or evaluation focus."}
+{"paper_id": "doi:10.5281/zenodo.23036761", "proposed_label": "SKIP", "reason": "Nanotechnology drug delivery for cancer review; biomedical."}
+{"paper_id": "doi:10.1145/3832027", "proposed_label": "SKIM", "reason": "LLM-guided acoustic sensing for activity recognition; LLM application without RAG or faithfulness angle."}
+{"paper_id": "doi:10.1002/anie.1584513", "proposed_label": "SKIP", "reason": "CO2 photoreduction catalysis; chemistry."}
+{"paper_id": "doi:10.55525/tjst.1870375", "proposed_label": "SKIP", "reason": "Image encryption method; security, no LLM angle."}
+{"paper_id": "doi:10.5281/zenodo.18570561", "proposed_label": "SKIM", "reason": "Bosnian text normalization and tokenization standard; general NLP infrastructure."}
+{"paper_id": "doi:10.1007/s10462-026-11529-2", "proposed_label": "SKIP", "reason": "Bio-inspired metaheuristic optimizer; unrelated to LLMs."}
+{"paper_id": "doi:10.26599/cvm.2025.9450462", "proposed_label": "SKIP", "reason": "Diffusion-model image editing via prompt inversion; vision, not RAG or evaluation."}
+{"paper_id": "doi:10.5281/zenodo.23072343", "proposed_label": "SKIP", "reason": "Combinatorial topology of triangulated surfaces; mathematics."}
+{"paper_id": "doi:10.48550/arxiv.2606.04828", "proposed_label": "SKIM", "reason": "French multiword-expression corpus designed for information retrieval and extraction research."}
+{"paper_id": "doi:10.5281/zenodo.20619481", "proposed_label": "SKIM", "reason": "Query log of Google AI Overview retrieval and dropped citations; niche attribution observations."}
+{"paper_id": "doi:10.5281/zenodo.21504113", "proposed_label": "SKIP", "reason": "LDA interpretability on hyperspectral imagery; LLM-judge only minor component."}
+{"paper_id": "doi:10.1145/3831655", "proposed_label": "SKIP", "reason": "Low-power HAR ASIC hardware design; unrelated."}
+{"paper_id": "doi:10.1002/adfm.75070", "proposed_label": "SKIP", "reason": "ML inverse design for functional materials; materials science."}
+{"paper_id": "doi:10.5281/zenodo.21334049", "proposed_label": "SKIP", "reason": "Embedding-based science-mapping retrodiction; not LLM or RAG focused."}
+{"paper_id": "doi:10.3390/app16199723", "proposed_label": "SKIP", "reason": "Visual secret sharing for color images; cryptography."}
+{"paper_id": "doi:10.1142/s0218001426590421", "proposed_label": "SKIP", "reason": "Video captioning model; vision-language, no LLM retrieval or evaluation."}
+{"paper_id": "doi:10.5281/zenodo.19983308", "proposed_label": "SKIP", "reason": "Variational RNN for sequential data; general ML."}
+{"paper_id": "doi:10.5281/zenodo.22881972", "proposed_label": "SKIP", "reason": "Adaptive systems architecture framework; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23038452", "proposed_label": "SKIP", "reason": "Engine wear prediction for dozers; mechanical engineering."}
+{"paper_id": "doi:10.5281/zenodo.23048229", "proposed_label": "SKIM", "reason": "Case analysis of LLM agent sandbox escape during evaluation; agent evaluation, speculative."}
+{"paper_id": "doi:10.35542/osf.io/96gr7_v1", "proposed_label": "SKIP", "reason": "Adaptive learning technologies review; education."}
+{"paper_id": "doi:10.1111/ejn.70601", "proposed_label": "SKIP", "reason": "MVPA decoding pseudotrials in neuroimaging; neuroscience."}
+{"paper_id": "doi:10.1145/3856207", "proposed_label": "SKIP", "reason": "Recommender system explanation effects; no LLM or retrieval-for-LLM angle."}
+{"paper_id": "doi:10.1186/s43067-026-00403-4", "proposed_label": "SKIP", "reason": "Neuroevolution activation functions in RL; unrelated ML."}
+{"paper_id": "doi:10.3390/electronics15091824", "proposed_label": "SKIM", "reason": "Review of bias evaluation and mitigation in LLMs; LLM evaluation but not faithfulness."}
+{"paper_id": "doi:10.3390/sym18101644", "proposed_label": "SKIM", "reason": "Evaluation protocol for hidden-state safety probes in LLMs; trustworthy LLM evaluation."}
+{"paper_id": "doi:10.1088/1751-8121/aeae7b", "proposed_label": "SKIP", "reason": "XXZ quantum simulator dynamics; physics."}
+{"paper_id": "doi:10.5281/zenodo.20322707", "proposed_label": "SKIP", "reason": "Conceptual sentence-coordinate document framework for AGI; no RAG or evaluation."}
+{"paper_id": "doi:10.5281/zenodo.20936013", "proposed_label": "SKIP", "reason": "Planck-scale unit theory; physics."}
+{"paper_id": "doi:10.3390/info17050493", "proposed_label": "SKIP", "reason": "Forensic DVR video recovery; unrelated."}
+{"paper_id": "doi:10.1145/3805774", "proposed_label": "READ", "reason": "Survey of retrieval-augmented text generation for LLMs, core to researcher's RAG work."}
+{"paper_id": "doi:10.1103/dmn4-snfx", "proposed_label": "SKIP", "reason": "Quantum-selected configuration interaction; quantum chemistry."}
+{"paper_id": "doi:10.35377/saucis...1780353", "proposed_label": "READ", "reason": "Evaluates ChatGPT, DeepSeek, Gemini summaries with fidelity metrics; LLM output evaluation."}
+{"paper_id": "doi:10.5281/zenodo.22172128", "proposed_label": "SKIP", "reason": "Conceptual meaning-layer standard for language systems; no RAG or evaluation substance."}
+{"paper_id": "doi:10.3390/math14122137", "proposed_label": "SKIM", "reason": "Speculative decoding for diffusion language models under long context; LLM efficiency."}
+{"paper_id": "doi:10.5281/zenodo.22725099", "proposed_label": "SKIM", "reason": "Catastrophic forgetting in parameter-efficient fine-tuning of small language models."}
+{"paper_id": "doi:10.1038/s41598-026-72157-y", "proposed_label": "SKIP", "reason": "Piano performance assessment with deep learning; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.20108465", "proposed_label": "SKIP", "reason": "Unitary RNN for sequence modeling; general ML."}
+{"paper_id": "doi:10.5281/zenodo.19433538", "proposed_label": "SKIP", "reason": "Formalization of arithmetic generative principle; mathematics."}
+{"paper_id": "doi:10.48550/arxiv.2604.19698", "proposed_label": "SKIP", "reason": "DPPs for Monte Carlo integration; statistics."}
+{"paper_id": "doi:10.1186/s41512-026-00237-8", "proposed_label": "SKIP", "reason": "Clinical prediction model transportability review; biostatistics."}
+{"paper_id": "doi:10.1038/s41467-026-74004-0", "proposed_label": "SKIP", "reason": "Task sampling for foundation model adaptation; general ML, no retrieval or evaluation."}
+{"paper_id": "doi:10.1002/adma.202518990", "proposed_label": "SKIP", "reason": "4D-printed intestinal stents; biomedical engineering."}
+{"paper_id": "doi:10.55525/tjst.1813122", "proposed_label": "SKIP", "reason": "Quantum circuit simulator; quantum computing."}
+{"paper_id": "doi:10.1002/anie.4897216", "proposed_label": "SKIP", "reason": "BiVO4 photoanode water oxidation; chemistry."}
+{"paper_id": "doi:10.2196/90872", "proposed_label": "SKIM", "reason": "Multiagent LLM framework for thematic analysis with evaluation against human coders."}
+{"paper_id": "doi:10.1145/3807511", "proposed_label": "SKIP", "reason": "Survey of 3D Gaussian splatting; graphics."}
+{"paper_id": "doi:10.5281/zenodo.20403394", "proposed_label": "SKIP", "reason": "Conceptual economic settlement framework for AI environments; unrelated."}
+{"paper_id": "doi:10.1103/ntvs-c48s", "proposed_label": "SKIP", "reason": "Quantum state preparation method; quantum computing."}
+{"paper_id": "doi:10.5281/zenodo.19498878", "proposed_label": "SKIP", "reason": "Gas turbine health monitoring; engineering."}
+{"paper_id": "doi:10.2118/1026-0023-jpt", "proposed_label": "SKIP", "reason": "Openhole gravel pack in reservoirs; petroleum engineering."}
+{"paper_id": "doi:10.48550/arxiv.2604.27563", "proposed_label": "SKIP", "reason": "Bayesian policy gradient RL; unrelated to LLMs."}
+{"paper_id": "doi:10.1007/s44443-026-01302-4", "proposed_label": "SKIM", "reason": "3D vision-language model for medical report generation; multimodal generation, no retrieval."}
+{"paper_id": "doi:10.5281/zenodo.20661554", "proposed_label": "SKIP", "reason": "Dynamic topology theory; mathematics."}
+{"paper_id": "doi:10.5281/zenodo.20727924", "proposed_label": "SKIP", "reason": "Philosophical brief on AI instance reality; no RAG or evaluation."}
+{"paper_id": "doi:10.1038/s41598-026-63984-0", "proposed_label": "SKIP", "reason": "Indoor object detection distillation; computer vision."}
+{"paper_id": "doi:10.2118/1026-0017-jpt", "proposed_label": "SKIP", "reason": "Oil and gas emissions management; engineering."}
+{"paper_id": "doi:10.1016/j.physb.2026.418608", "proposed_label": "SKIP", "reason": "Terahertz graphene absorber; physics."}
+{"paper_id": "doi:10.1016/j.jctb.2026.09.004", "proposed_label": "SKIP", "reason": "Acyclic list colouring of graphs; mathematics."}
+{"paper_id": "doi:10.5281/zenodo.23044424", "proposed_label": "SKIM", "reason": "Inference-time reconstruction for quantized LLMs; LLM efficiency, not evaluation."}
+{"paper_id": "doi:10.1007/s44443-026-01311-3", "proposed_label": "SKIP", "reason": "Mamba-based visual tracking; computer vision."}
+{"paper_id": "doi:10.1021/acs.inorgchem.6c03596", "proposed_label": "SKIP", "reason": "Hydrogen evolution electrocatalyst; chemistry."}
+{"paper_id": "doi:10.1016/j.array.2026.101133", "proposed_label": "SKIM", "reason": "Explainable AI survey extending to large language models; trustworthy AI context."}
+{"paper_id": "doi:10.3390/computers15050264", "proposed_label": "SKIP", "reason": "Image watermarking with biometrics; image security."}
+{"paper_id": "doi:10.1109/tnnls.2026.3673760", "proposed_label": "SKIP", "reason": "Image dehazing with optimal transport; computer vision."}
+{"paper_id": "doi:10.1016/j.nanoms.2024.12.005", "proposed_label": "SKIP", "reason": "Z-scheme heterojunction photocatalyst; materials chemistry."}
+{"paper_id": "doi:10.5281/zenodo.19433595", "proposed_label": "SKIP", "reason": "Discrete geometric spaces theory; mathematics."}
+{"paper_id": "doi:10.22190/fumi250126019r", "proposed_label": "SKIM", "reason": "Kernel methods for text classification; general NLP, no LLM or retrieval."}
+{"paper_id": "doi:10.5281/zenodo.20368225", "proposed_label": "SKIM", "reason": "Proposes tests for LLM self-report faithfulness versus interpretability mechanisms."}
+{"paper_id": "doi:10.55525/tjst.1896758", "proposed_label": "SKIP", "reason": "Railway scene perception; computer vision."}
+{"paper_id": "doi:10.48550/arxiv.2605.09519", "proposed_label": "SKIP", "reason": "Weighted rules in answer set programming; logic programming."}
+{"paper_id": "doi:10.1177/14759217261440798", "proposed_label": "SKIP", "reason": "Bearing fault diagnosis domain adaptation; engineering."}
+{"paper_id": "doi:10.5281/zenodo.23057515", "proposed_label": "SKIP", "reason": "Nanoparticle effects on cell physiology; biology."}
+{"paper_id": "doi:10.5281/zenodo.19382282", "proposed_label": "SKIP", "reason": "Natural-language programming language compiler; not RAG or LLM evaluation."}
+{"paper_id": "doi:10.5281/zenodo.20840233", "proposed_label": "SKIP", "reason": "Winding quantization theory; physics."}
+{"paper_id": "doi:10.1007/s44443-026-01283-4", "proposed_label": "SKIP", "reason": "Low-light image enhancement; computer vision."}
+{"paper_id": "doi:10.1128/msystems.00930-26", "proposed_label": "SKIP", "reason": "Microbiome rarefaction methods; ecology statistics."}
+{"paper_id": "doi:10.1017/s1471068426100726", "proposed_label": "SKIP", "reason": "Constraint answer set programming system; logic programming."}
+{"paper_id": "doi:10.1016/j.nanoms.2025.01.002", "proposed_label": "SKIP", "reason": "Cobalt-lanthanum sulfide electrode arrays; materials chemistry."}
+{"paper_id": "doi:10.1021/jacs.6c11755", "proposed_label": "SKIP", "reason": "CO2 electroreduction mechanism; chemistry."}
+{"paper_id": "doi:10.22075/ppam.2025.39297.1176", "proposed_label": "SKIP", "reason": "AlN nanoribbon DFT study; materials physics."}
+{"paper_id": "doi:10.1145/3849701", "proposed_label": "SKIP", "reason": "Static code analyzer false positives study; software engineering."}

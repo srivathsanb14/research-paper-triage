@@ -1,60 +1,124 @@
-"""Build the GitHub Pages artifact with only explicitly selected public app files.
+"""Build the static website (GitHub Pages or a Hugging Face static Space).
 
-    python scripts/build_pages.py
+    python scripts/build_pages.py                 # → _site/
+    python scripts/build_pages.py --hf-space      # also writes the Space README front matter
     python -m http.server 8000 --directory _site
 
-No application dependencies are needed at build time. Never copy the working
-directory wholesale: local databases, secrets and caches must stay local.
+Copies only an explicit list of public files: the browser app (web/), the
+shared quality rules and the verified catalog with its embeddings. Local
+databases, secrets and caches never leave the machine. No dependencies.
 """
 
 from __future__ import annotations
 
-import json
+import argparse
 import hashlib
+import json
 import re
 import shutil
-import tomllib
 from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "_site"
+WEB = ROOT / "web"
+CATALOG = ROOT / "data" / "catalog"
+SHARD = re.compile(r"[a-z]+-[0-9a-f]{64}\.(json|bin)")
+
+SPACE_README = """---
+title: Paper Triage
+emoji: 📚
+colorFrom: indigo
+colorTo: green
+sdk: static
+app_file: index.html
+pinned: false
+license: mit
+short_description: Read, Skim or Skip for research papers, with trust signals
+tags:
+  - research
+  - recommender
+  - sentence-transformers
+  - transformers.js
+models:
+  - Xenova/all-MiniLM-L6-v2
+---
+
+# Paper Triage
+
+Describe your research once. Paper Triage sorts recent papers into Read, Skim and Skip,
+gives a one-line reason, and shows worth-it signals (peer review, released code or
+data, study-design cues). Your ratings train a small model in your browser.
+
+Source, model cards and dataset: see the GitHub repository linked in the app.
+"""
 
 
-def build(output: Path = OUTPUT) -> None:
-    output.mkdir(parents=True, exist_ok=True)
-    for name in ("index.html", "loader.js", "site.css"):
-        shutil.copyfile(ROOT / "web" / name, output / name)
+def _verified(name: str, expected: str) -> bytes:
+    if not SHARD.fullmatch(name):
+        raise ValueError(f"Invalid catalog filename: {name}")
+    raw = (CATALOG / name).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected:
+        raise ValueError(f"Catalog checksum mismatch: {name}")
+    return raw
+
+
+def build(output: Path = OUTPUT, hf_space: bool = False) -> None:
+    if output.exists():
+        shutil.rmtree(output)
+    (output / "js").mkdir(parents=True)
+    (output / "catalog").mkdir()
+    for name in ("index.html", "styles.css"):
+        shutil.copyfile(WEB / name, output / name)
+    for path in sorted((WEB / "js").glob("*.js")):
+        shutil.copyfile(path, output / "js" / path.name)
+    shutil.copyfile(ROOT / "triage" / "quality_rules.json", output / "quality-rules.json")
     (output / ".nojekyll").touch()
-    paths = [ROOT / "app.py", *sorted((ROOT / "triage").glob("*.py")), ROOT / "data/sample_papers.json"]
-    catalog_dir = ROOT / "data/catalog"
-    manifest_path = catalog_dir / "manifest.json"
-    manifest = json.loads(manifest_path.read_text())
-    paths.append(manifest_path)
-    public_catalog = output / "catalog"
-    public_catalog.mkdir(exist_ok=True)
+
+    manifest = json.loads((CATALOG / "manifest.json").read_text())
     for area in manifest["areas"]:
-        filename = area["file"]
-        if not re.fullmatch(r"[a-z]+-[0-9a-f]{64}\.json", filename):
-            raise ValueError("Invalid catalog filename")
-        raw = (catalog_dir / filename).read_bytes()
-        if hashlib.sha256(raw).hexdigest() != area["sha256"]:
-            raise ValueError("Catalog checksum mismatch")
-        (public_catalog / filename).write_bytes(raw)
-    shutil.copyfile(manifest_path, public_catalog / "manifest.json")
-    with ZipFile(output / "app.zip", "w", compression=ZIP_DEFLATED) as bundle:
-        for path in paths:
-            bundle.write(path, path.relative_to(ROOT).as_posix())
-    theme = tomllib.loads((ROOT / ".streamlit/config.toml").read_text())["theme"]
-    settings = {f"theme.{key}": value for key, value in theme.items() if not isinstance(value, dict)}
-    settings.update({f"theme.sidebar.{key}": value for key, value in theme.get("sidebar", {}).items()})
-    # Stlite 1.9.2's custom web-font loader crashes outside a Helmet provider.
-    # Built-in fonts also avoid another external dependency on first launch.
-    settings.update({"theme.font": "sans-serif", "theme.headingFont": "serif"})
-    settings.update({"client.toolbarMode": "minimal", "browser.gatherUsageStats": False})
-    (output / "app-config.json").write_text(json.dumps(settings, indent=2) + "\n")
-    print(f"Built {output} ({len(paths)} app files; no local databases or secrets).")
+        (output / "catalog" / area["file"]).write_bytes(_verified(area["file"], area["sha256"]))
+    shutil.copyfile(CATALOG / "manifest.json", output / "catalog" / "manifest.json")
+
+    emb_path = CATALOG / "embeddings.json"
+    n_vec = 0
+    if emb_path.exists():
+        emb = json.loads(emb_path.read_text())
+        shards = {a["id"]: a["sha256"] for a in manifest["areas"]}
+        # Only publish vectors that belong to the papers being published.
+        emb["areas"] = {k: v for k, v in emb["areas"].items() if shards.get(k) == v["papers_sha256"]}
+        for entry in emb["areas"].values():
+            (output / "catalog" / entry["file"]).write_bytes(_verified(entry["file"], entry["sha256"]))
+            n_vec += entry["count"]
+        (output / "catalog" / "embeddings.json").write_text(json.dumps(emb, indent=2) + "\n")
+    n_prop = _proposals(output / "catalog" / "proposals.json", {p["id"] for a in manifest["areas"] for p in json.loads((CATALOG / a["file"]).read_text())})
+    if hf_space:
+        (output / "README.md").write_text(SPACE_README)
+    n = sum(a["count"] for a in manifest["areas"])
+    print(f"Built {output}: {n} papers, {n_vec} embeddings, {n_prop} label suggestions (no local databases or secrets).")
+
+
+def _proposals(dest: Path, catalog_ids: set[str]) -> int:
+    """Model-proposed labels for the Label tab's review mode (humans accept or correct each one)."""
+    folder = ROOT / "data" / "labels" / "proposals"
+    meta = json.loads((folder / "profiles.json").read_text()) if (folder / "profiles.json").exists() else {"profiles": []}
+    sets = []
+    for prof in meta["profiles"]:
+        items = []
+        for path in sorted(folder.glob(f"{prof['slug']}*.jsonl")):
+            for line in path.read_text().splitlines():
+                if line.strip():
+                    r = json.loads(line)
+                    if r.get("paper_id") in catalog_ids and r.get("proposed_label") in ("READ", "SKIM", "SKIP"):
+                        items.append({"paper_id": r["paper_id"], "proposed_label": r["proposed_label"], "reason": str(r.get("reason", ""))[:300]})
+        if items:
+            sets.append({**prof, "items": items})
+    dest.write_text(json.dumps({"proposer": meta.get("proposer", ""), "sets": sets}, ensure_ascii=False) + "\n")
+    return sum(len(s["items"]) for s in sets)
 
 
 if __name__ == "__main__":
-    build()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--hf-space", action="store_true", help="add Hugging Face Space front matter (README.md)")
+    args = parser.parse_args()
+    build(args.output, args.hf_space)

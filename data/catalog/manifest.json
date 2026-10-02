@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-01T15:02:34+00:00",
+  "updated_at": "2026-10-01T19:25:09+00:00",
   "source": "OpenAlex",
   "source_url": "https://openalex.org",
   "license": "CC0",
@@ -9,11 +9,22 @@
   "language": "en",
   "areas": [
     {
+      "id": "ai",
+      "label": "AI & machine learning",
+      "file": "ai-c3ae47d570df1949d701cb5ae1771ca38bebf7d70c08bfde30b695ced4fd7ad3.json",
+      "sha256": "c3ae47d570df1949d701cb5ae1771ca38bebf7d70c08bfde30b695ced4fd7ad3",
+      "count": 284,
+      "fields": [
+        1702,
+        1707
+      ]
+    },
+    {
       "id": "computing",
       "label": "Computing & engineering",
-      "file": "computing-19e3c4a1fa032874cc4e3d128b637c7bdd51b2e7ba7c2c47af4d723764bdad51.json",
-      "sha256": "19e3c4a1fa032874cc4e3d128b637c7bdd51b2e7ba7c2c47af4d723764bdad51",
-      "count": 273,
+      "file": "computing-b93afbddbbfbd04e7bdf3d48de9cd4d18586f81e28895aefc77dcfda548d81e6.json",
+      "sha256": "b93afbddbbfbd04e7bdf3d48de9cd4d18586f81e28895aefc77dcfda548d81e6",
+      "count": 245,
       "fields": [
         17,
         21,
@@ -24,9 +35,9 @@
     {
       "id": "physical",
       "label": "Maths & physical sciences",
-      "file": "physical-729df5e4764c7794db6af99d2d5a185f04057d9cffa9ccaaf5df0270d438d4cc.json",
-      "sha256": "729df5e4764c7794db6af99d2d5a185f04057d9cffa9ccaaf5df0270d438d4cc",
-      "count": 272,
+      "file": "physical-9ff5f0699a98b80bca55379e3353dd539c23bce962941a56a7f854e5b8e14aed.json",
+      "sha256": "9ff5f0699a98b80bca55379e3353dd539c23bce962941a56a7f854e5b8e14aed",
+      "count": 273,
       "fields": [
         15,
         16,
@@ -37,9 +48,9 @@
     {
       "id": "life",
       "label": "Biology & medicine",
-      "file": "life-d0c536f0c9e9d749e39f3bb3f2bfa280cb21045f4436e7d09462726d5619e187.json",
-      "sha256": "d0c536f0c9e9d749e39f3bb3f2bfa280cb21045f4436e7d09462726d5619e187",
-      "count": 259,
+      "file": "life-0dcb80ca9b9cb849eb773065f274ac142fed30e928d85eb27ccaaf4c811e1627.json",
+      "sha256": "0dcb80ca9b9cb849eb773065f274ac142fed30e928d85eb27ccaaf4c811e1627",
+      "count": 281,
       "fields": [
         13,
         24,
@@ -55,9 +66,9 @@
     {
       "id": "environment",
       "label": "Earth & environment",
-      "file": "environment-b9e6f40f0882c25a1d774d7360fc9df6fcae7c94b315fe5355779667ba305762.json",
-      "sha256": "b9e6f40f0882c25a1d774d7360fc9df6fcae7c94b315fe5355779667ba305762",
-      "count": 231,
+      "file": "environment-17abfbdbfd792bed5311a5cd730d48401f2a82cf30669389e24d5ca681075df2.json",
+      "sha256": "17abfbdbfd792bed5311a5cd730d48401f2a82cf30669389e24d5ca681075df2",
+      "count": 266,
       "fields": [
         11,
         19,
@@ -67,9 +78,9 @@
     {
       "id": "society",
       "label": "Society, psychology & economics",
-      "file": "society-2979984a199e5cef4075339be61c1800de20dde555be2518e1b420291c8fde35.json",
-      "sha256": "2979984a199e5cef4075339be61c1800de20dde555be2518e1b420291c8fde35",
-      "count": 238,
+      "file": "society-1ee6a728b625da796ed746e04b2b868c7e574f94d413c269bb53004f053be4ce.json",
+      "sha256": "1ee6a728b625da796ed746e04b2b868c7e574f94d413c269bb53004f053be4ce",
+      "count": 264,
       "fields": [
         14,
         18,
@@ -81,9 +92,9 @@
     {
       "id": "humanities",
       "label": "Arts & humanities",
-      "file": "humanities-69e4a4ca0ada836bcafe1cdd098a21081b58de209e740dbe0b77f07aadc4f994.json",
-      "sha256": "69e4a4ca0ada836bcafe1cdd098a21081b58de209e740dbe0b77f07aadc4f994",
-      "count": 215,
+      "file": "humanities-4974873dc6ae3b60f3cb424dd7a6d8498ef8dd2c11bdac69348b5132ae8b5184.json",
+      "sha256": "4974873dc6ae3b60f3cb424dd7a6d8498ef8dd2c11bdac69348b5132ae8b5184",
+      "count": 246,
       "fields": [
         12
       ]

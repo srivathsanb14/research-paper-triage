@@ -8,3 +8,4 @@ data/triage.db*
 _site/
 node_modules/
 test-results/
+_dataset/
