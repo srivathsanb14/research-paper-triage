@@ -5,7 +5,7 @@
 
 sri (materials discovery), ishaan (robotics) and chris (AI and design) all use password "demo",
 which is shorter than registration allows, so the accounts are created directly. Demo only: don't
-use this on a public host. Each user gets their own synthetic (rule-based mockup) profile plus one
+use this on a public host. Each profile also has a few papers saved to its reading list. Each user gets their own synthetic (rule-based mockup) profile plus one
 of the manual profiles, and lands on the manual one; both come from data/labels/ (labels.jsonl, origin "synthetic" or "manual").
 """
 
@@ -24,11 +24,18 @@ USERS = {
 }
 
 
+SAVED_PER_PROFILE = 5
+
+
 def profile_state(slug: str, now: str) -> dict:
     found = seed.load()[slug]
+    # A few papers already on the reading list: Read-labelled first, then Skim, by id (deterministic).
+    ranked = sorted((r["label"] != "READ", r["paper_id"]) for r in found["labels"] if r["label"] in ("READ", "SKIM"))
+    saved = [pid for _, pid in ranked[:SAVED_PER_PROFILE]]
     return {
         "id": f"demo-{slug}", **found["profile"], "hours": 3, "cutoffs": {"read": 0.62, "skim": 0.4}, "budget": True,
-        "group": True, "seeds": [], "starter": [], "feedback": [], "extra": [], "seen": [], "lastVisit": None, "created": now,
+        "group": True, "seeds": [], "starter": [],
+        "feedback": [{"pid": pid, "action": "save", "value": None, "at": now, "predicted": None, "score": None} for pid in saved], "extra": [], "seen": [], "lastVisit": None, "created": now,
         "labels": {r["paper_id"]: {"label": r["label"], "at": r["labeled_at"]} for r in found["labels"]},
     }
 

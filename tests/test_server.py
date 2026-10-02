@@ -117,5 +117,7 @@ def test_demo_users_have_a_synthetic_and_a_manual_profile(tmp_path, monkeypatch)
         for prof in state["profiles"].values():
             assert {x["label"] for x in prof["labels"].values()} == {"READ", "SKIM", "SKIP"}
             assert all("labeler" not in x for x in prof["labels"].values())
+            saved = [f["pid"] for f in prof["feedback"] if f["action"] == "save"]
+            assert len(saved) == demo_users.SAVED_PER_PROFILE and all(prof["labels"][pid]["label"] in ("READ", "SKIM") for pid in saved)
         total = sum(len(p["labels"]) for p in state["profiles"].values())
         assert len(client.get("/api/labels").text.splitlines()) == total
