@@ -32,7 +32,6 @@ class Embedder:
     # vs. paper; "short" = a keyword or one-line focus vs. paper (lower ceiling).
     cos_range = (0.0, 1.0)
     short_cos_range = (0.0, 1.0)
-    needs_fit = False
 
     def fit(self, texts: list[str]) -> "Embedder":
         return self
@@ -56,7 +55,6 @@ class TfidfEmbedder(Embedder):
     name = "tfidf"
     cos_range = (0.02, 0.30)
     short_cos_range = (0.01, 0.25)
-    needs_fit = True
 
     def __init__(self, lsa_dims: int = 100):
         self.lsa_dims = lsa_dims

@@ -1147,16 +1147,6 @@ async function restoreBackup(text) {
       cutoffs: r.cutoffs, budget: r.budget, group: r.group, seeds: r.seeds, labels: r.labels, feedback: r.feedback, extra: r.extra, good: r.good, reviewSet: r.reviewSet,
     });
     papers = obj.papers?.length ? parseImport(JSON.stringify(obj.papers)) : [];
-  } else if (obj?.format === "paper-triage-profile" && obj.version === 1 && obj.profile) { // Streamlit/server edition backup
-    const r = obj.profile;
-    papers = obj.papers?.length ? parseImport(JSON.stringify(obj.papers)) : [];
-    prof = newProfile({
-      name: r.name, description: r.description || "", keywords: r.keywords || [], focus: r.focus || "", avoid: r.avoid || [], hours: r.hours_per_week || 3,
-      seeds: obj.seeds || [], extra: obj.pool || [],
-      labels: Object.fromEntries(Object.entries(obj.labels || {}).map(([pid, l]) => [pid, { label: l, at: obj.label_times?.[pid] || now() }])),
-      feedback: (obj.feedback || []).map(f => ({ pid: f.paper_id, action: f.action, value: f.value ?? null, at: f.created_at || now(), predicted: f.predicted_label ?? null, score: f.score ?? null })),
-      cutoffs: obj.settings?.cutoffs || { ...DEFAULT_CUTOFFS },
-    });
   } else throw new Error("Choose a Paper Triage backup file.");
   sanitizeProfile(prof);
   if (!prof.name) throw new Error("The backup has no profile name.");

@@ -6,7 +6,7 @@
 sri (materials discovery), ishaan (robotics) and chris (AI and design) all use password "demo",
 which is shorter than registration allows, so the accounts are created directly. Demo only: don't
 use this on a public host. Each user gets their own synthetic (rule-based mockup) profile plus one
-of the manual profiles; both come from data/labels/ (labels.jsonl, origin "synthetic" or "manual").
+of the manual profiles, and lands on the manual one; both come from data/labels/ (labels.jsonl, origin "synthetic" or "manual").
 """
 
 import argparse
@@ -36,7 +36,7 @@ def profile_state(slug: str, now: str) -> dict:
 def demo_state(user: str, slugs: tuple[str, ...]) -> dict:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     profiles = {f"demo-{slug}": profile_state(slug, now) for slug in slugs}
-    return {"version": 1, "active": f"demo-{slugs[0]}", "owner": user, "settings": {"semantic": True}, "profiles": profiles}
+    return {"version": 1, "active": f"demo-{slugs[1]}", "owner": user, "settings": {"semantic": True}, "profiles": profiles}
 
 
 def main() -> None:

@@ -24,7 +24,6 @@ export const LABELS = ["READ", "SKIM", "SKIP"];
 export const LABEL_VALUE = { READ: 1, SKIM: 0.5, SKIP: 0 };
 export const DEFAULT_CUTOFFS = { read: 0.62, skim: 0.40 };
 export const MINUTES_PER_READ = 30;
-export const MINUTES_PER_SKIM = 5;
 
 const BLEND_K = 30;
 const MAX_UNVALIDATED_WEIGHT = 0.3;

@@ -10,7 +10,7 @@ from __future__ import annotations
 import html
 import re
 import unicodedata
-from typing import Iterable
+
 
 from .models import Paper
 
@@ -54,13 +54,6 @@ def clean_text(text: str | None) -> str:
     t = _BRACES.sub("", t)
     t = unicodedata.normalize("NFKC", t)
     return _WS.sub(" ", t).strip()
-
-
-def normalize_arxiv_id(raw: str) -> str:
-    """'http://arxiv.org/abs/2401.01234v2' -> '2401.01234'."""
-    raw = (raw or "").strip().rstrip("/")
-    m = _ARXIV_ID.search(raw)
-    return m.group(1) if m else raw.rsplit("/", 1)[-1]
 
 
 def title_key(title: str) -> str:
@@ -164,37 +157,6 @@ def clean_paper(p: Paper) -> Paper:
         full_text=clean_text(p.full_text)[:20000],
         full_text_status=p.full_text_status,
     )
-
-
-def dedupe(papers: Iterable[Paper]) -> list[Paper]:
-    """De-duplicate by id and by normalised title; prefer the richer record."""
-    by_key: dict[str, Paper] = {}
-    order: list[str] = []
-    for p in papers:
-        key = title_key(p.title) or p.id
-        existing = by_key.get(key)
-        if existing is None:
-            by_key[key] = p
-            order.append(key)
-            continue
-        # Merge: keep the record with the longer abstract, fill gaps from the other.
-        a, b = (existing, p) if len(existing.abstract) >= len(p.abstract) else (p, existing)
-        merged = Paper(**a.to_dict())
-        merged.venue = a.venue if a.venue and a.venue != "arXiv preprint" else (b.venue or a.venue)
-        merged.citation_count = a.citation_count if a.citation_count is not None else b.citation_count
-        merged.pdf_url = a.pdf_url or b.pdf_url
-        merged.year = a.year or b.year
-        merged.published = a.published or b.published
-        # Prefer the arXiv id as canonical when both sources know the paper.
-        if b.id.startswith("arxiv:") and not a.id.startswith("arxiv:"):
-            merged.id, merged.url = b.id, b.url or a.url
-        by_key[key] = merged
-    return [by_key[k] for k in order]
-
-
-def is_usable(p: Paper) -> bool:
-    """Drop records too thin to triage (no title, or no abstract and no full text)."""
-    return bool(p.title and p.title != "(untitled)" and (len(p.abstract) >= 40 or p.full_text))
 
 
 def split_sentences(text: str) -> list[str]:

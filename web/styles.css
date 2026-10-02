@@ -196,13 +196,6 @@ body[data-view="welcome"] main { max-width: 900px; }
 .tab.READ[aria-selected="true"] span { color: var(--read); } .tab.SKIM[aria-selected="true"] span { color: var(--skim); }
 .tab.link { margin-left: auto; font-size: 13px; color: var(--ink-3); }
 .tab.link.on { color: var(--ink); }
-.tab.link + .nudge { display: grid; grid-template-columns: auto 1fr 90px auto; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); color: var(--ink-2); font-size: 13px; }
-.nudge > .icon { color: var(--accent); }
-.nudge b { color: var(--ink); }
-.nudge .icon { width: 14px; height: 14px; }
-.nudge-meter { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 18%, transparent); overflow: hidden; }
-.nudge-meter i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.nudge small { font-weight: 600; color: var(--accent); }
 
 /* ---------------------------------------------------------------- paper card */
 .paper { position: relative; margin-bottom: 12px; padding: 18px 20px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; outline: none; }
@@ -367,8 +360,6 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
 .seed-row textarea { flex: 1; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); }
 .seed-list { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
 .seed-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 7px; background: var(--surface-2); }
-.slider { display: grid; gap: 4px; font-size: 14px; }
-.slider input { accent-color: var(--accent); }
 .toggle { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink-2); cursor: pointer; }
 .toggle input { margin-top: 3px; accent-color: var(--accent); }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 0; font-size: 14px; }
@@ -407,8 +398,6 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
   .icon-btn span { display: none; }
   .icon-btn { padding: 7px; }
   .vote .icon-btn span, .more-btn span { display: none; }
-  .nudge { grid-template-columns: auto 1fr; }
-  .nudge-meter, .nudge small { display: none; }
   .label-card { padding: 18px; }
   .label-controls { flex-direction: column; }
   .menu summary { max-width: 120px; padding: 6px 8px; }
@@ -453,7 +442,6 @@ dialog::backdrop { background: rgb(15 18 24 / 45%); backdrop-filter: blur(2px); 
 @media (max-width: 520px) { .srow { flex-wrap: wrap; } .sctl input[type=range] { width: 110px; } }
 #profile-menu .menu-list { left: 0; right: auto; }
 @media print { .topbar, .filters, .actions, #toast { display: none; } .paper { break-inside: avoid; box-shadow: none; } }
-@media (hover: none) { 
 /* review of suggested labels */
 .review-sets { margin: 18px 0; }
 .review-sets p { margin: 0 0 12px; color: var(--ink-2); font-size: 14px; }

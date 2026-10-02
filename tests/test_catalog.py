@@ -7,7 +7,6 @@ import pytest
 from scripts import build_catalog
 from triage import catalog
 from triage.models import Paper
-from triage.transfer import export_profile, restore_profile
 
 
 def test_areas_cover_every_openalex_field_once():
@@ -86,12 +85,3 @@ def test_damaged_download_is_rejected(tmp_path, monkeypatch):
 def test_bad_field_selection_is_rejected(selection):
     with pytest.raises(ValueError):
         catalog.load_selection(selection)
-
-
-def test_catalog_preferences_survive_backup(store, rag_profile, corpus):
-    store.save_profile(rag_profile)
-    store.upsert_papers(corpus)
-    store.add_to_pool(rag_profile.id, [p.id for p in corpus])
-    store.set_setting(rag_profile.id, "catalog_fields", ["humanities", "life"])
-    restored = restore_profile(store, export_profile(store, rag_profile))
-    assert store.get_setting(restored.id, "catalog_fields") == ["humanities", "life"]

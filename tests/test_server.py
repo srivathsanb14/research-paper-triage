@@ -112,7 +112,7 @@ def test_demo_users_have_a_synthetic_and_a_manual_profile(tmp_path, monkeypatch)
     for user, (own, manual) in demo_users.USERS.items():
         assert client.post("/api/login", json={"username": user, "password": "demo"}).status_code == 200
         state = client.get("/api/state").json()["state"]
-        assert set(state["profiles"]) == {f"demo-{own}", f"demo-{manual}"} and state["active"] == f"demo-{own}"
+        assert set(state["profiles"]) == {f"demo-{own}", f"demo-{manual}"} and state["active"] == f"demo-{manual}"
         assert seed.load()[own]["origin"] == "synthetic" and seed.load()[manual]["origin"] == "manual"
         for prof in state["profiles"].values():
             assert {x["label"] for x in prof["labels"].values()} == {"READ", "SKIM", "SKIP"}

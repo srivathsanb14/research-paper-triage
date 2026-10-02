@@ -8,3 +8,5 @@ _site/
 node_modules/
 test-results/
 _dataset/
+data/*.db-wal
+data/*.db-shm

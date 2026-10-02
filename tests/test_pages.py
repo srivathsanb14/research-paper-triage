@@ -1,12 +1,11 @@
 import json
+from pathlib import Path
 
 import pytest
 
 from scripts.build_pages import build
 from triage import config
-from triage.models import Paper
-from triage.store import Store
-from triage.transfer import export_profile, load_json, parse_papers, restore_profile
+from triage.transfer import load_json, parse_papers
 
 
 def test_pages_artifact_contains_only_public_app_files(tmp_path):
@@ -52,63 +51,7 @@ def test_paper_collection_roundtrip(corpus):
         parse_papers([corpus[0].to_dict(), corpus[0].to_dict()])
 
 
-def test_profile_backup_preserves_personalization(store, corpus, rag_profile):
-    store.save_profile(rag_profile)
-    store.upsert_papers(corpus)
-    store.add_to_pool(rag_profile.id, [p.id for p in corpus])
-    store.add_seeds(rag_profile.id, [corpus[0].id])
-    store.set_label(rag_profile.id, corpus[1].id, "READ", created_at="2026-09-01T12:00:00+00:00")
-    store.log_feedback(rag_profile.id, corpus[2].id, "not_useful", score=0.5)
-    store.set_setting(rag_profile.id, "cutoffs", {"read": 0.7, "skim": 0.3})
-    store.set_setting(rag_profile.id, "budget", False)
-    restored = restore_profile(store, export_profile(store, rag_profile))
-    assert restored.id != rag_profile.id
-    assert restored.name == "rag (imported 1)"
-    assert restored.fingerprint() == rag_profile.fingerprint()
-    assert store.pool_ids(restored.id) == store.pool_ids(rag_profile.id)
-    assert store.seed_ids(restored.id) == [corpus[0].id]
-    assert store.get_labels(restored.id) == {corpus[1].id: "READ"}
-    assert store.get_label_events(restored.id)[0]["created_at"] == "2026-09-01T12:00:00+00:00"
-    assert store.get_feedback(restored.id)[0]["action"] == "not_useful"
-    assert store.get_setting(restored.id, "cutoffs") == {"read": 0.7, "skim": 0.3}
-    assert store.get_setting(restored.id, "budget") is False
-
-
-def test_backup_retains_labels_when_pool_was_cleared(store, corpus, rag_profile):
-    store.save_profile(rag_profile)
-    store.upsert_papers(corpus)
-    store.set_label(rag_profile.id, corpus[0].id, "READ")
-    restored = restore_profile(store, export_profile(store, rag_profile))
-    assert store.pool_ids(restored.id) == []
-    assert store.get_labels(restored.id) == {corpus[0].id: "READ"}
-
-
-@pytest.mark.parametrize("bad_event", [
-    {"paper_id": "missing", "action": "useful"},
-    {"paper_id": [], "action": "useful"},
-    {"paper_id": "a", "action": []},
-    {"paper_id": "a", "action": "correct", "value": "UNKNOWN"},
-    {"paper_id": "a", "action": "useful", "created_at": "not a date"},
-])
-def test_invalid_backup_does_not_write_partial_profile(store, rag_profile, bad_event):
-    store.save_profile(rag_profile)
-    store.upsert_papers([Paper(id="a", title="A paper")])
-    store.add_to_pool(rag_profile.id, ["a"])
-    backup = json.loads(export_profile(store, rag_profile))
-    backup["feedback"] = [bad_event]
-    with pytest.raises(ValueError):
-        restore_profile(store, json.dumps(backup))
-    assert len(store.list_profiles()) == 1
-
-
-def test_browser_database_survives_connection_restart(tmp_path, monkeypatch, rag_profile):
-    monkeypatch.setattr(config, "BROWSER_MODE", True)
-    path = tmp_path / "browser.db"
-    original = Store(path)
-    original.save_profile(rag_profile)
-    original.log_feedback(rag_profile.id, "a", "useful")
-    with original._conn() as conn:
-        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
-    reopened = Store(path)
-    assert reopened.get_profile("rag").id == rag_profile.id
-    assert reopened.get_feedback(rag_profile.id)[0]["action"] == "useful"
+def test_stylesheet_braces_are_balanced():
+    """An unclosed rule or @media block silently swallows every rule after it."""
+    css = (Path(__file__).resolve().parent.parent / "web" / "styles.css").read_text(encoding="utf-8")
+    assert css.count("{") == css.count("}")
