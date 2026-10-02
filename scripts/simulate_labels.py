@@ -1,10 +1,10 @@
-"""Rule-based Read/Skim/Skip labels for four demo profiles, merged into the label dataset.
+"""Synthetic (rule-based) Read/Skim/Skip labels for four demo profiles, merged into the label dataset.
 
-    python scripts/simulate_labels.py   # rewrites the rule-based rows of data/labels/labels.jsonl
+    python scripts/simulate_labels.py   # rewrites the synthetic rows of data/labels/labels.jsonl
 
 Each profile (data/labels/profiles.json) gets a transparent keyword rule that never looks at the
 ranking model, plus a little seeded noise so labels are imperfect like a person's. Rows are
-tagged origin="rule"; rows with any other origin (the reviewed labels) are left untouched.
+tagged origin="synthetic"; rows with any other origin (the manual labels) are left untouched.
 Three of the rules also encode a hidden interest the written profile omits, so the Insights
 learning curve has something to learn. These labels support demos and tests, not claims about
 ranking quality.
@@ -114,7 +114,7 @@ def persona_rows(slug: str, papers: list[Paper], stamp: str) -> list[dict]:
         pool = by_label[lab]
         rng.shuffle(pool)
         picked += [(p, lab) for p in pool[:cap]]
-    return [{"profile": slug, "paper_id": p.id, "label": lab, "labeled_at": stamp, "origin": "rule"} for p, lab in picked]
+    return [{"profile": slug, "paper_id": p.id, "label": lab, "labeled_at": stamp, "origin": "synthetic"} for p, lab in picked]
 
 
 def main() -> None:
@@ -122,17 +122,17 @@ def main() -> None:
     papers = [p for area in info["areas"] for p in catalog.read_shard(area)]
     stamp = info["updated_at"]
     kept = [r for r in (json.loads(x) for x in (LABELS_DIR / "labels.jsonl").read_text(encoding="utf-8").splitlines() if x.strip())
-            if r["origin"] != "rule"]
+            if r["origin"] != "synthetic"]
     new = []
     for area in info["areas"]:
         if area["id"] in ("ai", "computing"):
-            new += [{"profile": "rag-research-demo", "paper_id": p.id, "label": rag_label(p), "labeled_at": stamp, "origin": "rule"}
+            new += [{"profile": "rag-research-demo", "paper_id": p.id, "label": rag_label(p), "labeled_at": stamp, "origin": "synthetic"}
                     for p in catalog.read_shard(area)]
     for slug in PERSONAS:
         new += persona_rows(slug, papers, stamp)
     rows = sorted(kept + new, key=lambda r: (r["profile"], r["paper_id"]))
     (LABELS_DIR / "labels.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
-    print(f"Kept {len(kept)} reviewed labels, wrote {len(new)} rule-based labels → {LABELS_DIR / 'labels.jsonl'}")
+    print(f"Kept {len(kept)} manual labels, wrote {len(new)} synthetic labels → {LABELS_DIR / 'labels.jsonl'}")
 
 
 if __name__ == "__main__":

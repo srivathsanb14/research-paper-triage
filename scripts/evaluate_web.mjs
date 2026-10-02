@@ -5,7 +5,7 @@
 // Reads data/labels/profiles.json and data/labels/labels.jsonl (one row per profile and paper,
 // joined to data/catalog/ by paper id). For every profile, runs the same 5-fold cross-validated
 // evaluation as the Insights page, with MiniLM (off-the-shelf) and TF-IDF vectors, and writes
-// report.md + report.json. Profiles are tagged by label origin (manual / reviewed / rule).
+// report.md + report.json. Profiles are tagged by label origin (manual / synthetic).
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,8 +80,8 @@ async function main() {
 
   const lines = ["# Evaluation report", "", `Generated ${new Date().toISOString().slice(0, 10)} by \`node scripts/evaluate_web.mjs\` from \`data/labels/labels.jsonl\` and \`data/labels/profiles.json\`.`,
     "Every number is 5-fold cross-validated: no paper is scored by a model trained on its own label. “Good” = Read (or Read + Skim where noted).",
-    "Origin: `reviewed` = a model proposed the label and a person accepted or changed it; `rule` = a transparent keyword rule (demo and pipeline check, not evidence of quality).", ""];
-  for (const group of [["reviewed", "Labels reviewed by a person"], ["rule", "Rule-based labels (pipeline check)"]]) {
+    "Origin: `manual` = a person judged the paper (in review mode a model's suggestion was shown first); `synthetic` = a rule-based mockup from a transparent keyword rule (demo and pipeline check, not evidence of quality).", ""];
+  for (const group of [["manual", "Manual labels"], ["synthetic", "Synthetic rule-based labels (pipeline check)"]]) {
     const rs = results.filter(r => r.origin === group[0]);
     if (!rs.length) continue;
     lines.push(`## ${group[1]}`, "");

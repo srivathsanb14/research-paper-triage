@@ -1,6 +1,6 @@
 [
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "AI and design",
     "space": "MiniLM",
     "good": "read",
@@ -73,7 +73,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "AI and design",
     "space": "MiniLM",
     "good": "read_skim",
@@ -146,7 +146,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "AI and design",
     "space": "TF-IDF",
     "good": "read",
@@ -219,7 +219,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "AI and design",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -292,7 +292,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Cancer immunotherapy",
     "space": "MiniLM",
     "good": "read",
@@ -365,7 +365,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Cancer immunotherapy",
     "space": "MiniLM",
     "good": "read_skim",
@@ -438,7 +438,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Cancer immunotherapy",
     "space": "TF-IDF",
     "good": "read",
@@ -511,7 +511,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Cancer immunotherapy",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -584,7 +584,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Climate adaptation",
     "space": "MiniLM",
     "good": "read",
@@ -657,7 +657,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Climate adaptation",
     "space": "MiniLM",
     "good": "read_skim",
@@ -730,7 +730,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Climate adaptation",
     "space": "TF-IDF",
     "good": "read",
@@ -803,7 +803,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "Climate adaptation",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -876,7 +876,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Materials discovery",
     "space": "MiniLM",
     "good": "read",
@@ -949,7 +949,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Materials discovery",
     "space": "MiniLM",
     "good": "read_skim",
@@ -1022,7 +1022,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Materials discovery",
     "space": "TF-IDF",
     "good": "read",
@@ -1095,7 +1095,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Materials discovery",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -1168,7 +1168,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "RAG & LLM evaluation",
     "space": "MiniLM",
     "good": "read",
@@ -1241,7 +1241,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "RAG & LLM evaluation",
     "space": "MiniLM",
     "good": "read_skim",
@@ -1314,7 +1314,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "RAG & LLM evaluation",
     "space": "TF-IDF",
     "good": "read",
@@ -1387,7 +1387,7 @@
     }
   },
   {
-    "origin": "reviewed",
+    "origin": "manual",
     "profile": "RAG & LLM evaluation",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -1460,7 +1460,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "RAG research (rule-based demo)",
     "space": "MiniLM",
     "good": "read",
@@ -1533,7 +1533,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "RAG research (rule-based demo)",
     "space": "MiniLM",
     "good": "read_skim",
@@ -1606,7 +1606,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "RAG research (rule-based demo)",
     "space": "TF-IDF",
     "good": "read",
@@ -1679,7 +1679,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "RAG research (rule-based demo)",
     "space": "TF-IDF",
     "good": "read_skim",
@@ -1752,7 +1752,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Robotics",
     "space": "MiniLM",
     "good": "read",
@@ -1825,7 +1825,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Robotics",
     "space": "MiniLM",
     "good": "read_skim",
@@ -1898,7 +1898,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Robotics",
     "space": "TF-IDF",
     "good": "read",
@@ -1971,7 +1971,7 @@
     }
   },
   {
-    "origin": "rule",
+    "origin": "synthetic",
     "profile": "Robotics",
     "space": "TF-IDF",
     "good": "read_skim",

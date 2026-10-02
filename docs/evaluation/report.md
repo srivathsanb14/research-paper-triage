@@ -2,9 +2,9 @@
 
 Generated 2026-10-02 by `node scripts/evaluate_web.mjs` from `data/labels/labels.jsonl` and `data/labels/profiles.json`.
 Every number is 5-fold cross-validated: no paper is scored by a model trained on its own label. “Good” = Read (or Read + Skim where noted).
-Origin: `reviewed` = a model proposed the label and a person accepted or changed it; `rule` = a transparent keyword rule (demo and pipeline check, not evidence of quality).
+Origin: `manual` = a person judged the paper (in review mode a model's suggestion was shown first); `synthetic` = a rule-based mockup from a transparent keyword rule (demo and pipeline check, not evidence of quality).
 
-## Labels reviewed by a person
+## Manual labels
 
 ### Cancer immunotherapy · MiniLM · good = Read
 
@@ -198,7 +198,7 @@ Learning weight chosen by cross-validation: **0%**. Random-order AP: 0.20; paper
 
 At the default cutoffs (Read ≥ 0.62, Skim ≥ 0.4): macro-F1 0.61, accuracy 0.84, 0 Read↔Skip errors.
 
-## Rule-based labels (pipeline check)
+## Synthetic rule-based labels (pipeline check)
 
 ### AI and design · MiniLM · good = Read
 

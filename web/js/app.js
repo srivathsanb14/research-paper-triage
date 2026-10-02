@@ -675,7 +675,7 @@ function reviewPanel(prof) {
   }).join("");
   return `<section class="review-sets card-surface">
     <h2>${icon("check")} Review suggested labels</h2>
-    <p>Each paper comes with a suggested label proposed by an AI model from the title and abstract (it never sees the ranker’s scores). Check every suggestion: <kbd>Enter</kbd> accepts, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> give your own answer. Both the suggestion and your answer are saved, so the dataset records these as <i>reviewed</i> labels.</p>
+    <p>Each paper comes with a suggested label proposed by an AI model from the title and abstract (it never sees the ranker’s scores). Check every suggestion: <kbd>Enter</kbd> accepts, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> give your own answer. Both the suggestion and your answer are saved, so the dataset records them as manual labels.</p>
     <ul>${rows}</ul>
   </section>`;
 }
@@ -717,7 +717,7 @@ function labelView(prof) {
     ${reviewing ? reviewPanel(prof) : ""}
     <section class="dataset card-surface">
       <h2>${icon("layers")} Your labels as a dataset</h2>
-      <p>One row per paper: the research profile, the paper’s id, your label, when you set it, and whether it was labelled from scratch or reviewed from a suggestion. Paper details stay in the catalog. Merge a teammate’s file with <b>Import labels</b>.</p>
+      <p>One row per paper: the research profile, the paper’s id, your label, when you set it, and that it is a manual label. Paper details stay in the catalog. Merge a teammate’s file with <b>Import labels</b>.</p>
       <div class="export-row">
         <button class="btn small" data-act="labels-export" data-fmt="csv" ${n ? "" : "disabled"}>${icon("download")}Labels CSV</button>
         <button class="btn small" data-act="labels-export" data-fmt="jsonl" ${n ? "" : "disabled"}>${icon("download")}Labels JSONL</button>
@@ -730,7 +730,7 @@ function labelView(prof) {
 /** One row per label, in the shape of data/labels/labels.jsonl: no paper details, those live in the catalog. */
 function labelRows(prof) {
   return Object.entries(prof.labels).map(([id, l]) => ({
-    profile: slug(prof.name), paper_id: id, label: l.label, labeled_at: l.at, origin: l.proposed ? "reviewed" : "manual",
+    profile: slug(prof.name), paper_id: id, label: l.label, labeled_at: l.at, origin: "manual",
   }));
 }
 
@@ -894,7 +894,7 @@ function accountDialog(message = "") {
   account.seedSets().then(sets => {
     const ul = $("#seed-sets");
     if (!ul) return;
-    ul.innerHTML = sets.map(x => `<li><div><b>${esc(x.name)}</b> <span class="pill ${x.origin === "reviewed" ? "ok" : ""}">${x.origin === "reviewed" ? "reviewed by a person" : x.origin === "rule" ? "rule-based" : "mixed"}</span><br><small>${x.n} labels</small></div>
+    ul.innerHTML = sets.map(x => `<li><div><b>${esc(x.name)}</b> <span class="pill ${x.origin === "manual" ? "ok" : ""}">${x.origin === "manual" ? "manual" : x.origin === "synthetic" ? "synthetic" : "mixed"}</span><br><small>${x.n} labels</small></div>
       <button type="button" class="btn small" data-act="import-seed" data-slug="${esc(x.slug)}">Add</button></li>`).join("") || `<li class="hint">No starter labels on this server.</li>`;
   }).catch(e => { const ul = $("#seed-sets"); if (ul) ul.innerHTML = `<li class="hint">${esc(e.message)}</li>`; });
 }

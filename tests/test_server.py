@@ -81,7 +81,7 @@ def test_stale_write_is_rejected_and_users_are_isolated(client):
 def test_seed_sets_come_from_the_label_dataset(client):
     client.post("/api/register", json={"username": "ada", "password": "correct horse"})
     sets = {s["slug"]: s for s in client.get("/api/seed-sets").json()["sets"]}
-    assert sets["rag-llm-evaluation"]["origin"] == "reviewed" and sets["robotics"]["origin"] == "rule"
+    assert sets["rag-llm-evaluation"]["origin"] == "manual" and sets["robotics"]["origin"] == "synthetic"
     full = client.get("/api/seed-sets/rag-llm-evaluation").json()
     assert full["profile"]["keywords"] and len(full["labels"]) == sets["rag-llm-evaluation"]["n"]
     assert {x["label"] for x in full["labels"]} <= {"READ", "SKIM", "SKIP"}
@@ -101,18 +101,21 @@ def test_users_database_holds_only_user_data(tmp_path, monkeypatch):
     assert "labeler" not in {r[1] for r in sqlite3.connect(db.DB_PATH).execute("PRAGMA table_info(labels)")}
 
 
-def test_demo_users_have_profiles_and_labels(tmp_path, monkeypatch):
-    from server import demo_users
+def test_demo_users_have_a_synthetic_and_a_manual_profile(tmp_path, monkeypatch):
+    from server import demo_users, seed
 
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "users.db")
     monkeypatch.setattr("sys.argv", ["demo_users"])
     demo_users.main()
     demo_users.main()  # idempotent
     client = TestClient(server_app.create_app())
-    for user, name in (("sri", "Materials discovery"), ("ishaan", "Robotics"), ("chris", "AI and design")):
+    for user, (own, manual) in demo_users.USERS.items():
         assert client.post("/api/login", json={"username": user, "password": "demo"}).status_code == 200
         state = client.get("/api/state").json()["state"]
-        prof = state["profiles"][state["active"]]
-        assert prof["name"] == name and len(prof["labels"]) > 100
-        assert {x["label"] for x in prof["labels"].values()} == {"READ", "SKIM", "SKIP"}
-        assert len(client.get("/api/labels").text.splitlines()) == len(prof["labels"])
+        assert set(state["profiles"]) == {f"demo-{own}", f"demo-{manual}"} and state["active"] == f"demo-{own}"
+        assert seed.load()[own]["origin"] == "synthetic" and seed.load()[manual]["origin"] == "manual"
+        for prof in state["profiles"].values():
+            assert {x["label"] for x in prof["labels"].values()} == {"READ", "SKIM", "SKIP"}
+            assert all("labeler" not in x for x in prof["labels"].values())
+        total = sum(len(p["labels"]) for p in state["profiles"].values())
+        assert len(client.get("/api/labels").text.splitlines()) == total

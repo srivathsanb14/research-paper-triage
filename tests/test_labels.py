@@ -9,7 +9,7 @@ from triage.config import LABELS
 from server.db import ROOT
 
 LABEL_DIR = ROOT / "data" / "labels"
-ORIGINS = {"manual", "reviewed", "rule"}
+ORIGINS = {"manual", "synthetic"}
 
 
 def rows():

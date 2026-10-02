@@ -233,8 +233,8 @@ async function main() {
       const jsonl = page.waitForEvent("download");
       await page.getByRole("button", { name: "Labels JSONL" }).click();
       const rows = (await fs.readFile(await (await jsonl).path(), "utf8")).trim().split("\n").map(l => JSON.parse(l));
-      assert.ok(rows.every(r => r.origin === "reviewed" && r.profile && !("labeler" in r)));
-      step("review mode records suggestion and human answer; exports as reviewed");
+      assert.ok(rows.every(r => r.origin === "manual" && r.profile && !("labeler" in r)));
+      step("review mode records suggestion and human answer; exports as manual");
       await page.locator("#nav").getByRole("link", { name: /^For you/ }).click();
       await page.locator("article.paper").first().waitFor();
     }

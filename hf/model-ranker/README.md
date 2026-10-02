@@ -72,7 +72,7 @@ Per user: their ratings and hand labels in the app. For the reported evaluation:
 5-fold cross-validated: no paper is scored by a model that saw its label. Baselines: profile only,
 learned only, semantic similarity only, keyword matches only, and random order.
 
-**Reviewed labels** (500 papers, 3 research profiles; labels started as model suggestions and were reviewed by a person; see the dataset card). MiniLM space, “good” = Read, 5-fold cross-validated:
+**Manual labels** (500 papers, 3 research profiles; a person judged each paper, starting from a model's suggestion; see the dataset card). MiniLM space, “good” = Read, 5-fold cross-validated:
 
 | Profile | Labels (Read/Skim/Skip) | Method | NDCG@10 | AP | Good in top 10 | Papers to find 80% of good |
 |---|---|---|---|---|---|---|
@@ -98,7 +98,7 @@ The cross-validated blend chose a learning weight of **0%** for all three profil
 
 Caveats: only 3–6 Read papers per profile, so AP for Read moves a lot with a single paper; labels began as suggestions from a language model reading the same title and abstract, which makes agreement with text-similarity rankers optimistic. Full tables (including good = Read or Skim and TF-IDF): `docs/evaluation/report.md`.
 
-Pipeline check on **rule-based** labels (the "RAG research (rule-based demo)" profile: 529 AI/computing papers labelled by the keyword rule in
+Pipeline check on **synthetic** labels (the "RAG research (rule-based demo)" profile: 529 AI/computing papers labelled by the keyword rule in
 `scripts/simulate_labels.py`, "good" = Read). This only shows the pipeline works. The rule is keyword-based,
 so keyword matching is expected to win:
 
