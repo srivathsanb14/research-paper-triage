@@ -1,7 +1,7 @@
 // Evaluation against your hand labels (ported from triage/evaluate.py).
 // Every number comes from cross-validation: no paper is scored by a model that
 // saw its label. Baselines are reported next to the personalised model.
-import { LABELS, MIN_LABELS, MIN_TRAIN_EXAMPLES, RelevanceModel, averagePrecision, buildExamples, labelFor, selectBlend } from "./engine.js";
+import { LABELS, MIN_LABELS, MIN_TRAIN_EXAMPLES, RelevanceModel, averagePrecision, buildExamples, folds, labelFor, selectBlend } from "./engine.js";
 
 const GAIN = { READ: 2, SKIM: 1, SKIP: 0 };
 export const SCREEN_MINUTES = 2; // reading a title + abstract and deciding
@@ -125,7 +125,7 @@ function hashOf(s) {
   return h >>> 0;
 }
 
-/** Training sizes to try: every 5 up to 20, then roughly +50% each step, up to `pool` labels. */
+/** Training sizes to try: every 5 up to 20, then roughly +50% each step, up to `pool` labels (the last point is the full pool). */
 export function curveSizes(pool) {
   const sizes = [];
   for (let k = MIN_TRAIN_EXAMPLES; k <= pool; k = k < 20 ? k + 5 : Math.round((k * 1.5) / 5) * 5) sizes.push(k);
@@ -133,46 +133,96 @@ export function curveSizes(pool) {
   return sizes;
 }
 
-/** Share of labels held out for scoring: enough for a stable NDCG@10, never fewer than 10. */
-export const curveTestSize = n => Math.min(n - MIN_TRAIN_EXAMPLES, Math.max(10, Math.round(n * 0.3)));
+/** `k` ids that keep the pool's label mix, with at least one of every label that exists (so early points can learn at all). */
+export function stratifiedSubset(ids, k, labelOf, seed) {
+  const groups = Object.fromEntries(LABELS.map(l => [l, []]));
+  for (const id of [...ids].sort((a, b) => hashOf(`${seed}|${a}`) - hashOf(`${seed}|${b}`))) groups[labelOf(id)].push(id);
+  const present = LABELS.filter(l => groups[l].length);
+  const take = Object.fromEntries(present.map(l => [l, Math.max(1, Math.round((k * groups[l].length) / ids.length))]));
+  const total = () => present.reduce((n, l) => n + take[l], 0);
+  while (total() > k) { const l = present.reduce((a, b) => (take[a] >= take[b] ? a : b)); if (take[l] <= 1) break; take[l]--; }
+  while (total() < k) {
+    const room = present.filter(l => take[l] < groups[l].length);
+    if (!room.length) break;
+    const l = room.reduce((a, b) => (groups[a].length - take[a] >= groups[b].length - take[b] ? a : b));
+    take[l]++;
+  }
+  return present.flatMap(l => groups[l].slice(0, take[l]));
+}
+
+const mean = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
 /**
- * Learning curve: how ranking quality on papers the model has NOT seen grows
- * with the number of labels it learned from. Each repeat holds out a fixed test
- * set (about 30% of your labels, so every point is scored on the same papers),
- * then trains on the first k of the remaining labels in a random order (labels
- * only: no votes, no seeds). It reports NDCG@10 for the model as the app would
- * run it with k ratings, for the hand-set profile alone, and for a random order.
- * Averaged over `repeats` random splits because one split is noisy.
+ * Learning curve: how well the model ranks papers it has NOT seen as it learns from more of your labels.
+ *
+ * It uses the same stratified 5-fold split as the cross-validated report above it. For each training
+ * size k, the model learns from k labels drawn (with your label mix) from each fold's training part and
+ * then scores that fold's held-out papers. Every labelled paper is therefore scored by a model that never
+ * saw it, and each point is NDCG@10 over all of them. This repeats `repeats` times with different draws,
+ * and the band is the spread of those draws. At the largest k the model has all the training labels,
+ * which is exactly the report's own cross-validation.
+ *
+ * Lines: the hand-set profile alone (it still uses the k labels as reference papers, so it moves a little),
+ * the model learning from labels only, the app's blend at `weight` (the cross-validated learning weight),
+ * and a random order. At the largest k these match the "Profile only", "Learned from feedback only" and
+ * "Personalised" rows of the report.
  */
-export function learningCurve(ctx, { repeats = 4 } = {}) {
+export function learningCurve(ctx, { weight = 0, repeats = 5, k: folds5 = 5 } = {}) {
   const { labels, byId } = ctx;
   const ids = Object.keys(labels).filter(id => byId.has(id) && ctx.space.vec(byId.get(id)));
   const labelOf = id => labels[id].label ?? labels[id];
-  const testN = curveTestSize(ids.length);
-  const sizes = curveSizes(ids.length - testN);
-  if (ids.length < MIN_TRAIN_EXAMPLES + 10 || new Set(ids.map(labelOf)).size < 2 || sizes.length < 2) {
-    return { ok: false, n: ids.length, message: `Label at least ${MIN_TRAIN_EXAMPLES + 10} papers, with at least two different labels, to see a learning curve.` };
+  const counts = Object.fromEntries(LABELS.map(l => [l, ids.filter(id => labelOf(id) === l).length]));
+  const present = LABELS.filter(l => counts[l]).length;
+  const parts = folds(ids, labelOf, Math.min(folds5, ids.length));
+  const pool = Math.min(...parts.map(f => ids.length - f.length));
+  const sizes = curveSizes(pool);
+  if (ids.length < 20 || present < 2 || sizes.length < 2) {
+    return { ok: false, n: ids.length, message: "Label at least 20 papers, with at least two different labels, to see a learning curve." };
   }
-  const acc = sizes.map(() => ({ model: [], prior: [], random: [] }));
-  for (let r = 0; r < repeats; r++) {
-    const order = [...ids].sort((a, b) => hashOf(`${r}|${a}`) - hashOf(`${r}|${b}`));
+  const index = new Map(ids.map((id, i) => [id, i]));
+  const truth = ids.map(labelOf);
+  const w = Math.min(1, Math.max(0, weight || 0));
+  // learned/blend/prior [si][r][i]: score of paper i by a model trained on sizes[si] labels in repeat r
+  const grid = () => sizes.map(() => Array.from({ length: repeats }, () => new Array(ids.length)));
+  const learned = grid(), blend = grid(), prior = grid();
+  parts.forEach((test, fi) => {
+    const trainPool = ids.filter(id => !test.includes(id));
+    const testPapers = test.map(id => byId.get(id));
     sizes.forEach((k, si) => {
-      const test = order.slice(0, testN);
-      const train = order.slice(testN, testN + k);
-      const trainLabels = Object.fromEntries(train.map(id => [id, labels[id]]));
-      const model = new RelevanceModel(ctx.space, ctx.pv, { today: ctx.today }).fit(buildExamples(trainLabels, []), byId);
-      const rows = model.score(test.map(id => byId.get(id)));
-      const truth = test.map(labelOf);
-      const m = ndcgAt(rows.map(x => x.final), truth);
-      const pr = ndcgAt(rows.map(x => x.prior), truth);
-      const rnd = [0, 1, 2, 3, 4, 5, 6, 7].reduce((a, d) => a + ndcgAt(test.map(id => hashOf(`${r}|${k}|${d}|${id}`)), truth), 0) / 8; // a steadier baseline than one draw
-      if (![m, pr, rnd].some(Number.isNaN)) { acc[si].model.push(m); acc[si].prior.push(pr); acc[si].random.push(rnd); }
+      for (let r = 0; r < repeats; r++) {
+        const train = stratifiedSubset(trainPool, Math.min(k, trainPool.length), labelOf, `${fi}|${r}`);
+        const trainLabels = Object.fromEntries(train.map(id => [id, labels[id]]));
+        const model = new RelevanceModel(ctx.space, ctx.pv, { today: ctx.today }).fit(buildExamples(trainLabels, []), byId);
+        model.learnedWeight = 1;
+        const rows = model.score(testPapers);
+        test.forEach((id, j) => {
+          const i = index.get(id), row = rows[j];
+          prior[si][r][i] = row.prior;
+          const l = row.learned ?? row.prior; // too few labels or one answer so far: nothing learned yet
+          learned[si][r][i] = l;
+          blend[si][r][i] = (1 - w) * row.prior + w * l;
+        });
+      }
     });
-  }
-  const mean = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
-  const points = sizes.map((k, i) => ({ k, model: mean(acc[i].model), prior: mean(acc[i].prior), random: mean(acc[i].random) })).filter(p => !Number.isNaN(p.model));
-  if (points.length < 2) return { ok: false, n: ids.length, message: "Not enough variety in your labels yet for a learning curve." };
-  const first = points[0], last = points[points.length - 1];
-  return { ok: true, n: ids.length, testN, repeats, points, gain: last.model - last.prior, learned: last.model - first.model };
+  });
+  const ndcg = scores => ndcgAt(scores, truth);
+  const spread = vals => { const m = mean(vals); return { m, lo: Math.min(...vals), hi: Math.max(...vals) }; };
+  const points = sizes.map((k, si) => {
+    const l = spread(learned[si].map(ndcg)), b = spread(blend[si].map(ndcg)), p = spread(prior[si].map(ndcg));
+    return { k, learned: l.m, learnedLo: l.lo, learnedHi: l.hi, blend: b.m, blendLo: b.lo, blendHi: b.hi, prior: p.m, priorLo: p.lo, priorHi: p.hi };
+  });
+  // A random order's expected NDCG@10, from many deterministic shuffles of the same labels.
+  const random = mean(Array.from({ length: 200 }, (_, d) => ndcg(ids.map(id => hashOf(`random|${d}|${id}`)))));
+  const last = points[points.length - 1];
+  const caught = points.find(p => p.learned >= p.prior - 1e-9);
+  const lowSignal = counts.READ < 10;
+  return {
+    ok: true, n: ids.length, counts, repeats, weight: w, random, points,
+    // How many labels until learning from labels alone matches the hand-set profile (null: not within your labels).
+    catchUp: caught ? caught.k : null,
+    gain: (w > 0 ? last.blend : last.learned) - last.prior,
+    learnedGain: last.learned - last.prior,
+    reliability: lowSignal || ids.length < 60 ? "low" : "ok",
+    note: lowSignal ? `Only ${counts.READ} Read label${counts.READ === 1 ? "" : "s"}: one paper moves this curve a lot, so read it as a rough guide.` : ids.length < 60 ? "Under 60 labels: the curve is rough." : "",
+  };
 }

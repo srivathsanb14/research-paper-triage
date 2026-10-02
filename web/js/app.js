@@ -748,27 +748,39 @@ function computeCurve() {
   if (!prof || !A.run?.ctx || A.curve) return;
   const seq = rankSeq;
   let curve;
-  try { curve = learningCurve(A.run.ctx); } catch (e) { console.error(e); curve = { ok: false, message: e.message }; }
+  try { curve = learningCurve(A.run.ctx, { weight: A.report?.blend?.weight ?? 0 }); } catch (e) { console.error(e); curve = { ok: false, message: e.message }; }
   if (seq !== rankSeq) return; // ranking changed while computing: the next report recomputes
   A.curve = curve;
   if (A.view === "insights") render();
 }
 
 function learningSection() {
-  if (!A.curve) return `<div class="card-surface"><h2>How fast does it learn you?</h2><div class="empty"><div class="spinner"></div><p>Training on growing subsets of your labels…</p></div></div>`;
-  if (!A.curve.ok) return `<div class="card-surface"><h2>How fast does it learn you?</h2><p class="hint">${esc(A.curve.message)}</p></div>`;
-  const { points, gain, learned, testN } = A.curve;
-  const last = points[points.length - 1];
-  const verdict = gain > 0.01 ? `With ${last.k} labels the learned model ranks unseen papers ${fix(gain * 100)} NDCG points better than the profile alone.`
-    : gain < -0.01 ? `With ${last.k} labels the profile alone still ranks unseen papers slightly better (${fix(-gain * 100)} points): learning hasn’t paid off yet.`
-    : `With ${last.k} labels learning and the profile alone rank unseen papers about equally well.`;
-  return `<div class="card-surface"><h2>How fast does it learn you?</h2>
-    ${learningChart(points, [
-      { name: "Learns from your labels", key: "model", cls: "s1" },
-      { name: "Profile only", key: "prior", cls: "s2" },
-      { name: "Random order", key: "random", cls: "ref" },
-    ])}
-    <p class="hint">${verdict} (Scored on ${testN} labels held out from training.) Going from ${points[0].k} to ${last.k} labels moved the personalised model by ${learned >= 0 ? "+" : "−"}${fix(Math.abs(learned) * 100)} points.</p></div>`;
+  const head = `<h2>How fast does it learn you?</h2>`;
+  if (!A.curve) return `<div class="card-surface">${head}<div class="empty"><div class="spinner"></div><p>Training on growing subsets of your labels…</p></div></div>`;
+  if (!A.curve.ok) return `<div class="card-surface">${head}<p class="hint">${esc(A.curve.message)}</p></div>`;
+  const c = A.curve;
+  const last = c.points[c.points.length - 1];
+  const pctPts = x => Math.round(x * 100);
+  const lines = [
+    `With ${last.k} labels of its own to learn from, the model alone scores ${pctPts(last.learned)}% on papers it hasn’t seen, against ${pctPts(last.prior)}% for your profile and ${pctPts(c.random)}% for a random order.`,
+    c.catchUp != null
+      ? `Learning alone passes your hand-written profile at about <b>${c.catchUp} labels</b>.`
+      : `Learning alone doesn’t pass your hand-written profile within your ${last.k} labels: the profile already captures your taste.`,
+    c.weight > 0
+      ? `The app blends in ${pct(c.weight)} learning (chosen by cross-validation), which scores ${pctPts(last.blend)}%.`
+      : `Cross-validation keeps the learning weight at 0%, so your ranking uses the profile alone for now.`,
+  ];
+  const series = [
+    { name: "Profile only", key: "prior", cls: "s2", band: ["priorLo", "priorHi"] },
+    { name: "Learns from your labels", key: "learned", cls: "s1", band: ["learnedLo", "learnedHi"] },
+    ...(c.weight > 0 ? [{ name: `Personalised (${pct(c.weight)} learning)`, key: "blend", cls: "s3", band: ["blendLo", "blendHi"] }] : []),
+    { name: "Random order", key: "random", cls: "ref" },
+  ];
+  const points = c.points.map(p => ({ ...p, random: c.random }));
+  return `<div class="card-surface">${head}
+    ${learningChart(points, series, { note: `Every one of your ${c.n} labelled papers is scored by a model that never saw it (the same 5-fold split as the report above). Shaded bands show the spread over ${c.repeats} random draws of the training labels.` })}
+    <ul class="curve-notes">${lines.map(l => `<li>${l}</li>`).join("")}</ul>
+    ${c.note ? `<p class="hint warn-text">${esc(c.note)}</p>` : ""}</div>`;
 }
 
 function insightsView(prof) {

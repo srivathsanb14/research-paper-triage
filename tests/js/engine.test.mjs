@@ -5,7 +5,7 @@ import { parseImport } from "../../web/js/data.js";
 import {
   DEFAULT_CUTOFFS, SparseSpace, adaptiveCutoffs, buildExamples, buildProfileVectors, groupSimilar, profileTexts, rank, readBudget,
 } from "../../web/js/engine.js";
-import { curveSizes, evaluate, learningCurve } from "../../web/js/evaluate.js";
+import { curveSizes, evaluate, learningCurve, stratifiedSubset } from "../../web/js/evaluate.js";
 import { toBibtex, toCsv } from "../../web/js/export.js";
 import { paperFromCrossref, paperFromEuropePmc, parseIdentifiers, paperFromWork, searchAll } from "../../web/js/live.js";
 
@@ -136,20 +136,43 @@ test("pressing a rating again clears it", () => {
   assert.deepEqual(ex.map(e => e.pid), ["b"]);
 });
 
-test("learning curve trains only on k labels and scores the rest", () => {
+test("stratified subsets keep the label mix and at least one of every label", () => {
+  const ids = Array.from({ length: 100 }, (_, i) => `p${i}`);
+  const labelOf = id => (+id.slice(1) < 3 ? "READ" : +id.slice(1) < 20 ? "SKIM" : "SKIP");
+  for (const k of [5, 10, 40]) {
+    const sub = stratifiedSubset(ids, k, labelOf, "s");
+    assert.equal(sub.length, k);
+    assert.equal(new Set(sub).size, k);
+    assert.deepEqual([...new Set(sub.map(labelOf))].sort(), ["READ", "SKIM", "SKIP"]);
+  }
+  assert.deepEqual(stratifiedSubset(ids, 10, labelOf, "s"), stratifiedSubset(ids, 10, labelOf, "s"), "deterministic");
+});
+
+test("learning curve scores every label out-of-fold and matches the report at its last point", () => {
   assert.deepEqual(curveSizes(8), [5]);
   assert.deepEqual(curveSizes(42), [5, 10, 15, 20, 30, 45].filter(k => k <= 42).concat(42));
   const ps = Array.from({ length: 5 }, (_, j) => papers().map(p => ({ ...p, id: `${p.id}-${j}`, title: `${p.title} (${j})` }))).flat();
   const labels = Object.fromEntries(ps.map(p => [p.id, { label: RAG.some(([t]) => p.title.startsWith(t)) ? "READ" : "SKIP" }]));
-  const curve = learningCurve(ctx(ps, { labels }), { repeats: 2 });
+  const c = ctx(ps, { labels });
+  const curve = learningCurve(c, { weight: 0.5, repeats: 3 });
   assert.ok(curve.ok);
   assert.equal(curve.n, 60);
   assert.equal(curve.points[0].k, 5);
-  assert.equal(curve.testN, 18);
-  assert.ok(curve.points.at(-1).k <= 60 - curve.testN, "never trains on the held-out papers");
-  for (const pt of curve.points) for (const key of ["model", "prior", "random"]) assert.ok(pt[key] >= 0 && pt[key] <= 1);
-  const avg = key => curve.points.reduce((a, p) => a + p[key], 0) / curve.points.length;
-  assert.ok(avg("model") > avg("random"), "learned model beats a random order");
+  for (const pt of curve.points) {
+    for (const key of ["learned", "blend", "prior"]) {
+      assert.ok(pt[key] >= 0 && pt[key] <= 1);
+      assert.ok(pt[`${key}Lo`] <= pt[key] + 1e-12 && pt[key] <= pt[`${key}Hi`] + 1e-12, `${key} sits inside its band`);
+    }
+  }
+  assert.ok(curve.points.every((p, i) => i === 0 || p.k > curve.points[i - 1].k));
+  // At the largest k the model has the whole training part of each fold: the report's own cross-validation.
+  const rep = evaluate(c, "read");
+  const last = curve.points.at(-1);
+  assert.ok(Math.abs(last.prior - rep.systems.find(s => s.key === "prior").ndcg) < 1e-9, "profile-only matches the report");
+  assert.ok(Math.abs(last.learned - rep.systems.find(s => s.key === "learned").ndcg) < 1e-9, "learned-only matches the report");
+  assert.ok(curve.random < last.learned, "learning beats a random order");
+  assert.equal(curve.reliability, "ok");
+  assert.equal(learningCurve(c, { weight: 0, repeats: 2 }).points[0].blend, learningCurve(c, { weight: 0, repeats: 2 }).points[0].prior, "weight 0 is the profile alone");
   assert.equal(learningCurve(ctx(papers(), { labels: { p0: { label: "READ" }, p6: { label: "SKIP" } } })).ok, false);
 });
 

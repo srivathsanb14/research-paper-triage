@@ -35,10 +35,11 @@ export function discoveryChart(series, { title = "Good papers found as you read 
 
 /**
  * Learning curve: quality (0..1) against number of labels learned from.
- * points: [{k, <key>: value}]; series: [{name, key, cls}]. Points sit at their
- * true x position, so the uneven label counts are not misleading.
+ * points: [{k, <key>: value}]; series: [{name, key, cls, band?: [loKey, hiKey]}]. Points sit at
+ * their true x position, so the uneven label counts are not misleading. A series with a `band`
+ * also draws the range between its two keys (the spread across repeated draws).
  */
-export function learningChart(points, series, { title = "Ranking quality as the model learns from more labels", yLabel = "NDCG@10 on papers it hasn’t seen" } = {}) {
+export function learningChart(points, series, { title = "Ranking quality as the model learns from more labels", yLabel = "NDCG@10 on papers it hasn’t seen", note = "" } = {}) {
   const lo = points[0].k, hi = points[points.length - 1].k;
   const x = k => M.l + ((k - lo) / Math.max(1, hi - lo)) * (W - M.l - M.r);
   const y = v => M.t + (1 - v) * (H - M.t - M.b);
@@ -46,6 +47,12 @@ export function learningChart(points, series, { title = "Ranking quality as the 
   const grid = [0, 0.25, 0.5, 0.75, 1].map(v => `<line class="grid" x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}"/><text class="tick" x="${M.l - 8}" y="${y(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("");
   const ticks = points.length > 8 ? points.filter((_, i) => i % 2 === 0 || i === points.length - 1) : points;
   const xt = ticks.map(p => `<text class="tick" x="${x(p.k)}" y="${H - M.b + 18}" text-anchor="middle">${p.k}</text>`).join("");
+  const bands = series.filter(s => s.band).map(s => {
+    const [lo, hi] = s.band;
+    const top = points.map(p => `${x(p.k).toFixed(1)},${y(p[hi]).toFixed(1)}`);
+    const bottom = [...points].reverse().map(p => `${x(p.k).toFixed(1)},${y(p[lo]).toFixed(1)}`);
+    return `<polygon class="band ${s.cls}" points="${[...top, ...bottom].join(" ")}"/>`;
+  }).join("");
   const lines = series.map(s => `<path class="line ${s.cls}" d="${path(s.key)}"/>${points.map(p => `<circle class="pt ${s.cls}" cx="${x(p.k).toFixed(1)}" cy="${y(p[s.key]).toFixed(1)}" r="2.5"/>`).join("")}`).join("");
   const legend = series.map(s => `<span class="lg"><i class="sw ${s.cls}"></i>${esc(s.name)}</span>`).join("");
   const data = esc(JSON.stringify({ points: points.map(p => ({ k: p.k, ...Object.fromEntries(series.map(s => [s.key, Math.round(p[s.key] * 1000) / 10])) })), series }));
@@ -55,7 +62,7 @@ export function learningChart(points, series, { title = "Ranking quality as the 
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">
         ${grid}<line class="axis" x1="${M.l}" x2="${W - M.r}" y1="${y(0)}" y2="${y(0)}"/>${xt}
         <text class="axis-title" x="${(M.l + W - M.r) / 2}" y="${H - 4}" text-anchor="middle">Labels the model learned from</text>
-        ${lines}
+        ${bands}${lines}
         <line class="cross" x1="0" x2="0" y1="${M.t}" y2="${y(0)}" visibility="hidden"/>
         <g class="dots"></g>
         <rect class="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>
@@ -63,7 +70,7 @@ export function learningChart(points, series, { title = "Ranking quality as the 
       <div class="tip" hidden></div>
     </div>
     <div class="legend">${legend}</div>
-    <p class="hint">${esc(yLabel)}. Every point is scored on the same held-out labels and averages several random train/test splits.</p>
+    <p class="hint">${esc(yLabel)}. ${esc(note)}</p>
   </figure>`;
 }
 
