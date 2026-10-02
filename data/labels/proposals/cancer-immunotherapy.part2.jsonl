@@ -1,0 +1,93 @@
+{"paper_id": "doi:10.5281/zenodo.23067021", "proposed_label": "SKIP", "reason": "Smokeless tobacco and oral health public health dentistry in India, no cancer immunology focus."}
+{"paper_id": "doi:10.1038/s41598-026-74094-2", "proposed_label": "SKIP", "reason": "Endodontic irrigation solution and dentin erosion; dental materials, unrelated to cancer immunology."}
+{"paper_id": "doi:10.22029/eir.2010.1655", "proposed_label": "SKIM", "reason": "Macrophage phenotype switching in obese adipose tissue; immunology biology outside cancer."}
+{"paper_id": "doi:10.1227/neuprac.0000000000000264", "proposed_label": "SKIP", "reason": "Surgical site infection risk after ventricular drain placement; neurosurgical infection epidemiology."}
+{"paper_id": "doi:10.48620/98605", "proposed_label": "SKIM", "reason": "Radioisotope production for theranostics; cancer-relevant targeted radiotherapy but no immune component."}
+{"paper_id": "doi:10.5281/zenodo.23029710", "proposed_label": "SKIP", "reason": "Herbal transdermal patch for inflammation; pharmaceutical formulation unrelated to cancer immunology."}
+{"paper_id": "doi:10.1038/s12276-026-01706-2", "proposed_label": "SKIP", "reason": "Zinc regulation of organelle homeostasis; cell biology review only touching cancer in passing."}
+{"paper_id": "doi:10.1111/jfb.70423", "proposed_label": "SKIP", "reason": "Fish welfare assessment; animal welfare science unrelated to cancer or immunology."}
+{"paper_id": "doi:10.1515/labmed-2026-0093", "proposed_label": "SKIM", "reason": "ECM lectin review touching tumour progression and PD-L1, but mainly cartilage and antimicrobial biology."}
+{"paper_id": "doi:10.1128/cmr.00139-26", "proposed_label": "SKIP", "reason": "Brucella epidemiology and pathogenesis; infectious disease unrelated to cancer immunotherapy."}
+{"paper_id": "doi:10.1111/jre.70104", "proposed_label": "SKIP", "reason": "Global economic burden of periodontitis; health economics unrelated to oncology or immunology."}
+{"paper_id": "doi:10.1126/science.ady5196", "proposed_label": "READ", "reason": "CD43 sialylation as glyco-immune checkpoint restraining macrophage, NK and T-cell antileukemic immunity."}
+{"paper_id": "doi:10.1208/s12249-026-03374-x", "proposed_label": "SKIP", "reason": "Niosome formulation for oral anticoagulant bioavailability; drug delivery unrelated to cancer immunology."}
+{"paper_id": "doi:10.5281/zenodo.23031299", "proposed_label": "SKIM", "reason": "Pharmacogenomics for personalised drug therapy including oncology; biomarker-driven treatment without immune angle."}
+{"paper_id": "doi:10.37527/2012.62.3.006", "proposed_label": "SKIP", "reason": "Glycaemic index of tropical fruits; nutrition science unrelated to cancer or immunology."}
+{"paper_id": "doi:10.1038/s41586-026-10644-y", "proposed_label": "SKIP", "reason": "Multi-agent AI system for scientific hypothesis generation; not cancer or immunology research."}
+{"paper_id": "doi:10.3390/nu18101483", "proposed_label": "SKIP", "reason": "Diet, microbiota and NLRP3 inflammasome in chronic disease; nutrition-inflammation, not cancer immunology."}
+{"paper_id": "doi:10.4103/nrr.nrr-d-25-00404", "proposed_label": "SKIP", "reason": "Engineered extracellular vesicles for Alzheimer neuroinflammation; neurodegeneration therapy unrelated to cancer."}
+{"paper_id": "doi:10.3390/ani16091333", "proposed_label": "SKIP", "reason": "Sensor-based precision feeding in livestock; agricultural technology unrelated to biomedicine."}
+{"paper_id": "doi:10.22029/eir.2012.1668", "proposed_label": "SKIM", "reason": "Leucocytes and cytokines in exercise-induced muscle damage; general immune biology outside cancer."}
+{"paper_id": "doi:10.5281/zenodo.23032257", "proposed_label": "SKIP", "reason": "Paediatric type 1 diabetes ketoacidosis case report; endocrinology unrelated to cancer immunotherapy."}
+{"paper_id": "doi:10.4037/ccn2026499", "proposed_label": "SKIP", "reason": "Nursing competence standard and readiness to practice; health workforce study, not cancer research."}
+{"paper_id": "doi:10.1080/00071668.2026.2704214", "proposed_label": "SKIP", "reason": "Fermented feed effects on laying hen immunity and parasites; poultry nutrition, not human cancer."}
+{"paper_id": "doi:10.5281/zenodo.23037396", "proposed_label": "SKIP", "reason": "Ayurvedic management of diabetic dyslipidemia case report; metabolic medicine unrelated to oncology."}
+{"paper_id": "doi:10.3389/fdgth.2026.1785141", "proposed_label": "SKIP", "reason": "Health information technology safety visibility; informatics and patient safety, not cancer immunology."}
+{"paper_id": "doi:10.5281/zenodo.23035025", "proposed_label": "SKIP", "reason": "Parental awareness and child well-being at Anganwadi centres; child public health, not oncology."}
+{"paper_id": "doi:10.48620/97531", "proposed_label": "SKIP", "reason": "Strongyloides hyperinfection in a dog; veterinary parasitology unrelated to cancer immunotherapy."}
+{"paper_id": "doi:10.1016/j.biopha.2026.119385", "proposed_label": "SKIM", "reason": "Inflammatory and immune toxicity of lipid nanoparticles; immune activation biology relevant to delivery, not cancer."}
+{"paper_id": "doi:10.5281/zenodo.23033017", "proposed_label": "SKIP", "reason": "Self-emulsifying drug delivery systems review; pharmaceutical formulation unrelated to cancer immunology."}
+{"paper_id": "doi:10.5281/zenodo.23031882", "proposed_label": "SKIP", "reason": "Regulatory requirements for nasal drug products; regulatory affairs unrelated to oncology."}
+{"paper_id": "doi:10.82451/k5753", "proposed_label": "SKIP", "reason": "Xylazine use among people who use drugs; substance use public health, not cancer."}
+{"paper_id": "doi:10.14670/hh-25-067", "proposed_label": "SKIP", "reason": "Acupuncture needling in rat rheumatoid arthritis model; non-cancer inflammation intervention study."}
+{"paper_id": "doi:10.1055/a-2860-7861", "proposed_label": "SKIP", "reason": "Therapeutic drug monitoring guidelines in neuropsychopharmacology; psychiatry pharmacology, not oncology."}
+{"paper_id": "doi:10.1038/s41598-026-70738-5", "proposed_label": "SKIP", "reason": "Operating room lighting and flooring effects on staff stress; ergonomics, not cancer research."}
+{"paper_id": "doi:10.3390/ani16091295", "proposed_label": "SKIP", "reason": "Haematological reference parameters in sheep; veterinary flock health, not cancer immunology."}
+{"paper_id": "doi:10.1080/10408398.2026.2649384", "proposed_label": "SKIP", "reason": "Human milk bioactive peptides for infant health; nutrition and development, not cancer."}
+{"paper_id": "doi:10.3390/cimb48101006", "proposed_label": "SKIM", "reason": "JAK/STAT cytokine dysregulation and cytotoxic lymphocytes in oral lichen planus; immunology outside cancer."}
+{"paper_id": "openalex:W7203801535", "proposed_label": "SKIP", "reason": "History of medical ethics education; education policy unrelated to cancer or immunology."}
+{"paper_id": "doi:10.22029/eir.2020.1730", "proposed_label": "SKIM", "reason": "Exercise effects on immune function and infection susceptibility; general immunology outside cancer."}
+{"paper_id": "doi:10.3390/dj14050292", "proposed_label": "SKIP", "reason": "Electrolytes for dental implant corrosion testing; biomaterials unrelated to cancer immunology."}
+{"paper_id": "openalex:W7214129243", "proposed_label": "SKIP", "reason": "Equine anaesthesia induction protocols comparison; veterinary anaesthesiology, not cancer research."}
+{"paper_id": "doi:10.14670/hh-25-071", "proposed_label": "SKIP", "reason": "Telocytes in skeletal muscle homeostasis and repair; muscle histology unrelated to tumour immunology."}
+{"paper_id": "doi:10.5281/zenodo.20728915", "proposed_label": "SKIP", "reason": "Theoretical foundations for human-AI multi-turn interaction; HCI theory, not biomedical."}
+{"paper_id": "doi:10.5281/zenodo.23013348", "proposed_label": "SKIP", "reason": "Knowledge and attitudes on childhood hearing screening; audiology public health, not oncology."}
+{"paper_id": "doi:10.1007/s44466-026-00040-6", "proposed_label": "SKIM", "reason": "Broad Toll-like receptor innate immunity review; general immunology with only partial cancer relevance."}
+{"paper_id": "doi:10.14309/crj.0000000000002330", "proposed_label": "SKIP", "reason": "Mpox proctocolitis case in transplant recipient; infectious disease case report, not cancer."}
+{"paper_id": "doi:10.1038/s43587-026-01206-y", "proposed_label": "SKIM", "reason": "cGAS innate DNA sensing in aging and inflammation; pathway relevant to tumour immunity but studied in aging."}
+{"paper_id": "doi:10.1038/s41598-026-72258-8", "proposed_label": "READ", "reason": "Cytokine gene variants and inflammatory markers shaping pro-tumour immune microenvironment in breast cancer."}
+{"paper_id": "doi:10.1128/msystems.00845-26", "proposed_label": "SKIP", "reason": "Horizontally acquired Salmonella gene physiology; bacterial genetics unrelated to cancer immunotherapy."}
+{"paper_id": "doi:10.5281/zenodo.21386961", "proposed_label": "SKIP", "reason": "Plant kinetochore protein sequence dataset; comparative structural biology, not biomedical oncology."}
+{"paper_id": "doi:10.3390/ani16081204", "proposed_label": "SKIP", "reason": "Obesity in dogs and cats and welfare management; veterinary primary care, not cancer."}
+{"paper_id": "doi:10.1038/s41541-026-01422-y", "proposed_label": "SKIP", "reason": "Meningococcal vaccine trial against gonorrhoea; infectious disease vaccine, not cancer immunotherapy."}
+{"paper_id": "doi:10.1073/pnas.2614738123", "proposed_label": "SKIM", "reason": "LAT condensation gating PLCg1 in TCR signalling; fundamental T-cell biology outside cancer."}
+{"paper_id": "doi:10.1542/neo.27-10-055", "proposed_label": "SKIM", "reason": "TREC newborn screening for severe combined immunodeficiency; T-cell immunology outside cancer."}
+{"paper_id": "doi:10.1021/acs.orglett.6c01403", "proposed_label": "SKIP", "reason": "Photocatalytic chlorofluorosulfonylation methodology; synthetic organic chemistry unrelated to cancer."}
+{"paper_id": "doi:10.37527/2012.62.1.009", "proposed_label": "SKIP", "reason": "Lactoferrin antimicrobial action in cheese; food microbiology unrelated to cancer immunology."}
+{"paper_id": "openalex:W7215000062", "proposed_label": "SKIP", "reason": "Entomophthoromycosis diagnosis case report; fungal infection case, not cancer immunotherapy."}
+{"paper_id": "doi:10.48620/98114", "proposed_label": "SKIP", "reason": "Additively manufactured dental cast fit analysis; prosthodontics unrelated to cancer immunology."}
+{"paper_id": "doi:10.1126/sciadv.ady7336", "proposed_label": "SKIP", "reason": "Horse domestication genetics and archaeology; evolutionary history, not biomedical research."}
+{"paper_id": "doi:10.48620/97859", "proposed_label": "SKIP", "reason": "AI-generated synthetic health data equity critique; health AI policy, not cancer immunology."}
+{"paper_id": "openalex:W7214129246", "proposed_label": "SKIM", "reason": "BRAF-targeted kinase inhibitor antitumour activity in canine urothelial carcinoma; oncology therapy without immune angle."}
+{"paper_id": "doi:10.1126/science.aef0610", "proposed_label": "SKIP", "reason": "Nitrogen atom-swap methodology for medicinal chemistry scaffolds; synthetic chemistry, not cancer immunology."}
+{"paper_id": "doi:10.1126/science.adx1893", "proposed_label": "READ", "reason": "STING-activating nanoparticle driving tumour regression, CD8 T-cell priming and immunosuppressive microenvironment remodelling."}
+{"paper_id": "doi:10.22127/rjp.2026.566591.3064", "proposed_label": "SKIM", "reason": "Bromelain as radiosensitizer in breast cancer cells; cancer biology without immune component."}
+{"paper_id": "doi:10.1186/s13568-026-02118-1", "proposed_label": "SKIP", "reason": "Herbal formulas modulating lamb gut microbiota; livestock enteric health, not cancer."}
+{"paper_id": "doi:10.37527/2007.57.3.009", "proposed_label": "SKIP", "reason": "Flaxseed oil effects on tilapia liver fatty acids; aquaculture nutrition, unrelated to oncology."}
+{"paper_id": "doi:10.14670/hh-25-062", "proposed_label": "SKIP", "reason": "Tanshinone IIA in myocardial ischaemia-reperfusion injury; cardiology pharmacology, not cancer."}
+{"paper_id": "doi:10.1038/s41587-026-03099-z", "proposed_label": "READ", "reason": "mRNA vaccine design shaping antigen-specific T-cell priming, PD1/PDL1 suppression and tumour burden reduction."}
+{"paper_id": "doi:10.22029/eir.2019.1727", "proposed_label": "SKIM", "reason": "T and B cell subsets versus amyloid and cognition after exercise; T-cell immunology outside cancer."}
+{"paper_id": "doi:10.37527/2008.58.3.004", "proposed_label": "SKIP", "reason": "Childhood malnutrition prevalence in Brazil; nutrition epidemiology unrelated to cancer immunology."}
+{"paper_id": "doi:10.1186/s43055-026-01867-0", "proposed_label": "SKIM", "reason": "Deep learning brain tumour classification from MRI; oncology diagnostics without immune angle."}
+{"paper_id": "doi:10.14670/hh-25-056", "proposed_label": "SKIM", "reason": "RRM2/GCH1 ferroptosis signalling and cisplatin resistance in cervical cancer; cancer biology, not immune."}
+{"paper_id": "doi:10.22029/eir.2006.1620", "proposed_label": "SKIM", "reason": "IL-6 biology in acute exercise and training; cytokine immunology outside cancer."}
+{"paper_id": "doi:10.3390/ani16193076", "proposed_label": "SKIP", "reason": "Rider-horse coordination measurement in equestrian sport; sports science, not biomedical."}
+{"paper_id": "doi:10.14670/hh-25-072", "proposed_label": "SKIM", "reason": "p53 and Smad4 immunohistochemistry validation in pancreatic cancer; oncology biomarkers without immune angle."}
+{"paper_id": "doi:10.5281/zenodo.23031825", "proposed_label": "SKIP", "reason": "Plant extract phenolics against resistant staphylococci; antimicrobial natural products, not cancer."}
+{"paper_id": "doi:10.3390/s26134271", "proposed_label": "SKIP", "reason": "Computer vision for cattle health monitoring; agricultural technology unrelated to biomedicine."}
+{"paper_id": "doi:10.22029/eir.2015.1697", "proposed_label": "SKIM", "reason": "Gut microbiota from an exercise immunology perspective; general immune modulation outside cancer."}
+{"paper_id": "doi:10.5281/zenodo.23032809", "proposed_label": "SKIP", "reason": "Ayurvedic protocol for psoriasis management; traditional dermatology treatment, not cancer."}
+{"paper_id": "doi:10.66128/ijbh202601.3", "proposed_label": "SKIP", "reason": "Chinese herbal mouthwash adjuvant for periodontitis; dental therapeutics unrelated to oncology."}
+{"paper_id": "doi:10.1111/imb.70064", "proposed_label": "SKIP", "reason": "Gene drive and AI-designed peptides for mosquito vector control; vector biology, not cancer."}
+{"paper_id": "doi:10.22127/rjp.2026.580156.3175", "proposed_label": "SKIP", "reason": "Piperonylic acid hepatoprotection in ethanol liver injury; hepatology pharmacology, not cancer."}
+{"paper_id": "doi:10.14670/hh-25-087", "proposed_label": "SKIP", "reason": "Liver sampling methods for rodent MASLD histology; preclinical methodology unrelated to cancer immunology."}
+{"paper_id": "doi:10.22029/eir.2006.1621", "proposed_label": "SKIM", "reason": "Toll-like receptor responses to exercise; innate immunology background outside cancer."}
+{"paper_id": "doi:10.1001/jamadermatol.2026.1753", "proposed_label": "SKIM", "reason": "Randomised trial of IL-17 biologic plus tirzepatide in psoriasis; immune-targeted clinical evidence outside cancer."}
+{"paper_id": "doi:10.5281/zenodo.20973217", "proposed_label": "SKIP", "reason": "Essay on AI alignment framing; philosophy of AI, unrelated to biomedical research."}
+{"paper_id": "doi:10.5281/zenodo.23068062", "proposed_label": "SKIP", "reason": "Context management architecture for large language models; AI systems work, not biomedical."}
+{"paper_id": "doi:10.5281/zenodo.23032282", "proposed_label": "SKIP", "reason": "Plant extract anti-ulcer and anthelmintic screening; pharmacognosy unrelated to cancer immunology."}
+{"paper_id": "doi:10.1093/jas/skag272.422", "proposed_label": "SKIP", "reason": "Distillers grains effects on equine glycaemic response; animal nutrition, not cancer."}
+{"paper_id": "doi:10.5281/zenodo.19561157", "proposed_label": "SKIP", "reason": "Pharmacovigilance signal detection methods re-analysis; drug safety statistics unrelated to oncology."}
+{"paper_id": "doi:10.1093/molbev/msag117", "proposed_label": "SKIP", "reason": "Phylogenomic inference software release; computational evolutionary biology, not cancer immunology."}
+{"paper_id": "doi:10.1080/21691401.2026.2668258", "proposed_label": "SKIP", "reason": "Green-synthesised ZnO nanoparticles for obesity-related enzyme inhibition; nanomaterials, not cancer immunotherapy."}
+{"paper_id": "doi:10.37527/2007.57.1.002", "proposed_label": "SKIP", "reason": "Food insecurity measurement in rural Ecuador; food security research unrelated to cancer."}

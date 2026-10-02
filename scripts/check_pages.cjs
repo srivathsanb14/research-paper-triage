@@ -1,0 +1,263 @@
+// End-to-end check of the static site. Run after `python scripts/build_pages.py` and `npm ci`.
+//   npm run test:pages                       (Playwright's Chromium)
+//   BROWSER_CHANNEL=chrome npm run test:pages (installed Chrome)
+//   OFFLINE_MODEL=1 …                        (skip the MiniLM download; TF-IDF only)
+const { chromium } = require("playwright");
+const assert = require("node:assert/strict");
+const http = require("node:http");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+
+const site = path.resolve(__dirname, "../_site");
+const prefix = "/research-paper-triage/"; // GitHub Pages serves project sites under a subpath
+const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".bin": "application/octet-stream" };
+const server = http.createServer(async (req, res) => {
+  const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  if (!pathname.startsWith(prefix)) { res.writeHead(404).end(); return; }
+  const file = path.resolve(site, pathname.slice(prefix.length) || "index.html");
+  if (!file.startsWith(site + path.sep)) { res.writeHead(404).end(); return; }
+  try {
+    const data = await fs.readFile(file);
+    res.writeHead(200, { "Content-Type": types[path.extname(file)] || "application/octet-stream" });
+    res.end(data);
+  } catch { res.writeHead(404).end(); }
+});
+
+function invertedIndex(text) {
+  const index = {};
+  text.split(" ").forEach((w, i) => (index[w] ||= []).push(i));
+  return index;
+}
+
+const step = msg => console.log(`PASS: ${msg}`);
+
+async function main() {
+  await new Promise(r => server.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${server.address().port}${prefix}`;
+  const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || undefined, headless: true });
+  const context = await browser.newContext({ viewport: { width: 1360, height: 900 }, acceptDownloads: true });
+  if (process.env.OFFLINE_MODEL) await context.route(/cdn\.jsdelivr\.net|huggingface\.co/, r => r.abort());
+  // Live OpenAlex calls are stubbed so the check is deterministic and offline-safe.
+  await context.route(/api\.openalex\.org/, r => r.fulfill({ contentType: "application/json", body: JSON.stringify({ results: [{
+    id: "https://openalex.org/W999", doi: "https://doi.org/10.9999/live-test", title: "Live OpenAlex Test Paper on Retrieval Evaluation", type: "article",
+    abstract_inverted_index: invertedIndex("We evaluate retrieval augmented generation faithfulness with a new benchmark and release code at github.com/example. The study covers many datasets and shows careful ablations across settings and tasks for evaluation of retrieval systems in practice."),
+    authorships: [{ author: { display_name: "T. Tester" } }], primary_location: { source: { display_name: "Test Journal", type: "journal" }, version: "publishedVersion" },
+    publication_date: "2026-09-01", publication_year: 2026, cited_by_count: 3, fwci: 2.1, referenced_works_count: 40,
+  }] }) }));
+  await context.route(/api\.crossref\.org/, r => r.fulfill({ status: 503, body: "down" })); // one source failing must not break Load more
+  const page = await context.newPage();
+  page.setDefaultTimeout(30000);
+  const errors = [];
+  page.on("pageerror", e => { errors.push(e.message); console.error("Browser error:", e.message); });
+  page.on("console", m => { if (m.type() === "warning" && !/content-length/.test(m.text())) console.error("Browser warning:", m.text()); });
+  let failed = false;
+  try {
+    const t0 = Date.now();
+    await page.goto(url);
+    await page.getByRole("button", { name: /Show papers/ }).waitFor();
+    step(`welcome page interactive in ${Date.now() - t0} ms`);
+
+    // Phase 1: 20 papers to rate, nothing labelled yet.
+    await page.getByRole("button", { name: "RAG & LLM evaluation" }).click();
+    await page.getByRole("button", { name: /Show papers/ }).click();
+    await page.locator("article.paper.unrated").first().waitFor();
+    assert.equal(await page.locator("article.paper.unrated").count(), 20);
+    assert.equal(await page.locator(".tabs").count(), 0, "no Read/Skim/Skip before 5 ratings");
+    const top = await page.locator("article.paper h2").first().innerText();
+    assert.match(top, /retriev|RAG|language model|LLM/i, `unexpected top paper: ${top}`);
+    step(`a new visitor gets 20 papers to rate, no labels yet (top: “${top.slice(0, 60)}”)`);
+
+    const active = () => page.evaluate(() => window.__triage.state.profiles[window.__triage.state.active]);
+    const cards = page.locator("article.paper.unrated");
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    await page.getByRole("button", { name: "Undo" }).click();
+    assert.equal((await active()).feedback.length, 0, "undo removes feedback");
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    await cards.first().getByRole("button", { name: "Relevant", exact: true }).click();
+    assert.equal(await page.locator(".rate-count").innerText(), "0/5", "pressing again clears the rating");
+    step("rate, undo and un-rate work");
+
+    // Load more merges every enabled source (stubbed). Crossref is "down" and Europe PMC is skipped
+    // because this profile is AI/computing only; neither may break the list.
+    await page.locator('.list [data-act="load-more"]').click();
+    await page.getByText(/Loaded 1 papers \(1 from OpenAlex, Crossref unavailable\)/).waitFor();
+    assert.equal(await cards.count(), 40);
+    await page.locator("article.paper.unrated h2", { hasText: "Live OpenAlex Test Paper" }).waitFor();
+    step("Load more adds live papers and survives a failing source");
+
+    // Five ratings unlock the algorithm's Read / Skim / Skip.
+    for (let i = 0; i < 5; i++) await cards.nth(i).getByRole("button", { name: i < 3 ? "Relevant" : "Not relevant", exact: true }).click();
+    await page.locator(".tabs").waitFor();
+    const tabs = (await page.locator(".tabs").innerText()).replace(/\s+/g, " ");
+    assert.match(tabs, /Read [1-9]/, `Read is filled: ${tabs}`);
+    assert.match(tabs, /Reviewed 5/);
+    assert.equal(await page.locator('article.paper [data-act="relabel"]').count(), 0, "labels are the algorithm's, not editable");
+    step(`5 ratings unlock the algorithm's triage (${tabs.trim()})`);
+
+    if (!process.env.OFFLINE_MODEL) {
+      await page.waitForFunction(() => window.__triage.run?.space?.name === "minilm", null, { timeout: 120000 });
+      step("MiniLM loads in a worker and the ranking switches to semantic vectors");
+    }
+
+    // Further ratings, save and hide in triage.
+    const first = page.locator("article.paper").first();
+    const firstId = await first.getAttribute("data-id");
+    await first.getByRole("button", { name: /^Save/ }).click();
+    await page.waitForFunction(id => !document.querySelector(`article.paper[data-id="${CSS.escape(id)}"]`), firstId);
+    await page.getByRole("tab", { name: /Skim/ }).click();
+    const skimCard = page.locator("article.paper").first();
+    const skimId = await skimCard.getAttribute("data-id");
+    await skimCard.getByRole("button", { name: "Hide" }).click();
+    await page.waitForFunction(id => !document.querySelector(`article.paper[data-id="${CSS.escape(id)}"]`), skimId);
+    await page.getByRole("tab", { name: /Reviewed/ }).click();
+    await page.locator(`article.paper[data-id="${firstId}"]`).waitFor();
+    step("saving moves a paper to Reviewed; hiding removes it");
+
+    // The selected tab survives a reload (remembered per profile).
+    await page.getByRole("tab", { name: /Skim/ }).click();
+    await page.waitForTimeout(300); // let the write to IndexedDB commit
+    await page.reload();
+    await page.locator(".tabs").waitFor();
+    assert.equal(await page.locator('.tab[aria-selected="true"]').count(), 1, "exactly one tab is selected");
+    assert.match(await page.locator('.tab[aria-selected="true"]').innerText(), /Skim/);
+    await page.getByRole("tab", { name: /Read/ }).click();
+    step("the selected tab is remembered across reloads");
+
+    // Details panel and keyboard shortcuts.
+    await page.getByRole("tab", { name: /Read/ }).click();
+    await page.keyboard.press("j");
+    await page.keyboard.press("Enter");
+    await page.locator(".details .bars").first().waitFor();
+    await page.keyboard.press("n");
+    const fb = (await active()).feedback.map(f => f.action);
+    assert.ok(fb.includes("not_useful"), "keyboard N records not relevant");
+    step("details show the score breakdown; keyboard triage works");
+
+    // Signal filters.
+    await page.getByRole("tab", { name: /All/ }).click();
+    await page.locator("label.chip-toggle", { hasText: "Peer-reviewed" }).click();
+    const sigs = await page.locator("article.paper .signals").allInnerTexts();
+    assert.ok(sigs.length && sigs.every(t => t.includes("Peer-reviewed")), "peer-reviewed filter");
+    await page.locator("label.chip-toggle", { hasText: "Peer-reviewed" }).click();
+    assert.ok(await page.evaluate(() => window.__triage.run.byId.has("doi:10.9999/live-test")), "OpenAlex paper is ranked");
+    await page.locator("#search").fill("Retrieval");
+    const hits = await page.locator("article.paper h2").allInnerTexts();
+    assert.ok(hits.length > 0 && hits.length <= 20, "search narrows the list");
+    await page.locator("#search").fill("");
+    step("signal filters and search work; OpenAlex papers are ranked too");
+
+    // Saved list exports BibTeX.
+    await page.locator("#nav").getByRole("link", { name: /^Saved/ }).click();
+    const bib = page.waitForEvent("download");
+    await page.getByRole("button", { name: "BibTeX" }).click();
+    assert.match(await fs.readFile(await (await bib).path(), "utf8"), /^@(article|misc)\{/);
+    step("saved papers export to BibTeX");
+
+    // Hand labelling, then insights.
+    await page.locator("#nav").getByRole("link", { name: /^Label/ }).click();
+    for (let i = 0; i < 24; i++) {
+      const title = await page.locator(".label-card h2").innerText();
+      const good = /retriev|RAG|language model|LLM|hallucinat/i.test(title);
+      await page.keyboard.press(good || i % 5 === 0 ? "1" : i % 4 ? "3" : "2");
+      await page.waitForFunction(t => document.querySelector(".label-card h2")?.innerText !== t, title);
+    }
+    await page.keyboard.press("Backspace");
+    const n = await page.evaluate(() => Object.keys(window.__triage.state.profiles[window.__triage.state.active].labels).length);
+    assert.equal(n, 23, "undo removes the last label");
+    const csv = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Labels CSV" }).click();
+    const rows = (await fs.readFile(await (await csv).path(), "utf8")).trim().split("\n");
+    assert.equal(rows.length, 24);
+    assert.equal(rows[0], "profile,paper_id,label,labeled_at,origin");
+    step("keyboard labelling with undo; labels export as a dataset CSV");
+
+    await page.locator("#nav").getByRole("link", { name: /^Insights/ }).click();
+    await page.locator(".tiles .tile").first().waitFor();
+    const discovery = page.locator("figure.chart:not([data-kind])");
+    await discovery.locator("svg").waitFor();
+    const box = await discovery.locator(".hit").boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await discovery.locator(".tip").waitFor();
+    step("insights show cross-validated metrics and an interactive discovery curve");
+
+    const curve = page.locator('figure.chart[data-kind="curve"]');
+    await curve.locator("svg").waitFor({ timeout: 30000 });
+    await curve.scrollIntoViewIfNeeded();
+    const cbox = await curve.locator(".hit").boundingBox();
+    await page.mouse.move(cbox.x + cbox.width / 2, cbox.y + cbox.height / 2);
+    await curve.locator(".tip").waitFor();
+    step("insights show a learning curve against held-out labels");
+
+    // Persistence and backup round-trip.
+    await page.reload();
+    await page.locator("article.paper, .tiles .tile").first().waitFor();
+    const after = await page.evaluate(() => { const p = window.__triage.state.profiles[window.__triage.state.active]; return [Object.keys(p.labels).length, p.feedback.length]; });
+    assert.equal(after[0], 23);
+    await page.getByRole("button", { name: "Settings" }).click();
+    const dl = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    const backupPath = await (await dl).path();
+    const backup = JSON.parse(await fs.readFile(backupPath, "utf8"));
+    assert.equal(backup.format, "paper-triage-web-profile");
+    assert.equal(Object.keys(backup.profile.labels).length, 23);
+    await page.locator('#settings-dialog input[data-act="restore"]').setInputFiles(backupPath);
+    await page.getByText(/Restored “RAG & LLM evaluation \(restored 1\)”/).waitFor();
+    step("ratings and labels survive reload; backups download and restore");
+
+    // Import a JSON collection.
+    await page.goto(url + "#/feed");
+    await page.locator("article.paper").first().waitFor();
+    await page.locator('input[data-act="import-papers"]').setInputFiles({ name: "papers.json", mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify([{ id: "test:import", title: "Imported Paper About Retrieval Augmented Generation", abstract: "Retrieval augmented generation for scientific question answering." }])) });
+    await page.getByText("Imported 1 new papers.").waitFor();
+    await page.locator("#search").fill("Imported Paper About");
+    await page.getByRole("tab", { name: /All/ }).click();
+    await page.locator("article.paper h2", { hasText: "Imported Paper About" }).waitFor();
+    await page.locator("#search").fill("");
+    step("JSON paper collections can be imported and ranked");
+
+    // Review mode: a person accepts or corrects model-proposed labels.
+    const sets = await page.evaluate(() => window.__triage.proposals.sets.length);
+    if (sets) {
+      await page.locator("#nav").getByRole("link", { name: /^Label/ }).click();
+      await page.locator('[data-act="review-set"]').first().click();
+      await page.locator(".suggest").waitFor();
+      const proposed = await page.locator(".suggest .label-chip").innerText();
+      await page.keyboard.press("Enter");
+      await page.locator(".suggest").waitFor();
+      await page.keyboard.press("3");
+      const got = await page.evaluate(() => Object.values(window.__triage.state.profiles[window.__triage.state.active].labels));
+      assert.equal(got.length, 2);
+      assert.equal(got[0].label, got[0].proposed, `accepted suggestion (${proposed})`);
+      assert.ok(got.every(l => l.proposal), "provenance is kept");
+      const jsonl = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Labels JSONL" }).click();
+      const rows = (await fs.readFile(await (await jsonl).path(), "utf8")).trim().split("\n").map(l => JSON.parse(l));
+      assert.ok(rows.every(r => r.origin === "manual" && r.profile && !("labeler" in r)));
+      step("review mode records suggestion and human answer; exports as manual");
+      await page.locator("#nav").getByRole("link", { name: /^For you/ }).click();
+      await page.locator("article.paper").first().waitFor();
+    }
+
+    await fs.mkdir("test-results", { recursive: true });
+    if (await page.locator(".tabs").count()) await page.getByRole("tab", { name: /Read/ }).click(); // a fresh profile is still in the rating phase
+    await page.screenshot({ path: "test-results/pages-desktop.png" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: "test-results/pages-mobile.png" });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "no horizontal scroll on mobile");
+    assert.deepEqual(errors, []);
+    step("mobile layout fits; no uncaught errors");
+  } catch (e) {
+    failed = true;
+    await fs.mkdir("test-results", { recursive: true });
+    await page.screenshot({ path: "test-results/pages-failure.png", fullPage: true }).catch(() => {});
+    console.error((await page.locator("body").innerText().catch(() => "")).slice(0, 3000));
+    throw e;
+  } finally {
+    await browser.close();
+    server.close();
+    if (failed) process.exitCode = 1;
+  }
+}
+
+main().catch(e => { console.error(e); process.exitCode = 1; server.close(); });

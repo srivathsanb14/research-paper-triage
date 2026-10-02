@@ -3,8 +3,12 @@
   "configurations": [
     {
       "name": "paper-triage",
-      "url": "http://localhost:8501",
-      "port": 8501
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/run_server.cjs",
+        "8000"
+      ],
+      "port": 8000
     }
   ]
 }

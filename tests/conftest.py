@@ -6,7 +6,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from triage.models import InterestProfile, Paper  # noqa: E402
-from triage.store import Store  # noqa: E402
 
 
 def make_paper(i: int, title: str, abstract: str, published: str = "2026-09-01") -> Paper:
@@ -69,8 +68,3 @@ def rag_profile() -> InterestProfile:
         avoid=["robot"],
         hours_per_week=2,
     )
-
-
-@pytest.fixture
-def store() -> Store:
-    return Store(":memory:")

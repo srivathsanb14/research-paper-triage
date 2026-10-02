@@ -1,113 +1,88 @@
-# Personalized Research Paper Triage
+# Paper Triage
 
-*"Which papers are actually worth my time?"*
+Too many papers, too little time. Describe your research and every recent paper is sorted into
+**Read / Skim / Skip** with a one-line reason and separate "worth-it" signals (peer review, released
+code or data, study design, citation impact, cautions). It learns from your ratings and labels.
+Runs in the browser; no API key. **Load more** pulls fresh papers live from OpenAlex, Europe PMC and Crossref (Settings → Sources).
 
-Describe your research once; every batch of new papers comes back ranked and sorted into
-**Read / Skim / Skip**, each with a one-line reason. Your feedback retrains the ranking.
+**Live:** Hugging Face Space (see [Publish](#publish)) · GitHub Pages `https://srivathsanb14.github.io/research-paper-triage/`
+
+## Requirements
+
+| # | Requirement | How it is met |
+|---|---|---|
+| 1 | **Functional and useful** | Triage for a real reading backlog. Measured with 5-fold cross-validation on our own labels (NDCG@10, average precision, papers to screen for 80% of the good ones, time saved) against profile-only, semantic-only, keyword-only and random baselines: [report](docs/evaluation/report.md), the Insights page, and a learning curve of quality vs. number of labels. |
+| 2 | **≥ 500 manual samples** | **500 manual** labels (a person judged each paper for a research profile) plus **984 synthetic** rule-based mockups, in one table, [`data/labels/labels.jsonl`](data/labels/labels.jsonl), over a 1,859-paper catalog of real papers (OpenAlex, CC0). The `origin` column (`manual` / `synthetic`) separates them, and only the manual ones count towards the 500. Card and EDA: [docs/EDA.md](docs/EDA.md). |
+| 3 | **≥ 2 model types** | **Off-the-shelf:** all-MiniLM-L6-v2 embeddings ([card](hf/model-embeddings/README.md)). **Trained from scratch:** a per-user ridge ranker over seven readable features, blended with a hand-set profile score by a cross-validated weight ([card](hf/model-ranker/README.md)). |
+| 4 | **Public GUI on Hugging Face Spaces** | Static Space built by `scripts/build_pages.py --hf-space`, published with `scripts/publish_hf.sh`. |
+
+## Use it
+
+1. Pick your fields and optionally describe your research, then **Show papers**.
+2. Rate at least 5 of the first 20 (more papers: **Load more**, de-duplicated across sources) as 👍 or 👎 (or hand-label in **Label**). The rest are sorted into Read / Skim / Skip and re-sorted with every rating.
+3. **Insights** shows how well the ranking finds what you would pick, and how fast it learns you.
+4. **Saved** exports BibTeX, RIS or CSV. **Settings** has cutoffs and backups.
+
+## How it works
+
+```
+ description ─┐                    ┌─ profile score (hand-set weights)
+ papers ──────┼─ MiniLM ─ 7 features ─┤
+ ratings ─────┘                    └─ ridge regression (trained per user)
+                                       final = (1−w)·profile + w·learned, w by cross-validation
+ metadata + abstract ─ rules ─ worth-it signals (shown beside the score, never mixed in)
+```
+
+* **Relevance ≠ quality.** Signals are checkable cues, not a verdict, and they never change relevance.
+* **Validated learning.** A few subjective labels can make a learned model worse, so its weight stays 0 unless it beats the profile alone in cross-validation.
+* **Grounded reasons.** Explanations cite only words found in the paper.
+
+Code: `web/js/engine.js` (browser), `triage/relevance.py` (Python reference, checked for parity), `web/js/evaluate.js`, `triage/quality_rules.json`.
 
 ## Run
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/streamlit run app.py
+python3 scripts/build_pages.py                                  # builds _site/
+python3 -m http.server 8000 --bind 127.0.0.1 --directory _site  # static site, browser-only
 ```
 
-Open http://localhost:8501. On first launch a **Demo — RAG research** profile is created: ~400 real
-arXiv papers (bundled, offline) with **simulated** labels and feedback from a rule-based stand-in
-researcher (`triage/demo.py`), so every view has data. The app marks it as a demo; reset it under
-Settings. Create your own profile from the sidebar for real use.
+Optional accounts (sign-in, per-user profiles and labels in SQLite, starter label sets):
 
-The active profile, tab and reading-list filter are kept in the URL, so refreshing or sharing a link
-returns you to the same view.
+```bash
+pip install -r requirements.txt
+python -m server                  # http://localhost:8000, serves _site/ and /api
+python -m server.demo_users       # demo accounts sri, ishaan, chris (password "demo", simulated labels)
+```
 
-Optional environment variables:
+Tests: `pytest -q` · `npm run test:js` · `npm run test:pages` (Playwright end to end; `npx playwright install chromium` first).
 
-| Variable | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | Enables Claude-written explanations (Settings → Explanations). |
-| `TRIAGE_LLM_MODEL` | Model for explanations (default `claude-opus-5`). |
-| `S2_API_KEY` | Semantic Scholar key; anonymous requests are heavily rate-limited. |
-| `TRIAGE_EMBEDDING_BACKEND` | `auto` (default), `sbert`, or `tfidf`. |
-| `TRIAGE_DB_PATH` | SQLite location (default `data/triage.db`). |
-| `SLACK_WEBHOOK_URL` / SMTP vars | Digest delivery (optional). |
+## Data
 
-Tests: `.venv/bin/python -m pytest`
+```
+data/catalog/       PAPERS: 1,859 papers, signals and MiniLM vectors (read-only snapshot)
+data/labels/        LABELS: profiles.json (research profiles) + labels.jsonl (profile, paper_id, label, labeled_at, origin)
+data/users.db       USERS: accounts, sessions, each user's saved state and labels (SQLite; nothing about papers)
+```
 
-## How it maps to the design
+Papers, labels and users are separate: labels point at papers by id, and a user's labels are their own copy in `users.db`.
 
-| Design box | Code |
-|---|---|
-| User context | `models.InterestProfile`, sidebar form |
-| Research paper database (arXiv / Semantic Scholar) | `triage/sources.py` |
-| Preprocessing: clean → fields → embeddings | `triage/preprocess.py`, `triage/embeddings.py` |
-| Labels + feedback log | `triage/store.py` (SQLite) |
-| User-interest representation — CONFIGURED | `triage/profile.py` |
-| Paper relevance model — TRAINED | `triage/relevance.py` |
-| Ranking + triage — TUNED | `triage/ranking.py` |
-| Explanation generator — CONFIGURED | `triage/explain.py` |
-| Evaluation vs. hand labels — EVALUATED | `triage/evaluate.py` |
-| Streamlit interface | `app.py` |
+1. Label papers in **Label** (predictions hidden) and export **Labels JSONL**; its rows have the same shape as `data/labels/labels.jsonl`, so append them (origin `manual`).
+2. `python scripts/build_dataset.py` validates labels against the catalog and writes `_dataset/` and `docs/EDA.md`.
+3. `node scripts/evaluate_web.mjs` writes `docs/evaluation/report.md` (5-fold cross-validation per profile).
+4. `python scripts/simulate_labels.py` regenerates the synthetic (rule-based) labels and leaves the manual ones untouched.
 
-**Relevance model.** A transparent prior (semantic similarity to the project, to the current focus and to
-each keyword; exact keyword hits; recency; excluded-topic penalty; similarity to papers you rated) is
-blended with a ridge regression trained on hand labels and feedback. The learned weight grows with data,
-`n / (n + 30)`, capped at 70%, so a handful of subjective labels can't swamp the prior.
+## Publish
 
-**Triage.** Cutoffs are set by human judgment (Settings) and can be tuned on the Evaluation tab. Read is
-optionally capped by your weekly reading time; overflow is demoted to Skim.
+* **Hugging Face:** `hf auth login`, then `scripts/publish_hf.sh <hf-user>` creates the Space, dataset and both model cards.
+* **GitHub Pages:** Settings → Pages → Source: GitHub Actions. The workflow tests, refreshes the catalog daily and deploys.
 
-**Explanations.** Evidence (keyword hits, shared terms) is extracted deterministically. Rule-based
-explanations state only that evidence. Claude explanations must cite the paper terms they rely on; each
-citation is verified against the abstract and unverifiable explanations are discarded (the design's
-"may invent overlap" risk). The project team can also mark explanations accurate/inaccurate.
+## Limitations
 
-**Validated learning.** How much the learned model counts is chosen per profile by cross-validation
-on your hand labels (0–70%, by average precision for good papers). Learning is switched off unless it
-beats the profile-only ranking; Settings shows the decision and the numbers behind it. Without enough
-labels to validate, learning is capped at 30%.
+* The catalog is a bounded recent sample (~270 papers per area); use *Load more* or import your own papers for depth.
+* English abstracts only. Signals come from metadata and abstract wording and inherit OpenAlex errors.
+* Without the optional server, data lives in one browser; use Settings → Download backup.
 
-**Seed papers.** Paste arXiv IDs/links or DOIs, or upload a BibTeX export (Zotero, Google Scholar).
-Seeds pull the interest profile towards them and act as strong positive examples from day one. arXiv
-ids are resolved via OAI-PMH, DOIs via Crossref (falling back to Semantic Scholar / the arXiv version
-for missing abstracts).
+## AI assistance
 
-**Daily feed.** With arXiv categories set, the app fetches new listings automatically when opened
-(at most once a day) and opens on **New** — papers worth a look that arrived since your last visit.
-For fetching while the app is closed, schedule `scripts/daily.py` (see its docstring for cron).
-Every fetch is logged (Settings → Fetch history) and the sidebar shows when the last one succeeded.
-
-**Near-duplicates.** Papers that are near-identical (cosine ≥ 0.72 with sentence-transformers) are
-grouped under the highest-ranked one, so the top of the list covers more ground.
-
-**Full text for borderline papers.** After a fetch, up to 12 papers whose score is close to a cutoff
-are re-scored using their introduction and conclusion (arXiv HTML, falling back to the PDF).
-
-**Export and digest.** Read / Read + Skim lists as BibTeX or RIS (Zotero, Mendeley, EndNote), and a
-Markdown digest. Set `SLACK_WEBHOOK_URL` or SMTP variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
-`SMTP_PASSWORD`, `DIGEST_FROM`, `DIGEST_TO`) to post or email it, from the app or from
-`scripts/daily.py --digest slack|email`.
-
-**Uncertainty.** Evaluation metrics carry 90% bootstrap ranges; the learning curve shows them as a band.
-
-**How quickly good papers surface.** On the Evaluation tab:
-*discovery curve* — walking down the ranked list, the share of good papers found after k papers,
-against random order and a perfect ranking, summarised as papers to review for the first / half / 80%
-of good papers and minutes of screening saved; *learning curve* — labels and ratings replayed in the
-order given, showing how the top 10 improves with feedback (cross-validated). "Good" is Read by
-default, or Read + Skim.
-
-**Evaluation.** k-fold cross-validation (no paper scored by a model trained on its own label), against
-profile-only, semantic-only and keyword-only baselines; Spearman ρ, NDCG@10, macro-F1, confusion
-matrix, and suggested cutoffs.
-
-## Data sources — known limitations
-
-* **arXiv OAI-PMH** (oaipmh.arxiv.org) is used by `scripts/build_sample_data.py` to add recent
-  cs.IR / cs.CL papers (`sources.fetch_arxiv_oai`).
-* **arXiv new listings** (rss.arxiv.org) is the most reliable source: the day's announcements in the
-  chosen categories. Feeds are empty on weekends and holidays.
-* **arXiv keyword search** (export.arxiv.org) currently answers HTTP 406 to Python HTTP clients from
-  some networks; the app reports this and suggests the other sources.
-* **Semantic Scholar** throttles anonymous requests; set `S2_API_KEY` for reliable use.
-* Regenerate the offline sample with `python scripts/build_sample_data.py`.
+Large parts of the code, tests and docs were written with Claude Code under the team's direction. Claude also proposed labels for the review sets in `data/labels/proposals/`; a person judged each one before it became a manual label.
+<!-- Team: add your own reflection: what you asked the tools for, what they got wrong, what you rewrote. -->

@@ -86,7 +86,6 @@ def triage(
                 score=s,
                 label=label,
                 rank=rank,
-                prior_score=float(prior[i]),
                 features={f: float(F[i, j]) for j, f in enumerate(FEATURES)},
                 note=note,
             )
@@ -94,45 +93,4 @@ def triage(
     return out
 
 
-def summarize(results: list[TriageResult]) -> dict[str, int]:
-    counts = {lab: 0 for lab in config.LABELS}
-    for r in results:
-        counts[r.label] += 1
-    return counts
-
-
-def estimated_minutes(results: list[TriageResult]) -> int:
-    c = summarize(results)
-    return c["READ"] * config.MINUTES_PER_READ + c["SKIM"] * config.MINUTES_PER_SKIM
-
-
 # Cosine similarity above which two papers count as near-duplicates, per backend.
-SIMILAR_THRESHOLD = {"sbert": 0.72, "tfidf": 0.55}  # sbert: ≥0.72 on the sample = same narrow subtopic
-
-
-def group_similar(results: list[TriageResult], vecs_by_id: dict[str, np.ndarray], threshold: float) -> list[TriageResult]:
-    """Group near-identical papers under the highest-ranked one (in place).
-
-    Walking down the ranking, a paper joins the most similar existing lead if the
-    cosine similarity is ≥ threshold, otherwise it becomes a lead itself. Scores
-    and labels are untouched; the UI uses this to show one card per cluster.
-    """
-    lead_ids: list[str] = []
-    lead_vecs: list[np.ndarray] = []
-    by_id = {r.paper.id: r for r in results}
-    for r in results:
-        r.group_lead, r.similar = "", []
-    for r in results:
-        v = vecs_by_id.get(r.paper.id)
-        if v is None:
-            continue
-        if lead_vecs:
-            sims = np.vstack(lead_vecs) @ v
-            j = int(np.argmax(sims))
-            if sims[j] >= threshold:
-                r.group_lead = lead_ids[j]
-                by_id[lead_ids[j]].similar.append(r.paper.id)
-                continue
-        lead_ids.append(r.paper.id)
-        lead_vecs.append(v)
-    return results

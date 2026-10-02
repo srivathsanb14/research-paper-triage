@@ -1,0 +1,94 @@
+{"paper_id": "doi:10.22029/eir.2005.1612", "proposed_label": "READ", "reason": "HSP70 as tumour antigen chaperone driving CD8 T-cell and NK anti-cancer immunity."}
+{"paper_id": "doi:10.56430/japro.1979815", "proposed_label": "SKIP", "reason": "AI disease detection in farm animals; unrelated to cancer or immunology."}
+{"paper_id": "doi:10.22029/eir.2015.1703", "proposed_label": "SKIP", "reason": "Origin of exercise-induced cell-free DNA; no cancer or immune focus."}
+{"paper_id": "doi:10.22029/eir.2007.1632", "proposed_label": "SKIP", "reason": "CoQ10 and exercise muscle injury in rats; unrelated."}
+{"paper_id": "doi:10.14670/hh-25-063", "proposed_label": "READ", "reason": "PD-L1 in tumour versus stroma in ESCC as checkpoint inhibitor biomarker in tumour immune microenvironment."}
+{"paper_id": "doi:10.1111/iej.70180", "proposed_label": "SKIP", "reason": "Dental hydraulic cement classification; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23035791", "proposed_label": "SKIP", "reason": "Biochemical markers in malnourished children; unrelated."}
+{"paper_id": "doi:10.1016/j.celrep.2026.117981", "proposed_label": "SKIM", "reason": "Genetics (HLA) of COVID-19 mRNA vaccine antibody responses; general immunology outside cancer."}
+{"paper_id": "doi:10.1038/s12276-026-01847-4", "proposed_label": "SKIM", "reason": "T helper and Treg plasticity in periodontitis; T-cell biology outside cancer."}
+{"paper_id": "doi:10.5281/zenodo.23034024", "proposed_label": "SKIP", "reason": "Review of typhus rickettsial infections; unrelated infectious disease."}
+{"paper_id": "doi:10.30934/kusbed.1934201", "proposed_label": "SKIP", "reason": "Lab predictors of bacteremia in pediatric brucellosis; unrelated."}
+{"paper_id": "doi:10.22029/eir.2013.1679", "proposed_label": "SKIP", "reason": "Muscle soreness and damage markers after eccentric exercise; unrelated."}
+{"paper_id": "doi:10.22029/eir.2004.1607", "proposed_label": "SKIP", "reason": "Inflammatory mediators after eccentric exercise; not cancer or T-cell focused."}
+{"paper_id": "doi:10.22029/eir.2014.1692", "proposed_label": "SKIP", "reason": "Review of miRNAs in exercise immunology; general exercise adaptation, no cancer angle."}
+{"paper_id": "doi:10.1038/s41586-026-10429-3", "proposed_label": "SKIM", "reason": "HIV vaccine eliciting broadly neutralizing antibodies; general immunology outside cancer."}
+{"paper_id": "doi:10.82135/tno-230308", "proposed_label": "SKIM", "reason": "Cisplatin DNA adducts in cancer patients' leukocytes; oncology treatment without immune angle."}
+{"paper_id": "doi:10.1007/s13402-026-01199-1", "proposed_label": "READ", "reason": "Review of neoantigen mRNA cancer vaccines inducing tumour-reactive T cells with checkpoint blockade."}
+{"paper_id": "doi:10.22029/eir.2013.1681", "proposed_label": "SKIP", "reason": "Butyrylated starch effects on gut and immunity in healthy adults; unrelated."}
+{"paper_id": "doi:10.22029/eir.2020.1731", "proposed_label": "SKIP", "reason": "Exercise and kynurenine pathway metabolism; no cancer focus."}
+{"paper_id": "doi:10.3389/fmolb.2026.1766853", "proposed_label": "SKIP", "reason": "Oral microbiome engineering against dental caries; unrelated."}
+{"paper_id": "doi:10.3390/vaccines14050409", "proposed_label": "SKIP", "reason": "Brucellosis vaccine strategies review; infectious disease prevention, not cancer."}
+{"paper_id": "doi:10.1038/s41586-026-10735-w", "proposed_label": "SKIP", "reason": "Fly brain-and-cord connectome; neuroscience, unrelated."}
+{"paper_id": "doi:10.1056/nejmoa2516739", "proposed_label": "SKIP", "reason": "Meningococcal B vaccine trial for gonorrhea prevention; infectious disease, not cancer."}
+{"paper_id": "doi:10.1038/s41592-026-03062-5", "proposed_label": "SKIP", "reason": "Blinking dyes for super-resolution microscopy; methods unrelated."}
+{"paper_id": "doi:10.1016/j.jlr.2026.101075", "proposed_label": "SKIP", "reason": "Bioanalysis of pro-resolving lipid mediators; unrelated to cancer immunology."}
+{"paper_id": "doi:10.66128/ijaiir202601.3", "proposed_label": "SKIP", "reason": "AI in dentistry review; unrelated."}
+{"paper_id": "doi:10.14670/hh-25-069", "proposed_label": "SKIP", "reason": "Pathology of false chordae in dilated cardiomyopathy; unrelated."}
+{"paper_id": "doi:10.48620/98282", "proposed_label": "SKIP", "reason": "Long-term periodontal and orthodontic outcomes; unrelated."}
+{"paper_id": "doi:10.1016/j.cell.2026.07.052", "proposed_label": "SKIP", "reason": "ML model for predicting transcriptomic perturbation responses; no cancer immunology focus."}
+{"paper_id": "doi:10.1097/asw.0000000000000436", "proposed_label": "SKIP", "reason": "Xylazine-associated wounds scoping review; unrelated."}
+{"paper_id": "doi:10.3390/diagnostics16193174", "proposed_label": "SKIP", "reason": "CBCT mandibular morphology study; unrelated."}
+{"paper_id": "doi:10.1227/neuprac.0000000000000270", "proposed_label": "SKIM", "reason": "Quality of intracranial tumour tissue collected by ultrasonic aspirator; oncology tissue handling."}
+{"paper_id": "doi:10.2460/javma.25.11.0720", "proposed_label": "SKIP", "reason": "Lipase activity in horses with colic; veterinary, unrelated."}
+{"paper_id": "doi:10.1126/sciadv.aee4401", "proposed_label": "SKIP", "reason": "Microneedle patch for oral infections; unrelated."}
+{"paper_id": "doi:10.1089/jwh.2024.0812", "proposed_label": "SKIP", "reason": "Contraception claims among women with autoimmune diseases; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23012445", "proposed_label": "SKIP", "reason": "ML fault detection in medical equipment; unrelated."}
+{"paper_id": "openalex:W7215000032", "proposed_label": "SKIP", "reason": "Serum calcium and magnesium in febrile seizures; unrelated."}
+{"paper_id": "doi:10.1515/labmed-2026-0085", "proposed_label": "SKIP", "reason": "Pre-analytical factors in MMP-9 measurement; general lab medicine."}
+{"paper_id": "doi:10.3390/j9020013", "proposed_label": "SKIP", "reason": "Precision livestock farming review; unrelated."}
+{"paper_id": "doi:10.1098/rspb.2026.0380", "proposed_label": "SKIP", "reason": "Zoo species holdings and conservation priorities; unrelated."}
+{"paper_id": "openalex:W7215000029", "proposed_label": "SKIP", "reason": "Urine strips for bacterial meningitis diagnosis; unrelated."}
+{"paper_id": "doi:10.22029/eir.2015.1696", "proposed_label": "SKIP", "reason": "Innate immune activation in obesity and exercise; metabolic inflammation, no cancer."}
+{"paper_id": "doi:10.22029/eir.2007.1629", "proposed_label": "SKIM", "reason": "Exercise effects on T-cell homing and trafficking; T-cell biology outside cancer."}
+{"paper_id": "doi:10.22029/eir.2015.1693", "proposed_label": "SKIP", "reason": "Muscle cytokine secretion and exercise; unrelated to cancer immunology."}
+{"paper_id": "doi:10.37527/2008.58.1.005", "proposed_label": "SKIP", "reason": "Stature and diet of sugarcane labourers; unrelated."}
+{"paper_id": "doi:10.3390/life16060962", "proposed_label": "SKIP", "reason": "Tramadol/paracetamol in knee osteoarthritis; unrelated."}
+{"paper_id": "doi:10.1021/acs.analchem.6c01427", "proposed_label": "SKIP", "reason": "Nanoassemblies probing bacterial metabolism in water; unrelated."}
+{"paper_id": "doi:10.22029/eir.2005.1613", "proposed_label": "SKIM", "reason": "Hsp72 chaperokine activity initiating immune responses; general immunology, no direct cancer focus."}
+{"paper_id": "doi:10.5281/zenodo.23034110", "proposed_label": "SKIP", "reason": "Ayurvedic daily regimen and circadian health; unrelated."}
+{"paper_id": "doi:10.1093/jbmrpl/ziag146", "proposed_label": "SKIP", "reason": "Pediatric Bruck syndrome phenotypes; unrelated."}
+{"paper_id": "openalex:W7211218910", "proposed_label": "SKIP", "reason": "Astrocytic connexin 43 in Parkinson's; unrelated."}
+{"paper_id": "openalex:W7203813502", "proposed_label": "SKIP", "reason": "Philosophical critique of medicalization; unrelated."}
+{"paper_id": "doi:10.1093/nop/npag050", "proposed_label": "SKIM", "reason": "Stereotactic radiosurgery outcomes for colorectal brain metastases; oncology without immune angle."}
+{"paper_id": "doi:10.24072/pcjournal.808", "proposed_label": "SKIP", "reason": "Homeostatic efficiency and animal well-being; unrelated."}
+{"paper_id": "doi:10.1002/jev2.70387", "proposed_label": "SKIP", "reason": "Pneumolysin on extracellular vesicles damaging membranes; unrelated."}
+{"paper_id": "doi:10.22029/eir.2004.1610", "proposed_label": "SKIP", "reason": "Neutrophil oxidative stress and antioxidants in exercise; unrelated."}
+{"paper_id": "doi:10.1017/s1366728926101886", "proposed_label": "SKIP", "reason": "Language switching and inhibitory control; unrelated."}
+{"paper_id": "openalex:W7214999999", "proposed_label": "SKIP", "reason": "Leptospira isolation from urine; unrelated infectious disease."}
+{"paper_id": "doi:10.5281/zenodo.23032577", "proposed_label": "SKIP", "reason": "Ayurvedic and modern toxicology comparison; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.21393789", "proposed_label": "SKIP", "reason": "Mechanics of load conduction theory; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23032355", "proposed_label": "SKIP", "reason": "Aceclofenac pharmacosomal gel formulation; unrelated."}
+{"paper_id": "doi:10.1007/s13346-026-02103-y", "proposed_label": "SKIP", "reason": "Modafinil transethosomes for brain delivery; unrelated."}
+{"paper_id": "doi:10.22029/eir.2004.1608", "proposed_label": "SKIM", "reason": "Exercise effects on type 1/type 2 T lymphocytes; T-cell biology outside cancer."}
+{"paper_id": "doi:10.48620/98531", "proposed_label": "SKIP", "reason": "miR-148a-3p in PCOS steroidogenesis; unrelated."}
+{"paper_id": "doi:10.14670/hh-25-070", "proposed_label": "SKIM", "reason": "METTL3/VSTM2L ferroptosis in prostate adenocarcinoma progression; cancer biology without immune angle."}
+{"paper_id": "doi:10.3390/dj14050289", "proposed_label": "SKIP", "reason": "Oral-gut-brain axis neuroinflammation review; unrelated."}
+{"paper_id": "doi:10.14670/hh-25-026", "proposed_label": "SKIP", "reason": "Porcine urethra characterization; unrelated."}
+{"paper_id": "openalex:W7213992791", "proposed_label": "SKIP", "reason": "Produce prescription program for Medicaid patients; unrelated public health."}
+{"paper_id": "doi:10.1177/13872877261480719", "proposed_label": "SKIP", "reason": "Single-cell atlas of Alzheimer's disease; unrelated."}
+{"paper_id": "doi:10.22029/eir.2019.1723", "proposed_label": "SKIP", "reason": "Exercise, immunity and gut microbiome; no cancer focus."}
+{"paper_id": "doi:10.22029/eir.2008.1639", "proposed_label": "SKIP", "reason": "PCR detection of gene doping; unrelated."}
+{"paper_id": "doi:10.22029/eir.2016.1710", "proposed_label": "SKIM", "reason": "Exercise and inflammation in cancer-related fatigue; cancer survivorship, peripheral."}
+{"paper_id": "doi:10.1186/s40813-026-00538-w", "proposed_label": "SKIP", "reason": "Veterinary medication safety in sows; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.20728438", "proposed_label": "SKIP", "reason": "Human-AI relational systems; unrelated."}
+{"paper_id": "doi:10.1002/wps.70093", "proposed_label": "SKIP", "reason": "Risk factors for psychotic disorders umbrella review; unrelated."}
+{"paper_id": "doi:10.1016/j.cell.2026.06.016", "proposed_label": "SKIP", "reason": "Diploid human genome benchmark; genomics, unrelated."}
+{"paper_id": "doi:10.1016/j.theriogenology.2026.118021", "proposed_label": "SKIP", "reason": "Ovum pick-up in mares; unrelated."}
+{"paper_id": "doi:10.1097/og9.0000000000000208", "proposed_label": "SKIP", "reason": "Junk science in obstetric malpractice; unrelated."}
+{"paper_id": "openalex:W7215000039", "proposed_label": "SKIP", "reason": "Infraorbital foramen morphometry; unrelated."}
+{"paper_id": "doi:10.1038/s41593-026-02395-w", "proposed_label": "SKIP", "reason": "Neural activity dimensionality in mouse cortex; unrelated."}
+{"paper_id": "doi:10.37527/2012.62.2.003", "proposed_label": "SKIP", "reason": "Malnutrition in Colombian schoolchildren; unrelated."}
+{"paper_id": "doi:10.1111/jre.70099", "proposed_label": "SKIP", "reason": "Periodontitis-systemic disease mechanisms review; unrelated."}
+{"paper_id": "doi:10.22029/eir.2006.1624", "proposed_label": "SKIP", "reason": "Exercise rehabilitation in medically complex elderly; unrelated."}
+{"paper_id": "doi:10.22029/eir.2006.1622", "proposed_label": "SKIM", "reason": "Exercise-induced T, NK and neutrophil count changes and immunocompetence; general immunology."}
+{"paper_id": "doi:10.5281/zenodo.23031923", "proposed_label": "SKIP", "reason": "Ondansetron sustained-release tablet review; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.20366413", "proposed_label": "SKIP", "reason": "Speculative consciousness topology paper; unrelated."}
+{"paper_id": "doi:10.22029/eir.2005.1614", "proposed_label": "SKIP", "reason": "Mechanisms of HSP72 release during exercise; cell stress, no cancer or T-cell focus."}
+{"paper_id": "doi:10.1016/j.jconrel.2026.114980", "proposed_label": "SKIP", "reason": "Microneedle arrays for drug delivery; unrelated."}
+{"paper_id": "doi:10.3390/ani16081244", "proposed_label": "SKIP", "reason": "Smart feedlot technologies; unrelated."}
+{"paper_id": "doi:10.5281/zenodo.23015858", "proposed_label": "SKIP", "reason": "Nutritional status and respiratory infection severity in children; unrelated."}
+{"paper_id": "doi:10.1002/jdd.70228", "proposed_label": "SKIP", "reason": "Immersive tech in dental education; unrelated."}
+{"paper_id": "doi:10.22270/jddt.v16i4.7666", "proposed_label": "SKIP", "reason": "Caffeine cubosome hydrogel formulation; unrelated."}
+{"paper_id": "doi:10.22029/eir.2022.1750", "proposed_label": "SKIP", "reason": "Exercise effects on complement proteins in healthy humans; no cancer focus."}
+{"paper_id": "doi:10.22029/eir.2008.1635", "proposed_label": "SKIM", "reason": "Acute exercise mobilization of NK cell subsets; general immunology outside cancer."}

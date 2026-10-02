@@ -1,0 +1,101 @@
+{
+  "model_type": "paper-triage-relevance-ranker",
+  "version": 1,
+  "features": [
+    {
+      "name": "semantic",
+      "description": "Similar to your research",
+      "prior_weight": 0.4
+    },
+    {
+      "name": "focus",
+      "description": "Similar to your current focus",
+      "prior_weight": 0.15
+    },
+    {
+      "name": "keyword_sem",
+      "description": "Closest keyword (meaning)",
+      "prior_weight": 0.15
+    },
+    {
+      "name": "keyword_lex",
+      "description": "Keywords found in the paper",
+      "prior_weight": 0.25
+    },
+    {
+      "name": "recency",
+      "description": "Recently published",
+      "prior_weight": 0.05
+    },
+    {
+      "name": "avoid",
+      "description": "Excluded topic",
+      "prior_weight": -0.4
+    },
+    {
+      "name": "feedback",
+      "description": "Like papers you rated",
+      "prior_weight": 0.25
+    }
+  ],
+  "prior": "clip(sum(prior_weight * feature), 0, 1)",
+  "learned": {
+    "type": "ridge_regression",
+    "alpha": 1,
+    "fit_intercept": true,
+    "min_examples": 5,
+    "target": {
+      "READ": 1,
+      "SKIM": 0.5,
+      "SKIP": 0
+    }
+  },
+  "blend": {
+    "final": "(1 - w) * prior + w * learned",
+    "grid": [
+      0,
+      0.15,
+      0.3,
+      0.5,
+      0.7
+    ],
+    "selection": "5-fold CV average precision on hand labels; w > 0 only if it beats w = 0 by 0.01",
+    "min_labels": 6,
+    "unvalidated": "min(0.3, n / (n + 30))"
+  },
+  "calibration": {
+    "minilm": {
+      "doc": [
+        0.15,
+        0.5
+      ],
+      "short": [
+        0.12,
+        0.45
+      ]
+    },
+    "tfidf": {
+      "doc": [
+        0.02,
+        0.3
+      ],
+      "short": [
+        0.01,
+        0.25
+      ]
+    }
+  },
+  "near_duplicate_threshold": {
+    "minilm": 0.72,
+    "tfidf": 0.5
+  },
+  "triage": {
+    "cutoffs": {
+      "read": 0.62,
+      "skim": 0.4
+    },
+    "minutes_per_read": 30,
+    "read_budget": "floor(hours_per_week * 60 / minutes_per_read)"
+  },
+  "embedding_model": "Xenova/all-MiniLM-L6-v2 (q8, transformers.js 3.8.1)"
+}

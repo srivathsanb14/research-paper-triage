@@ -1,7 +1,12 @@
 .venv/
 __pycache__/
 .pytest_cache/
-data/triage.db*
 .streamlit/secrets.toml
 .streamlit/cache/
 .DS_Store
+_site/
+node_modules/
+test-results/
+_dataset/
+data/*.db-wal
+data/*.db-shm
