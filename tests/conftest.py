@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from triage.models import InterestProfile, Paper  # noqa: E402
+from triage.models import Paper  # noqa: E402
 
 
 def make_paper(i: int, title: str, abstract: str, published: str = "2026-09-01") -> Paper:
@@ -56,15 +56,3 @@ def corpus() -> list[Paper]:
             out.append(make_paper(i, t, a))
             i += 1
     return out
-
-
-@pytest.fixture
-def rag_profile() -> InterestProfile:
-    return InterestProfile(
-        name="rag",
-        description="I build retrieval-augmented generation systems for question answering over scientific documents.",
-        keywords=["retrieval augmented generation", "question answering", "dense retrieval"],
-        focus="evaluating retrieval quality in RAG pipelines",
-        avoid=["robot"],
-        hours_per_week=2,
-    )

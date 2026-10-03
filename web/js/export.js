@@ -1,4 +1,4 @@
-// Reference-manager exports (ported from triage/export.py) and file downloads.
+// Reference-manager exports (BibTeX, RIS, CSV) and file downloads.
 
 const bibEscape = s => String(s || "").replace(/\\/g, "\\textbackslash{}").replace(/[{}%&]/g, m => "\\" + m);
 

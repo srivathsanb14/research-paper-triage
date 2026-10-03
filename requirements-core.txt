@@ -1,4 +1,3 @@
-numpy>=1.26
+requests>=2.31      # catalog collection
+numpy>=1.26         # with scikit-learn: tests/test_web_parity.py checks the browser's ridge regression
 scikit-learn>=1.4
-scipy>=1.11
-requests>=2.31

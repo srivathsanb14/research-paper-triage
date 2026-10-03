@@ -40,30 +40,3 @@ class Paper:
     def text(self) -> str:
         """Text used for embeddings: title twice (it's the densest signal) + abstract."""
         return f"{self.title}. {self.title}. {self.abstract}".strip()
-
-
-@dataclass
-class InterestProfile:
-    """User context typed into the app (the 'User context' box)."""
-
-    name: str = "default"
-    description: str = ""  # free-text project description
-    keywords: list[str] = field(default_factory=list)
-    focus: str = ""  # current focus (weighted higher)
-    avoid: list[str] = field(default_factory=list)  # topics to down-rank
-    hours_per_week: float = 3.0  # time available for reading
-    id: int | None = None
-
-    def is_empty(self) -> bool:
-        return not (self.description.strip() or self.keywords or self.focus.strip())
-
-
-@dataclass
-class TriageResult:
-    paper: Paper
-    score: float
-    label: str
-    rank: int
-    features: dict[str, float] = field(default_factory=dict)
-    evidence: dict[str, Any] = field(default_factory=dict)
-    note: str = ""  # e.g. "demoted to SKIM by time budget"

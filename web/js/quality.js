@@ -1,4 +1,4 @@
-// Worth-it signals; mirrors triage/quality.py and reads the same rules file.
+// Worth-it signals; mirrors triage/quality.py (which builds the dataset) and reads the same rules file.
 // Signals never change the relevance score. They are cues a reader can check.
 
 let R = null;

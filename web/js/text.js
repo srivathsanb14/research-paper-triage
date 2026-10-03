@@ -1,5 +1,4 @@
-// Text helpers, ported from triage/preprocess.py so explanations and keyword
-// matches behave the same in the browser and in the Python engine.
+// Text helpers for keyword matching and explanations (hyphens, plurals and acronyms count as matches).
 
 const TOKEN = /[a-z][a-z0-9]+/g;
 

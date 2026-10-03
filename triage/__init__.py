@@ -1,8 +1,6 @@
-"""Python reference engine for Paper Triage.
+"""Python tooling for Paper Triage: the paper catalog, cleaning, worth-it signals and dataset building.
 
-The browser app (`web/js/`) is the product. This package is the reference implementation that
-`tests/test_web_parity.py` checks it against, and it provides the catalog, dataset and quality
-tooling used by the scripts in `scripts/`.
+The app itself (ranking, evaluation, UI) is the JavaScript in `web/js/`.
 """
 
 __version__ = "1.0.0"

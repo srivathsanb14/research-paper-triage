@@ -18,6 +18,7 @@ HF="${HF:-$(command -v hf || echo .venv/bin/hf)}"
 "$PY" scripts/build_pages.py --hf-space
 "$PY" scripts/build_dataset.py
 node scripts/export_model_config.mjs
+"$PY" scripts/render_model_card.py   # model-card numbers come from docs/evaluation/report.json
 RANKER="$(mktemp -d)"
 trap 'rm -rf "$RANKER"' EXIT
 cp -R hf/model-ranker/. "$RANKER/"
