@@ -1,4 +1,4 @@
-// Evaluation against your hand labels (ported from triage/evaluate.py).
+// Evaluation against your hand labels.
 // Every number comes from cross-validation: no paper is scored by a model that
 // saw its label. Baselines are reported next to the personalised model.
 import { LABELS, MIN_LABELS, MIN_TRAIN_EXAMPLES, RelevanceModel, averagePrecision, buildExamples, folds, labelFor, selectBlend } from "./engine.js";

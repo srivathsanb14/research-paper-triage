@@ -9,6 +9,8 @@ Runs in the browser; no API key. **Load more** pulls fresh papers live from Open
 
 ## Requirements
 
+Course paperwork (technical submission text, check-in figure) lives in [`course/`](course/); what each script does is in [`scripts/README.md`](scripts/README.md).
+
 | # | Requirement | How it is met |
 |---|---|---|
 | 1 | **Functional and useful** | Triage for a real reading backlog. Measured with 5-fold cross-validation on our own labels (NDCG@10, average precision, papers to screen for 80% of the good ones, time saved) against profile-only, semantic-only, keyword-only and random baselines: [report](docs/evaluation/report.md), the Insights page, and a learning curve of quality vs. number of labels. |
@@ -37,7 +39,7 @@ Runs in the browser; no API key. **Load more** pulls fresh papers live from Open
 * **Validated learning.** A few subjective labels can make a learned model worse, so its weight stays 0 unless it beats the profile alone in cross-validation.
 * **Grounded reasons.** Explanations cite only words found in the paper.
 
-Code: `web/js/engine.js` (browser), `triage/relevance.py` (Python reference, checked for parity), `web/js/evaluate.js`, `triage/quality_rules.json`.
+Code: the ranker is `web/js/engine.js`, its evaluation is `web/js/evaluate.js`, and the worth-it rules are `triage/quality_rules.json` (shared by the browser and the Python dataset tools). A test checks the browser's ridge regression against scikit-learn and its worth-it signals against Python.
 
 ## Run
 

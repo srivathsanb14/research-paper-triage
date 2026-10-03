@@ -1,7 +1,3 @@
-import io
-import sys
-from types import SimpleNamespace
-
 import pytest
 
 from scripts import build_catalog
@@ -54,34 +50,13 @@ def test_published_catalog_has_real_papers_and_verified_shards():
         assert len(papers) == entry["count"] >= 30
         assert all(p.source == "openalex" and len(p.abstract.split()) >= 30 for p in papers)
         assert all(info["since"] <= p.published <= info["until"] for p in papers)
-    selected = catalog.load_selection(list(catalog.AREAS), 300)
-    assert len(selected) == 300
-    assert len({p.id for p in selected}) == 300
-
-
-def test_browser_loads_only_selected_same_site_shards(monkeypatch):
-    requests = []
-    original = catalog.CATALOG_DIR
-    def open_url(url):
-        requests.append(url)
-        return io.StringIO((original / url.rsplit("/", 1)[-1]).read_text())
-    monkeypatch.setitem(sys.modules, "pyodide.http", SimpleNamespace(open_url=open_url))
-    monkeypatch.setattr(catalog.sys, "platform", "emscripten")
-    monkeypatch.setenv("TRIAGE_CATALOG_URL", "https://example.test/repository/catalog/")
-    assert len(catalog.load_selection(["humanities"], 100)) == 100
-    assert len(requests) == 1
-    assert requests[0].startswith("https://example.test/repository/catalog/humanities-")
+    ids = [p.id for entry in info["areas"] for p in catalog.read_shard(entry)]
+    assert len(ids) == len(set(ids)), "no paper appears in two areas"
 
 
 def test_damaged_download_is_rejected(tmp_path, monkeypatch):
     entry = catalog.manifest()["areas"][0]
     (tmp_path / entry["file"]).write_text("[]")
     monkeypatch.setattr(catalog, "CATALOG_DIR", tmp_path)
-    with pytest.raises(ValueError, match="reload"):
+    with pytest.raises(ValueError, match="damaged"):
         catalog.read_shard(entry)
-
-
-@pytest.mark.parametrize("selection", [[], ["unknown"], ["../secrets"]])
-def test_bad_field_selection_is_rejected(selection):
-    with pytest.raises(ValueError):
-        catalog.load_selection(selection)

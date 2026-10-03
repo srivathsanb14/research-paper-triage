@@ -52,7 +52,9 @@ in [`docs/evaluation/report.md`](https://github.com/srivathsanb14/research-paper
 uses nothing but MiniLM cosine to the profile, and the report compares the full ranker in MiniLM vs
 TF-IDF space on the same labels.
 
-On the 500 manual labels (good = Read), the full ranker reaches AP 1.00, 0.83, 1.00 with MiniLM vs 0.83, 0.78, 1.00 with TF-IDF (RAG, climate and cancer profiles).
+<!-- eval:minilm-vs-tfidf -->
+On the manual labels (good = Read), the full ranker reaches AP 1.00, 0.83, 1.00 with MiniLM vs 1.00, 0.78, 0.83 with TF-IDF (Cancer immunotherapy, Climate adaptation, RAG & LLM evaluation).
+<!-- /eval:minilm-vs-tfidf -->
 
 ## Limitations
 

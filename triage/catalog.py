@@ -1,14 +1,11 @@
-"""Read the site's public paper catalog; personalization never leaves the browser."""
+"""Read and validate the public paper catalog in data/catalog/ (OpenAlex snapshot, CC0 metadata)."""
 
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import sys
 from itertools import zip_longest
-from urllib.parse import urljoin
 
 from . import config
 from .models import Paper
@@ -45,19 +42,14 @@ def manifest() -> dict:
 
 
 def read_shard(area: dict) -> list[Paper]:
+    """One area's papers, checked against the manifest's checksum."""
     try:
-        if sys.platform == "emscripten":
-            # Browser worker XHR: same-origin, public files only; no API credentials.
-            from pyodide.http import open_url
-            base = os.environ["TRIAGE_CATALOG_URL"]
-            raw = open_url(urljoin(base, area["file"])).getvalue().encode("utf-8")
-        else:
-            raw = (CATALOG_DIR / area["file"]).read_bytes()
+        raw = (CATALOG_DIR / area["file"]).read_bytes()
         if hashlib.sha256(raw).hexdigest() != area["sha256"]:
             raise ValueError("Catalog checksum mismatch")
         return parse_papers(load_json(raw))
     except Exception as exc:
-        raise ValueError("Couldn’t load the paper catalog. Check your connection and reload the page.") from exc
+        raise ValueError("Couldn’t load the paper catalog: a shard is missing or damaged.") from exc
 
 
 def balanced_papers(groups: list[list[Paper]], limit: int) -> list[Paper]:
@@ -77,16 +69,4 @@ def balanced_papers(groups: list[list[Paper]], limit: int) -> list[Paper]:
             papers.append(p)
             if len(papers) == limit:
                 return papers
-    return papers
-
-
-def load_selection(selected: list[str], limit: int = 600) -> list[Paper]:
-    if not selected or any(key not in AREAS for key in selected):
-        raise ValueError("Choose at least one research field.")
-    entries = {entry["id"]: entry for entry in manifest()["areas"]}
-    if any(key not in entries for key in selected):
-        raise ValueError("Some selected fields are unavailable. Please reload the page.")
-    papers = balanced_papers([read_shard(entries[key]) for key in dict.fromkeys(selected)], limit)
-    if not papers:
-        raise ValueError("No papers are available in these fields yet.")
     return papers

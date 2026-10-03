@@ -10,3 +10,6 @@ test-results/
 _dataset/
 data/*.db-wal
 data/*.db-shm
+
+# Local tooling (preview launcher and its config)
+.claude/

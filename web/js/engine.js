@@ -1,4 +1,4 @@
-// Ranking engine for the browser, ported from the Python package (triage/).
+// The ranking engine; runs in the browser.
 //
 //   interest profile ─┐
 //   paper vectors ────┼─> 7 interpretable features ─> prior (hand-set weights)
@@ -555,7 +555,7 @@ export function evidence(p, profile, { df, n }) {
 
 const q = (items, n = 2) => items.slice(0, n).map(i => `“${i}”`).join(", ");
 
-/** One short sentence that only states verified evidence (ported from explain.template_reason). */
+/** One short sentence that only states verified evidence. */
 export function reason(label, ev, f, focus) {
   if (ev.avoidHits.length) return `Covers ${q(ev.avoidHits, 1)}, which you excluded.`;
   const fv = Object.fromEntries(FEATURES.map((name, j) => [name, f?.[j] ?? 0]));

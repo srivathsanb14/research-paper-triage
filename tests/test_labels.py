@@ -4,11 +4,10 @@ import json
 from collections import Counter
 
 from triage import catalog
-from triage.config import LABELS
-
 from server.db import ROOT
 
 LABEL_DIR = ROOT / "data" / "labels"
+LABELS = ("READ", "SKIM", "SKIP")
 ORIGINS = {"manual", "synthetic"}
 
 

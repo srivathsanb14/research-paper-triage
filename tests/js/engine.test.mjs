@@ -7,6 +7,7 @@ import {
 } from "../../web/js/engine.js";
 import { curveSizes, evaluate, learningCurve, stratifiedSubset } from "../../web/js/evaluate.js";
 import { toBibtex, toCsv } from "../../web/js/export.js";
+import { phraseInText } from "../../web/js/text.js";
 import { paperFromCrossref, paperFromEuropePmc, parseIdentifiers, paperFromWork, searchAll } from "../../web/js/live.js";
 
 const RAG = [
@@ -222,4 +223,12 @@ test("searching several sources merges, de-duplicates and survives a failing sou
     const skipBio = await searchAll("rag", { sources: { europepmc: true }, bio: false });
     assert.deepEqual(skipBio, { papers: [], status: {} }); // not asked, not reported
   } finally { globalThis.fetch = real; }
+});
+
+test("phrase matching handles hyphens, plurals and acronyms", () => {
+  assert.ok(phraseInText("retrieval augmented generation", "retrieval-augmented generations help"));
+  assert.ok(phraseInText("retrieval augmented generation", "Our RAG system"));
+  assert.ok(phraseInText("LLM agents", "LLM-based agent"));
+  assert.ok(!phraseInText("question answering", "questions about the answer key"));
+  assert.ok(!phraseInText("", "anything"));
 });

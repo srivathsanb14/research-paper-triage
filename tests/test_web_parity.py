@@ -1,4 +1,5 @@
-"""The browser engine (web/js) must agree with the Python reference (triage/).
+"""The browser (web/js) must agree with independent references: Python worth-it signals (triage/quality.py,
+which builds the dataset) and scikit-learn's ridge regression.
 
 Runs tests/js/parity.mjs under Node with identical inputs; skipped without Node.
 """
@@ -13,23 +14,10 @@ import pytest
 from sklearn.linear_model import Ridge
 
 from triage import quality
-from triage.explain import document_frequencies, extract_evidence, template_reason
-from triage.models import InterestProfile, Paper
-from triage.preprocess import phrase_in_text
-from triage.relevance import FEATURES
+from triage.models import Paper
 
 ROOT = Path(__file__).resolve().parent.parent
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-
-PHRASES = [
-    ("retrieval augmented generation", "We study retrieval-augmented generations for QA."),
-    ("retrieval augmented generation", "A RAG pipeline for science."),
-    ("LLM agents", "LLM-based agents that browse the web"),
-    ("question answering", "questions about the answer key"),
-    ("graph neural networks", "Message passing on graphs with neural nets"),
-    ("climate", "Climatic change in coastal regions"),
-]
-
 
 def papers() -> list[Paper]:
     return [
@@ -44,33 +32,20 @@ def papers() -> list[Paper]:
     ]
 
 
-def test_browser_engine_matches_python():
+def test_browser_matches_references():
     ps = papers()
-    profile = InterestProfile(name="t", description="I evaluate retrieval augmented generation and household savings",
-                              keywords=["retrieval augmented generation", "savings", "agents"], focus="faithfulness of answers")
-    labels = ["READ", "SKIP", "SKIM", "SKIP"]
     rng = np.random.default_rng(0)
-    feats = rng.uniform(0, 1, (len(ps), len(FEATURES))).round(3)
-    X = rng.uniform(0, 1, (30, len(FEATURES)))
-    y = (X @ rng.normal(size=len(FEATURES)) + rng.normal(scale=0.1, size=30)).clip(0, 1)
+    n_features = 7  # the ranker's seven features
+    X = rng.uniform(0, 1, (30, n_features))
+    y = (X @ rng.normal(size=n_features) + rng.normal(scale=0.1, size=30)).clip(0, 1)
     w = rng.choice([0.3, 1.0, 1.5, 2.0], size=30)
-    job = {
-        "papers": [p.to_dict() for p in ps], "profile": {**profile.__dict__}, "labels": labels, "features": feats.tolist(),
-        "phrases": PHRASES, "ridge": {"X": X.tolist(), "y": y.tolist(), "w": w.tolist()},
-    }
+    job = {"papers": [p.to_dict() for p in ps], "ridge": {"X": X.tolist(), "y": y.tolist(), "w": w.tolist()}}
     res = subprocess.run(["node", str(ROOT / "tests/js/parity.mjs")], input=json.dumps(job), capture_output=True, text=True, check=True, cwd=ROOT)
     js = json.loads(res.stdout)
-
-    assert js["phrases"] == [phrase_in_text(a, b) for a, b in PHRASES]
 
     for p, s in zip(ps, js["signals"]):
         py = quality.signals(p)
         assert {k: s[k] for k in py.__dict__} == py.__dict__, p.id
-
-    df, n = document_frequencies(ps)
-    fdict = [dict(zip(FEATURES, row)) for row in feats]
-    py_reasons = [template_reason(lab, extract_evidence(p, profile, df, n), f, profile.focus) for p, lab, f in zip(ps, labels, fdict)]
-    assert js["reasons"] == py_reasons
 
     ref = Ridge(alpha=1.0).fit(X, y, sample_weight=w)
     np.testing.assert_allclose(js["ridge"]["coef"], ref.coef_, atol=1e-9)
