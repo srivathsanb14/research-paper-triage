@@ -38,6 +38,29 @@ profiles, ratings and labels are saved to your account, or just in your browser 
 You rate at least 5 of the first 20 papers and the app starts sorting. Hand labels matter most: they teach
 the ranker, and they are what the app is tested against.
 
+### Why two kinds of answers
+
+They do different jobs, and the split is deliberate.
+
+| | 👍 / 👎 rating (plus Save, Open, Dismiss) | Hand label: Read / Skim / Skip |
+|---|---|---|
+| **Where** | the feed, while you browse | the Label tab |
+| **What you see** | the app's own Read/Skim/Skip guess | the prediction **hidden** |
+| **Choices** | 2 (relevant or not) | 3 (Read, Skim or Skip) |
+| **Effort** | one click | a real judgement |
+| **Trains the ranker** | yes | yes |
+| **Answer key for testing** | **no** | **yes** |
+
+- **Ratings are cheap but biased.** You press them while seeing the app's guess, and the app decides which
+  papers you even see, so your answers get nudged toward what it already thinks. Grading the app on them
+  would partly grade it on its own choices. Asking for just 5 clicks is what lets it work immediately.
+- **Hand labels are slower but clean.** With the prediction hidden they are an independent answer key, and
+  three levels (Read, Skim, Skip) are fine enough to measure ranking quality.
+- **Ratings also shape the score itself** through check 7, "looks like papers you liked", even before any
+  learning happens.
+- A person who only ever presses 👍/👎 gets a sorted list and learning, but no measured quality: Insights asks
+  for at least 6 hand labels with at least two different answers.
+
 ## 3. Meaning as numbers (embeddings)
 
 **In words.** A model turns each text into a list of 384 numbers so that texts with similar *meaning* land
@@ -177,6 +200,22 @@ omits, earns `w = 70%`.
 
 **In words.** The Insights page uses your labels as the answer key and reports how high your relevant papers
 rank, compared with your profile alone and with a random order.
+
+**What it is measured against.** Only your **hand labels** (Read / Skim / Skip), never your thumbs. The code
+passes just the hand labels to the evaluation; thumbs travel in a separate list that is used for training but
+never for grading. Example: you hand-labelled 100 papers (8 Read, 20 Skim, 72 Skip) and pressed 👍/👎 on about
+30 others.
+
+1. The answer key is those 100 papers and their 100 labels, nothing else.
+2. Cross-validation (section 7) splits them into 5 piles of 20. For each pile it trains on the other 80 labels
+   **plus all your thumbs** (except thumbs on papers in the hidden pile) and scores the hidden 20.
+3. After 5 rounds each of the 100 papers has an honest score. The metrics below compare those scores with the
+   labels: did the 8 Read papers rank near the top, was the order Read > Skim > Skip, and how often was the
+   label right at the cutoffs?
+4. Baselines and random order are scored against the same 100 labels, so the comparison is fair.
+
+Thumbs help the model *learn*; they never decide whether it was *right*. The 500 manual labels and the demo
+accounts' labels are all hand-label-style data, so every number in the report is measured against them.
 
 **The math.** Everything is computed on the pooled out-of-fold scores. "Good" means Read, or Read + Skim if
 chosen.
