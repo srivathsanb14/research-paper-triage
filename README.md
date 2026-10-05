@@ -20,7 +20,7 @@ Course paperwork (technical submission text, check-in figure) lives in [`course/
 
 ## Use it
 
-New here? Read [how it works](docs/HOW_IT_WORKS.md): a plain-words walkthrough first, then every formula, the cross-validation and the metrics.
+New here? Read [how it works](docs/HOW_IT_WORKS.md): one flowing guide from papers to scores, labels, the blend, cross-validation and the metrics, with the exact math at each step.
 
 1. Pick your fields and optionally describe your research, then **Show papers**.
 2. Rate at least 5 of the first 20 (more papers: **Load more**, de-duplicated across sources) as 👍 or 👎 (or hand-label in **Label**). The rest are sorted into Read / Skim / Skip and re-sorted with every rating.
