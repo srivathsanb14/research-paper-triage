@@ -884,7 +884,7 @@ function accountDialog(message = "") {
       <h2>Your account</h2>
       <p class="hint">Sign in to keep your profiles, ratings and labels on the server, so the ranking is personal to you on any device. Your profiles in this browser are added to the account the first time. <b>Sign in</b> uses an existing account; <b>Create account</b> makes a new one.</p>
       <label class="field"><span>Username</span><input name="username" autocomplete="username" required minlength="3" maxlength="40" autofocus></label>
-      <label class="field"><span>Password <small>at least 8 characters</small></span><input name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></label>
+      <label class="field"><span>Password <small>new accounts need at least 8 characters</small></span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
       <p class="form-error" ${message ? "" : "hidden"}>${esc(message)}</p>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-act="close-dialog">Cancel</button>
         <div><button type="submit" class="btn" value="register">Create account</button><button type="submit" class="btn primary" value="login">Sign in</button></div></div>
@@ -1525,6 +1525,11 @@ document.addEventListener("submit", e => {
 
 async function submitAccount(form, mode) {
   const username = form.username.value.trim(), password = form.password.value;
+  if (mode === "register" && password.length < 8) { // sign-in accepts any length, so existing short passwords still work
+    accountDialog("A new account needs a password of at least 8 characters.");
+    $("#account-form").username.value = username;
+    return;
+  }
   const buttons = $$("button", form);
   buttons.forEach(b => { b.disabled = true; });
   try {
